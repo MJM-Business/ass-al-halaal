@@ -1,24 +1,5 @@
 import {products as fallbackProducts,total,validPhone,safe} from './shop.js';
 
-// v421 — mobile/browser-safe UUID helper.
-// Render serves over HTTPS, but this fallback keeps cart actions working on older
-// mobile browsers and local/LAN testing contexts where crypto.randomUUID may be unavailable.
-function safeRandomUUID(){
-  try{
-    if(globalThis.crypto?.randomUUID)return globalThis.safeRandomUUID();
-    if(globalThis.crypto?.getRandomValues){
-      const bytes=new Uint8Array(16);
-      globalThis.crypto.getRandomValues(bytes);
-      bytes[6]=(bytes[6]&0x0f)|0x40;
-      bytes[8]=(bytes[8]&0x3f)|0x80;
-      const hex=[...bytes].map(b=>b.toString(16).padStart(2,'0')).join('');
-      return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
-    }
-  }catch{}
-  return `mobile-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,12)}`;
-}
-
-
 // v388 — permanently removed catalog cards (requested cleanup).
 // Match both IDs and exact catalog names so products cannot reappear after API/backend reloads.
 const REMOVED_PRODUCT_IDS=new Set([
@@ -1310,20 +1291,7 @@ const statusLabel=s=>t({received:'تم استلام الطلب',confirmed:'تم 
 
 function persist(){write('kn-cart',cart);write('kn-cart-coupon',cartCouponCode);write('kn-lang',lang);write('kn-lang-mode',langMode);write('kn-district',district);write('kn-phone',myPhone);write('kn-favourites',[...favourites])}
 function toast(message){toastEl.textContent=message;toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),2600)}
-function open(html,klass=''){
-  opener=document.activeElement;
-  modal.className=klass;
-  modal.innerHTML=`<button class="close" type="button" aria-label="${t('إغلاق','Close')}">×</button>${html}`;
-  try{
-    if(typeof modal.showModal==='function')modal.showModal();
-    else modal.setAttribute('open','');
-  }catch{
-    modal.setAttribute('open','');
-  }
-  const closeBtn=modal.querySelector('.close');
-  if(closeBtn)closeBtn.onclick=()=>{try{modal.close()}catch{modal.removeAttribute('open')}};
-  setTimeout(applyRbacUi,0);
-}
+function open(html,klass=''){opener=document.activeElement;modal.className=klass;modal.innerHTML=`<button class="close" type="button" aria-label="${t('إغلاق','Close')}">×</button>${html}`;modal.showModal();modal.querySelector('.close').onclick=()=>modal.close();setTimeout(applyRbacUi,0)}
 modal.addEventListener('close',()=>opener?.focus());
 function openLanguagePicker(){
   const detected=deviceAppLanguage();
@@ -1538,7 +1506,7 @@ async function loadCustomerAuth(){
 function customerOrderCode(o){return String(o?.order_code||o?.id||'')}
 function customerAuthMarkup(){
   return `<div class="simple-auth-shell" data-auth-mode="login">
-    <div class="simple-auth-icon simple-auth-logo-wrap"><img src="assets/ass-al-halaal-mark-v135.png" alt="Ass Al Halaal"></div>
+    <div class="simple-auth-icon simple-auth-logo-wrap"><img src="assets/ass-al-halaal-logo-colored.png" alt="Ass Al Halaal"></div>
     <div class="simple-auth-heading">
       <small>ASS AL HALAAL</small>
       <h2>${t('تسجيل الدخول','Login')}</h2>
@@ -1895,7 +1863,7 @@ function customerIcon(name){
 function header(){const v=view();return `<header class="app-header ref-customer-header">
   <div class="customer-brand">
     <button class="customer-logo" type="button" data-nav="home" aria-label="Ass Al Halaal Home">
-      <img src="assets/ass-al-halaal-mark-v135.png" alt="Ass Al Halaal">
+      <img src="assets/ass-al-halaal-logo-white.png" alt="Ass Al Halaal">
       <span><b>${t('عاس الحلال','Ass Al Halaal')}</b><small>${t('ذبائح ولحوم مختارة','Premium livestock & meat')}</small></span>
     </button>
     <button class="location-pill ref-location-pill" id="location-top" type="button" aria-label="${t('اختيار منطقة التوصيل','Choose delivery area')}">
@@ -1903,6 +1871,10 @@ function header(){const v=view();return `<header class="app-header ref-customer-
       <span class="ref-location-copy"><small>${t('منطقة التوصيل','Delivery area')}</small><b>${t('جدة · '+district.replace('حي ',''),'Jeddah · '+(districtEn[district]||district))}</b></span>
       <span class="chev">${customerIcon('chevron')}</span>
     </button>
+  </div>
+
+  <div class="mobile-brand-wordmark" aria-hidden="true">
+    <strong>Ass Al Halaal</strong>
   </div>
 
   <nav class="desktop-main-nav" aria-label="Main navigation">
@@ -1977,16 +1949,20 @@ function homePage(){
   <div class="district-title">
     <span class="near">⌖</span>
     <div><h2>${t('اختر منطقة التوصيل في جدة','Choose your delivery area in Jeddah')}</h2><p>${t('توصيل مبرد 4°C يحافظ على طلبك طازجاً','Chilled 4°C delivery keeps every order fresh')}</p></div>
-    <span class="fast">⚡ ${t('خلال 3 ساعات','Within 3 hours')}</span>
+  </div>
+  <div class="district-prep-stamp" aria-hidden="true">
+    <img class="district-prep-stamp-image" src="assets/order-now-preparation-sameday-3d-stamp.png" alt="">
   </div>
   <div class="district-chips">${districts.map(d=>`<button data-district="${safe(d)}" class="${d===district?'selected':''}">${t(d,districtEn[d])}</button>`).join('')}</div>
-  <div class="dispatch"><span>◷</span>${t('اطلب الآن للتجهيز والتوصيل في نفس اليوم','Order now for preparation and same-day delivery')}<b>${t('تجهيز سريع','Fast dispatch')} →</b></div>
 </section>
 
 <!-- v410: visual order only — hero above categories; behavior unchanged -->
 <section class="hero-slider v94-hero-slider hero-progress-run" data-hero-slider aria-label="${t('عروض عاس الحلال','Ass Al Halaal highlights')}">
   <div class="hero-slides">
     ${heroSlides.map((slide,index)=>`<article class="quality-hero ref-quality-hero luxury-quality-hero v93-cover hero-slide hero-theme-${slide.theme} ${index===0?'is-active':''}" data-hero-slide="${index}" aria-hidden="${index===0?'false':'true'}">
+      <div class="mobile-hero-image-v468" style="background-image:url('${slide.image}')">
+        <img src="${slide.image}" alt="${safe(slide.alt)}" loading="${index===0?'eager':'lazy'}">
+      </div>
       <div class="hero-copy">
         <div class="hero-badges luxury-hero-badges">
           <span>♛ ${slide.badge}</span>
@@ -2011,7 +1987,7 @@ function homePage(){
           <small><i>✓</i> ${t('دخول موحد للعملاء والإدارة','One secure login for customers and administration')}</small>
         </div>
       </div>
-      <div class="hero-media luxury-hero-media">
+      <div class="hero-media luxury-hero-media" style="--hero-mobile-image:url('${slide.image}')">
         <img src="${slide.image}" alt="${safe(slide.alt)}" loading="${index===0?'eager':'lazy'}">
       </div>
     </article>`).join('')}
@@ -2103,9 +2079,7 @@ function homePage(){
 </section>
 
 <section id="collection" class="collection ref-collection">
-  <div class="section-row"><div><h2>${t('المفضلة في جدة','Jeddah favourites')}</h2><p>${t('اختيارات جاهزة للتخصيص حسب رغبتك','Popular selections ready to customise your way')}</p></div><span class="crown">★</span></div>
-  <label class="search-box ref-search"><span>⌕</span><input id="search" value="${safe(query)}" placeholder="${t('ابحث عن منتج…','Search products...')}"><i>→</i></label>
-  <div class="filters">${[['all','الكل','All'],['goat-breeds','سلالات الماعز','Goat breeds'],['whole','ذبائح','Whole'],['boxes','بوكسات','Boxes'],['grill','شواء','Grill'],['daily','يومي','Daily'],['premium','مميز','Premium']].map(([id,ar,en])=>`<button data-filter="${id}" class="${filter===id?'selected':''}">${t(ar,en)}</button>`).join('')}</div>
+  <div class="section-row most-requested-heading"><div><h2>${t('الأكثر طلباً','MOST REQUESTED')}</h2></div></div>
   <div id="products" class="product-list ref-products">${productCards()}</div>
 </section>
 
@@ -2195,7 +2169,7 @@ function homePage(){
 
     <section class="mega-footer-brand">
       <div class="mega-footer-brand-head">
-        <img src="assets/ass-al-halaal-mark-v135.png" alt="Ass Al Halaal">
+        <img src="assets/ass-al-halaal-logo-white.png" alt="Ass Al Halaal">
         <div>
           <small>${t('عاس الحلال','ASS AL HALAAL')}</small>
           <h3>${t('مؤسسة عاس الحلال','Ass Al Halaal Establishment')}</h3>
@@ -2346,7 +2320,7 @@ function homePage(){
         <b>${t('عاس الحلال','Ass Al Halaal')}</b>
         <small>${t('سنرد عليكم في أقرب وقت ممكن','We will respond as soon as possible.')}</small>
       </div>
-      <span class="floating-whatsapp-logo"><img src="assets/ass-al-halaal-mark-v135.png" alt="Ass Al Halaal"></span>
+      <span class="floating-whatsapp-logo"><img src="assets/ass-al-halaal-logo-colored.png" alt="Ass Al Halaal"></span>
     </div>
 
     <div class="floating-whatsapp-body">
@@ -3530,7 +3504,7 @@ function livestockCategoryPage(key){
 
 function quickAddLivestockProduct(id){
   const p=productById(id);if(!p)return;
-  const item={key:safeRandomUUID(),id:p.id,qty:1,purchaseMode:'whole',purchaseLabel:t('حيوان كامل','Whole animal'),sizeChoice:'whole',sizeLabel:t('حيوان كامل','Whole animal'),boxChoice:'standard',boxLabel:t('صندوق عاس الحلال','Ass Al Halaal box'),cut:'medium',pack:'bags',fat:'regular',head:'raw',tripe:'cleaned',organs:'separate',slaughter:'municipality',deliveryChoice:'',dishCount:'1',partPrefs:{},breedId:p.breedId||'',breedName:p.en||'',unit:Number(p.price||0)};
+  const item={key:crypto.randomUUID(),id:p.id,qty:1,purchaseMode:'whole',purchaseLabel:t('حيوان كامل','Whole animal'),sizeChoice:'whole',sizeLabel:t('حيوان كامل','Whole animal'),boxChoice:'standard',boxLabel:t('صندوق عاس الحلال','Ass Al Halaal box'),cut:'medium',pack:'bags',fat:'regular',head:'raw',tripe:'cleaned',organs:'separate',slaughter:'municipality',deliveryChoice:'',dishCount:'1',partPrefs:{},breedId:p.breedId||'',breedName:p.en||'',unit:Number(p.price||0)};
   cart.push(item);persist();toast(t('تمت الإضافة للسلة','Added to cart'));
 }
 
@@ -4837,7 +4811,7 @@ function bindHashiReferenceDetail(){
   const updateQty=()=>{if(qtyValue)qtyValue.textContent=String(orderQty)};
   root.querySelectorAll('[data-hashi-order-qty]').forEach(btn=>btn.addEventListener('click',()=>{orderQty=Math.max(1,Math.min(20,orderQty+Number(btn.dataset.hashiOrderQty||0)));updateQty()}));
   const buildDefaultItem=()=>{
-    const base={key:safeRandomUUID(),id:root.dataset.productId,qty:orderQty,cut:'medium',cutChoice:'fridge-medium',pack:'bags',fat:'regular',fatChoice:'natural',head:'exclude',extraChoice:'none',tripe:'exclude',organs:'none',slaughter:'municipality',unit:Number((productById(root.dataset.productId)||{}).price||0)};
+    const base={key:crypto.randomUUID(),id:root.dataset.productId,qty:orderQty,cut:'medium',cutChoice:'fridge-medium',pack:'bags',fat:'regular',fatChoice:'natural',head:'exclude',extraChoice:'none',tripe:'exclude',organs:'none',slaughter:'municipality',unit:Number((productById(root.dataset.productId)||{}).price||0)};
     if(isHuwar){
       base.huwarProductKind=read('kn-huwar-product-kind','whole');
     }else{
@@ -4994,7 +4968,7 @@ function bindReferenceProductDetail(){
   root.querySelectorAll('[data-pdp-qty]').forEach(b=>b.addEventListener('click',()=>{qty=Math.max(1,Math.min(20,qty+Number(b.dataset.pdpQty||0)));update()}));
   [size,pack,head,cut,delivery,dishes].filter(Boolean).forEach(el=>el.addEventListener('change',update));
   partSelects.forEach(sel=>sel.addEventListener('change',update));
-  const makeMainItem=()=>({key:safeRandomUUID(),id:p.id,qty,purchaseMode,purchaseLabel:purchaseLabel(),customKg:purchaseMode==='kg'?customKg:null,sizeChoice:size?.value||'small',sizeLabel:purchaseLabel(),boxChoice:'standard',boxLabel:t('صندوق عاس الحلال','Ass Al Halaal box'),cut:cut?.value||'medium',pack:pack?.value||'bags',fat:'regular',head:head?.value||'raw',tripe:'cleaned',organs:'separate',slaughter:'municipality',deliveryChoice:delivery?.value||'',dishCount:dishes?.value||'1',partPrefs:partPrefs(),breedId:selectedBreed?.id||'',breedName:selectedBreed?selectedBreed.en:'',unit:mainUnit()});
+  const makeMainItem=()=>({key:crypto.randomUUID(),id:p.id,qty,purchaseMode,purchaseLabel:purchaseLabel(),customKg:purchaseMode==='kg'?customKg:null,sizeChoice:size?.value||'small',sizeLabel:purchaseLabel(),boxChoice:'standard',boxLabel:t('صندوق عاس الحلال','Ass Al Halaal box'),cut:cut?.value||'medium',pack:pack?.value||'bags',fat:'regular',head:head?.value||'raw',tripe:'cleaned',organs:'separate',slaughter:'municipality',deliveryChoice:delivery?.value||'',dishCount:dishes?.value||'1',partPrefs:partPrefs(),breedId:selectedBreed?.id||'',breedName:selectedBreed?selectedBreed.en:'',unit:mainUnit()});
   const addMain=()=>{const item=makeMainItem();cart.push(item);persist();render();showAddedToCartPopup(item)};
   root.querySelector('[data-pdp-add-main]')?.addEventListener('click',addMain);
   root.querySelector('[data-pdp-buy-now]')?.addEventListener('click',()=>{cart.push(makeMainItem());persist();checkout()});
@@ -5201,7 +5175,7 @@ function orderCard(o){
 function accountPage(){
   const head=`<section class="page-head customer-page-head"><button data-nav="home" aria-label="${t('الرجوع للرئيسية','Back to home')}">${t('→','←')}</button><div><small>ASS AL HALAAL</small><h1>${t('حسابي','My account')}</h1></div></section>`;
   if(!customerSession)return `${head}<section class="account-card premium-account-card customer-auth-card">${customerAuthMarkup()}</section>`;
-  return `${head}<section class="account-card premium-account-card signed-customer-card"><div class="signed-customer-hero"><img src="assets/ass-al-halaal-mark-v135.png" alt="Ass Al Halaal"><div><small>${t('حساب عميل موثق','CUSTOMER ACCOUNT')}</small><h2>${safe(customerSession.name)}</h2><p>${safe(customerSession.email)}</p></div><span>${customerSession.provider==='google'?'Google':t('حساب مباشر','Direct')}</span></div>
+  return `${head}<section class="account-card premium-account-card signed-customer-card"><div class="signed-customer-hero"><img src="assets/ass-al-halaal-logo-white.png" alt="Ass Al Halaal"><div><small>${t('حساب عميل موثق','CUSTOMER ACCOUNT')}</small><h2>${safe(customerSession.name)}</h2><p>${safe(customerSession.email)}</p></div><span>${customerSession.provider==='google'?'Google':t('حساب مباشر','Direct')}</span></div>
   <form id="customer-profile-form" class="customer-profile-form"><label>${t('الاسم الكامل','Full name')}<input name="name" value="${safe(customerSession.name||'')}" required></label><label>${t('رقم الجوال','Mobile number')}<input name="phone" type="tel" dir="ltr" value="${safe(customerSession.phone||myPhone||'')}" placeholder="05XXXXXXXX"></label><button type="submit">${t('حفظ بيانات الحساب','Save account details')}</button></form>
   <div class="customer-account-actions"><button data-nav="orders" class="primary-block">${t('طلباتي وتتبع الطلب','My orders & tracking')}</button><button id="customer-logout" class="secondary-block" type="button">${t('تسجيل الخروج','Sign out')}</button></div></section>`;
 }
@@ -7183,7 +7157,7 @@ function adminPage(){
   return `<div class="reference-admin stitch-shell-v186 ${adminModule==='dashboard'?'stitch-dashboard-active':''}">
     <aside class="reference-sidebar">
       <div class="reference-brand">
-        <div class="reference-brand-mark"><img src="assets/ass-al-halaal-mark-v135.png" alt="Ass Al Halaal"></div>
+        <div class="reference-brand-mark"><img src="assets/ass-al-halaal-logo-white.png" alt="Ass Al Halaal"></div>
         <div><b>${t('عاس الحلال','ASS AL HALAAL')}</b><small>${t('الإدارة والعمليات','ADMIN & OPERATIONS')}</small></div>
       </div>
 
@@ -7416,6 +7390,7 @@ function render(){
   let content=v==='home'?homePage():v==='orders'?ordersPage():v==='account'?accountPage():v==='admin'?adminPage():v.startsWith('livestock/')?livestockCategoryPage(decodeURIComponent(v.slice(10))):v.startsWith('hashi/')?hashiVariantPage(productById('hashi-camel')||products.find(isHashiCamelProduct),decodeURIComponent(v.slice(6))):v.startsWith('product/')?productDetailPage(decodeURIComponent(v.slice(8))):homePage();
   document.querySelector('#app').innerHTML=shell(content,{admin:v==='admin'});
   bind();
+  requestAnimationFrame(()=>{ if(typeof applyV443LockedTopNav==='function') applyV443LockedTopNav(); });
 }
 
 
@@ -7733,24 +7708,19 @@ function bind(){
   document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>setView(b.dataset.nav));
   document.querySelector('#language')?.addEventListener('click',openLanguagePicker);
   document.querySelector('#location-top')?.addEventListener('click',()=>{if(view()!=='home')setView('home');setTimeout(()=>document.querySelector('.district-card')?.scrollIntoView({behavior:'smooth'}),80)});
-  document.querySelector('#top-search')?.addEventListener('click',()=>{if(view()!=='home')setView('home');setTimeout(()=>{document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'});document.querySelector('#search')?.focus()},100)});
+  document.querySelector('#top-search')?.addEventListener('click',()=>openTopSearchOverlay());
   document.querySelector('#top-bell')?.addEventListener('click',()=>toast(t('سنضيف مركز التنبيهات في مرحلة الحسابات.','Notification centre will be connected in the account phase.')));
   document.querySelectorAll('.js-cart,#nav-cart').forEach(el=>el.addEventListener('click',showCart));
   document.querySelector('#header-cart')?.addEventListener('click',showCart);
   document.querySelectorAll('.js-products,#nav-products').forEach(el=>el.addEventListener('click',()=>{if(view()!=='home')setView('home');setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'}),100)}));
   document.querySelectorAll('[data-hero-browse]').forEach(btn=>btn.addEventListener('click',()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'})));
-  // v421: one optional/mobile-specific enhancement must never stop the rest of
-  // the page from receiving its click/tap handlers.
-  const safeBindSetup=(label,fn)=>{
-    try{fn()}catch(err){console.warn(`[v421] ${label} setup skipped:`,err)}
-  };
-  safeBindSetup('hero slider',setupHeroSlider);
-  safeBindSetup('custom box showcase',setupCustomBox3DShowcase);
-  safeBindSetup('standards experience',setupStandardsExperience);
-  safeBindSetup('floating WhatsApp',setupFloatingWhatsapp);
-  safeBindSetup('product detail',bindReferenceProductDetail);
-  safeBindSetup('sheep breed catalog',bindSheepBreedCatalog);
-  safeBindSetup('Hashi detail',bindHashiReferenceDetail);
+  setupHeroSlider();
+  setupCustomBox3DShowcase();
+  setupStandardsExperience();
+  setupFloatingWhatsapp();
+  bindReferenceProductDetail();
+  bindSheepBreedCatalog();
+  bindHashiReferenceDetail();
   document.querySelectorAll('[data-hashi-variant-button]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();setView('hashi/'+encodeURIComponent(b.dataset.hashiVariantButton))}));
   document.querySelectorAll('[data-hashi-variant]').forEach(card=>{const openVariant=e=>{if(e.target.closest('button'))return;setView('hashi/'+encodeURIComponent(card.dataset.hashiVariant))};card.addEventListener('click',openVariant);card.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('button')){e.preventDefault();openVariant(e)}})});
   document.querySelectorAll('[data-hashi-product]').forEach(card=>{const choose=()=>{const source=hashiVariantById(card.dataset.hashiSource);const item=HASHI_VARIANT_PRODUCTS.find(x=>x.id===card.dataset.hashiProduct);toast(t(`تم اختيار ${item?.ar||''} من ${source?.ar||''}. ستفتح خيارات التقطيع والتغليف في المرحلة التالية.`,`Selected ${item?.en||''} from ${source?.en||''}. Cutting and packaging options are the next layer.`))};card.addEventListener('click',choose);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose()}})});
@@ -8008,7 +7978,7 @@ function productOptionsDialog(id){
     };
     const legacyHead=['head','head_liver'].includes(d.extraChoice)?'raw':'exclude';
     const item={
-      key:safeRandomUUID(),id:p.id,qty,
+      key:crypto.randomUUID(),id:p.id,qty,
       cut:cutMap[d.cutChoice]||'medium',
       cutChoice:d.cutChoice||'fridge-medium',
       pack:'bags',fat:'regular',
@@ -8175,7 +8145,7 @@ function productDialog(id){
     const fatCost=d.fatChoice==='light'?57.5:0;
     // Keep backend-safe legacy fields while preserving the richer customer choices locally.
     const legacyHead=['head','head_liver'].includes(d.extraChoice)?'raw':'exclude';
-    const item={key:safeRandomUUID(),id:p.id,qty,cut:d.cut,pack:d.pack,fat:'regular',fatChoice:d.fatChoice||'natural',head:legacyHead,extraChoice:d.extraChoice||'head',tripe:'exclude',organs:['liver','head_liver'].includes(d.extraChoice)?'liver':'none',slaughter:d.slaughter,unit:Number(p.price)+packCost+extraCost+fatCost};
+    const item={key:crypto.randomUUID(),id:p.id,qty,cut:d.cut,pack:d.pack,fat:'regular',fatChoice:d.fatChoice||'natural',head:legacyHead,extraChoice:d.extraChoice||'head',tripe:'exclude',organs:['liver','head_liver'].includes(d.extraChoice)?'liver':'none',slaughter:d.slaughter,unit:Number(p.price)+packCost+extraCost+fatCost};
     cart.push(item);
     persist();modal.close();render();showAddedToCartPopup(item);
   };
@@ -8496,3 +8466,5784 @@ await Promise.all([loadProducts(),loadPublicServiceHealth(),loadCustomerAuth(),r
 render();
 if(view()==='orders'&&customerSession)await loadMyOrders();
 if(view()==='admin'&&adminAuthReady)await loadAdmin();
+
+
+
+
+
+;(()=>{
+  const installV419MobileStyles=()=>{
+    if(document.getElementById('v419-mobile-responsive-fix')) return;
+    const style=document.createElement('style');
+    style.id='v419-mobile-responsive-fix';
+    style.textContent=`
+/* v419 — mobile responsive layer. Visual-only; existing handlers/data attributes remain untouched. */
+@media (max-width: 900px){
+  html,body{overflow-x:hidden!important}
+  .app-shell{max-width:100%!important;width:100%!important;margin:0!important}
+  .screen{padding-left:12px!important;padding-right:12px!important}
+
+  /* Header */
+  .app-header{position:sticky!important;top:0!important;z-index:100!important;display:flex!important;flex-wrap:wrap!important;gap:8px!important;padding:10px!important;border-radius:0 0 16px 16px!important}
+  .customer-brand{min-width:0!important;flex:1 1 170px!important}
+  .customer-logo b{font-size:15px!important}
+  .customer-logo small{font-size:9px!important}
+  .location-pill{flex:1 1 150px!important;min-width:145px!important;padding:8px 10px!important}
+  .desktop-main-nav{order:3!important;width:100%!important;overflow-x:auto!important;display:flex!important;justify-content:flex-start!important;gap:4px!important;padding-bottom:2px!important;scrollbar-width:none!important}
+  .desktop-main-nav::-webkit-scrollbar{display:none!important}
+  .desktop-main-nav button{flex:0 0 auto!important;min-width:74px!important;padding:8px!important;font-size:10px!important}
+  .customer-header-actions{margin-inline-start:auto!important;display:flex!important;gap:6px!important}
+  .header-search{order:4!important;width:100%!important;min-width:0!important}
+  .header-search input{width:100%!important}
+
+  /* Announcement + delivery area */
+  .trust-strip,.top-trust-strip,.customer-trust-strip{font-size:9px!important;gap:8px!important;overflow-x:auto!important;white-space:nowrap!important}
+  .delivery-area-section,.delivery-area-card,.ref-delivery-panel{margin:8px 0 12px!important;padding:12px!important;border-radius:16px!important}
+  .delivery-area-section h2,.delivery-area-card h2,.ref-delivery-panel h2{font-size:18px!important;line-height:1.2!important}
+  .delivery-area-section p,.delivery-area-card p,.ref-delivery-panel p{font-size:10px!important}
+  .delivery-area-section .districts,.delivery-area-card .districts,.ref-delivery-panel .districts{display:flex!important;gap:6px!important;overflow-x:auto!important;white-space:nowrap!important;padding-bottom:2px!important;scrollbar-width:none!important}
+  .delivery-area-section .districts::-webkit-scrollbar,.delivery-area-card .districts::-webkit-scrollbar,.ref-delivery-panel .districts::-webkit-scrollbar{display:none!important}
+  .delivery-area-section button,.delivery-area-card button,.ref-delivery-panel button{font-size:10px!important;padding:8px 11px!important;flex:0 0 auto!important}
+
+  /* Hero */
+  .luxury-hero,.home-hero,.hero-section,.premium-home-hero{min-height:0!important;height:auto!important;border-radius:18px!important;overflow:hidden!important}
+  .luxury-hero .hero-grid,.home-hero .hero-grid,.hero-section .hero-grid,.premium-home-hero .hero-grid{display:grid!important;grid-template-columns:1fr!important}
+  .luxury-hero img,.home-hero img,.hero-section img,.premium-home-hero img{width:100%!important;max-height:300px!important;object-fit:cover!important}
+  .luxury-hero-content,.home-hero-content,.hero-copy,.premium-hero-copy{padding:18px!important}
+  .luxury-hero h1,.home-hero h1,.hero-section h1,.premium-home-hero h1{font-size:30px!important;line-height:1.08!important}
+  .luxury-hero p,.home-hero p,.hero-section p,.premium-home-hero p{font-size:12px!important;line-height:1.6!important}
+  .hero-feature-grid,.hero-benefits,.luxury-hero-features{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+
+  /* Top categories */
+  .v409-category-row,.top-category-grid,.category-showcase-grid,.livestock-category-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+  .v409-category-card,.top-category-card,.category-showcase-card,.livestock-category-card{width:100%!important;min-width:0!important}
+  .v409-category-card img,.top-category-card img,.category-showcase-card img,.livestock-category-card img{width:100%!important;height:auto!important;aspect-ratio:4/3!important;object-fit:cover!important}
+  .v409-category-card button,.top-category-card button,.category-showcase-card button,.livestock-category-card button{width:100%!important;min-height:40px!important;font-size:13px!important}
+
+  /* Product list/cards */
+  #products,.products-grid,.product-grid,.ref-products{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;overflow:visible!important;scroll-snap-type:none!important}
+  #products>.product-card,#products>.premium-product-card,#products>.harri-product-card,#products>.hashi-product-card,.products-grid>.product-card,.product-grid>.product-card{width:100%!important;min-width:0!important;max-width:none!important;flex:none!important}
+  .product-card,.premium-product-card,.harri-product-card,.hashi-product-card{border-radius:16px!important}
+  .product-card img,.premium-product-card img,.harri-product-card img,.hashi-product-card img{width:100%!important;height:auto!important;aspect-ratio:4/3!important;object-fit:contain!important;background:#faf7ef!important}
+  .product-content{padding:10px!important}
+  .product-content h3,.product-title-block h3{font-size:14px!important}
+  .product-title-block p,.product-content p{font-size:9px!important}
+  .premium-card-actions{grid-template-columns:1fr auto!important;gap:6px!important}
+  .premium-add-button{min-height:40px!important;font-size:10px!important}
+  .premium-card-share{width:40px!important;height:40px!important}
+  .clean-meta-row,.harri-chip-row{display:flex!important;flex-wrap:wrap!important;gap:5px!important}
+  .clean-price-row,.harri-price-row{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:6px!important}
+  .price b,.harri-price-row b{font-size:18px!important}
+  .product-details-link{font-size:10px!important}
+
+  /* Category / breed hub pages */
+  .livestock-hub-page{padding:10px!important}
+  .livestock-hub-hero{grid-template-columns:1fr!important;padding:18px!important;border-radius:18px!important}
+  .livestock-hub-hero h1{font-size:28px!important}
+  .livestock-hub-hero img{height:auto!important;aspect-ratio:4/3!important;object-fit:cover!important}
+  .livestock-hub-grid{grid-template-columns:1fr 1fr!important;gap:10px!important}
+  .livestock-hub-photo{height:auto!important;aspect-ratio:4/3!important}
+  .livestock-hub-copy{padding:12px!important}
+  .livestock-hub-copy h3{font-size:17px!important}
+  .livestock-hub-actions{grid-template-columns:1fr!important}
+
+  /* Product detail */
+  .ref-product-layout,.product-detail-layout,.pdp-layout{grid-template-columns:1fr!important;gap:14px!important}
+  .ref-product-gallery,.product-gallery{order:1!important}
+  .ref-product-info,.product-info{order:2!important}
+  .ref-product-image-stage img,.product-main-image img{width:100%!important;height:auto!important;max-height:380px!important;object-fit:contain!important}
+  .ref-parts-grid,.parts-grid{grid-template-columns:1fr!important}
+
+  /* Footer / floating whatsapp */
+  .whatsapp-float,.contact-float{right:12px!important;bottom:12px!important;transform:scale(.92)!important;transform-origin:bottom right!important}
+}
+
+@media (max-width: 560px){
+  .screen{padding-left:8px!important;padding-right:8px!important}
+  .customer-logo img{width:38px!important;height:34px!important}
+  .customer-logo b{font-size:13px!important}
+  .location-pill{min-width:132px!important}
+  .desktop-main-nav button{min-width:66px!important;font-size:9px!important}
+
+  .v409-category-row,.top-category-grid,.category-showcase-grid,.livestock-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+  #products,.products-grid,.product-grid,.ref-products{grid-template-columns:1fr!important;gap:12px!important}
+  .product-card,.premium-product-card,.harri-product-card,.hashi-product-card{max-width:100%!important}
+  .product-card img,.premium-product-card img,.harri-product-card img,.hashi-product-card img{aspect-ratio:16/10!important}
+  .hero-feature-grid,.hero-benefits,.luxury-hero-features{grid-template-columns:1fr 1fr!important}
+  .livestock-hub-grid{grid-template-columns:1fr!important}
+  .livestock-hub-head{align-items:flex-start!important;flex-direction:column!important;gap:8px!important}
+  .ref-product-thumbs,.product-thumbnails{overflow-x:auto!important;display:flex!important;gap:6px!important;scrollbar-width:none!important}
+  .ref-product-thumbs::-webkit-scrollbar,.product-thumbnails::-webkit-scrollbar{display:none!important}
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',installV419MobileStyles,{once:true});
+  else installV419MobileStyles();
+})();
+
+
+;(()=>{
+  const installV428AccurateHeader=()=>{
+    if(document.getElementById('v428-accurate-header')) return;
+    const style=document.createElement('style');
+    style.id='v428-accurate-header';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v428 — white original logo + stable header
+   Light-touch override only. Keeps header size stable.
+   ========================================================= */
+@media (min-width: 901px){
+  .ref-customer-header{
+    min-height:92px!important;
+    height:92px!important;
+    padding:0 20px!important;
+    display:grid!important;
+    grid-template-columns:minmax(290px,1.1fr) minmax(420px,1fr) minmax(270px,.9fr)!important;
+    align-items:center!important;
+    gap:18px!important;
+    background:linear-gradient(180deg,#075741 0%,#044f3b 100%)!important;
+    border-bottom:1px solid rgba(255,255,255,.08)!important;
+    box-shadow:none!important;
+  }
+  .ref-customer-header .customer-brand{
+    display:flex!important;
+    flex-direction:row-reverse!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:16px!important;
+    min-width:0!important;
+  }
+  .ref-customer-header .customer-logo{
+    width:180px!important;
+    min-width:180px!important;
+    height:70px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    padding:0!important;
+    background:transparent!important;
+    border:0!important;
+    box-shadow:none!important;
+    overflow:visible!important;
+  }
+  .ref-customer-header .customer-logo img{
+    width:168px!important;
+    height:68px!important;
+    object-fit:contain!important;
+    filter:none!important;
+  }
+  .ref-customer-header .customer-logo span{display:none!important}
+
+  .ref-customer-header .ref-location-pill{
+    width:190px!important;
+    min-width:190px!important;
+    height:54px!important;
+    border-radius:16px!important;
+    display:grid!important;
+    grid-template-columns:34px 1fr 16px!important;
+    align-items:center!important;
+    gap:10px!important;
+    padding:0 14px!important;
+    background:rgba(255,255,255,.07)!important;
+    border:1px solid rgba(233,185,64,.32)!important;
+    box-shadow:none!important;
+    color:#fff!important;
+  }
+  .ref-customer-header .ref-location-copy small{
+    color:#d6ebe4!important;
+    font-size:10px!important;
+    font-weight:700!important;
+  }
+  .ref-customer-header .ref-location-copy b{
+    color:#fff!important;
+    font-size:12px!important;
+    font-weight:900!important;
+  }
+  .ref-customer-header .ref-location-pin{
+    width:32px!important;height:32px!important;
+    border-radius:50%!important;
+    background:#dcb23d!important;color:#084d3a!important;
+    display:grid!important;place-items:center!important;
+    font-size:15px!important;
+  }
+  .ref-customer-header .desktop-main-nav{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:8px!important;
+    padding:0!important;
+    background:transparent!important;
+    border:0!important;
+    box-shadow:none!important;
+  }
+  .ref-customer-header .desktop-main-nav button{
+    min-width:78px!important;
+    height:70px!important;
+    padding:8px 10px 6px!important;
+    border-radius:14px!important;
+    background:transparent!important;
+    color:#fff!important;
+    border:0!important;
+    box-shadow:none!important;
+    gap:5px!important;
+  }
+  .ref-customer-header .desktop-main-nav .nav-icon,
+  .ref-customer-header .desktop-main-nav .nav-icon svg{
+    width:24px!important;height:24px!important;
+  }
+  .ref-customer-header .desktop-main-nav small{
+    font-size:11px!important;
+    font-weight:900!important;
+    line-height:1.1!important;
+    white-space:nowrap!important;
+  }
+  .ref-customer-header .desktop-main-nav button.active{
+    min-width:102px!important;
+    color:#f0c44d!important;
+    background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.03))!important;
+    border:1.5px solid #d8ab35!important;
+    box-shadow:inset 0 -2px 0 #e2b43d, 0 0 0 1px rgba(255,210,94,.05)!important;
+  }
+  .ref-customer-header .desktop-main-nav button.active .nav-icon{color:#f0c44d!important}
+  .ref-customer-header .desktop-main-nav .cart-nav b{
+    background:#f0c54c!important;color:#0c4a39!important;border:2px solid #0a5d49!important;
+    min-width:18px!important;height:18px!important;font-size:8px!important;font-weight:900!important;
+  }
+  .ref-customer-header .premium-action-dock{
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:8px!important;
+    min-width:0!important;
+  }
+  .ref-customer-header .premium-action-dock .top-action{
+    width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important;
+    border-radius:12px!important;
+    background:rgba(255,255,255,.07)!important;
+    border:1px solid rgba(255,255,255,.15)!important;
+    color:#fff!important;
+    box-shadow:none!important;
+    padding:0!important;
+  }
+  .ref-customer-header .premium-action-dock .top-action .action-icon,
+  .ref-customer-header .premium-action-dock .top-action .action-icon svg{
+    width:21px!important;height:21px!important;
+  }
+  .ref-customer-header .premium-action-dock .top-bell{
+    width:44px!important;height:44px!important;min-width:44px!important;
+    background:#ffffff!important;border-color:#ffffff!important;color:#0b5d49!important;
+  }
+  .ref-customer-header .premium-action-dock .top-bell .action-icon{color:#0b5d49!important}
+  .ref-customer-header .premium-action-dock .top-bell i{
+    top:7px!important;right:7px!important;width:8px!important;height:8px!important;background:#e64747!important;border:2px solid #fff!important;
+  }
+  .ref-customer-header .premium-action-dock .top-language{
+    width:40px!important;min-width:40px!important;background:rgba(255,255,255,.07)!important;border:1px solid rgba(233,185,64,.5)!important;
+  }
+  .ref-customer-header .premium-action-dock .top-language .lang-code{color:#f1c54d!important;font-size:12px!important;font-weight:900!important}
+  .ref-customer-header .premium-action-dock .top-cart{
+    background:rgba(255,255,255,.08)!important;
+    border:1px solid rgba(233,185,64,.55)!important;
+    color:#fff!important;
+  }
+  .ref-customer-header .premium-action-dock .top-cart .action-icon{color:#fff!important}
+  .ref-customer-header .premium-action-dock .top-search{
+    width:248px!important;min-width:248px!important;max-width:248px!important;
+    height:50px!important;padding:0 14px!important;
+    display:grid!important;grid-template-columns:20px 1fr!important;gap:10px!important;
+    background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,255,255,.14)!important;
+    border-radius:16px!important;color:#fff!important;
+  }
+  .ref-customer-header .premium-action-dock .top-search .top-search-copy{
+    color:#dce9e4!important;font-size:11px!important;font-weight:700!important;
+    white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+  }
+
+  .ref-announcement{
+    min-height:52px!important;
+    padding:0 20px!important;
+    background:#0b654d!important;
+    border-top:1px solid rgba(255,255,255,.06)!important;
+    border-bottom:1px solid rgba(255,255,255,.06)!important;
+  }
+  .ref-announcement>span{
+    width:38px!important;height:38px!important;background:#e5b938!important;color:#0b4c3b!important;
+  }
+  .ref-announcement p{font-size:13px!important;font-weight:800!important;color:#fff!important}
+  .ref-announcement b{background:#0d7a4b!important;color:#dfffd8!important;padding:8px 14px!important;border-radius:16px!important}
+  .ref-announcement .announcement-features small{font-size:10px!important;color:#fff!important}
+}
+
+@media (max-width: 900px){
+  .ref-customer-header{background:linear-gradient(180deg,#075741 0%,#044f3b 100%)!important}
+  .ref-customer-header .customer-logo{width:92px!important;min-width:92px!important;height:54px!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+  .ref-customer-header .customer-logo img{width:86px!important;height:48px!important;object-fit:contain!important;filter:none!important}
+  .ref-customer-header .customer-logo span{display:none!important}
+  .ref-customer-header .premium-action-dock .top-cart{background:rgba(255,255,255,.08)!important;border:1px solid rgba(233,185,64,.55)!important;color:#fff!important}
+  .ref-customer-header .premium-action-dock .top-cart .action-icon{color:#fff!important}
+  .ref-customer-header .premium-action-dock .top-language{background:rgba(255,255,255,.07)!important;border:1px solid rgba(233,185,64,.5)!important}
+  .ref-customer-header .premium-action-dock .top-language .lang-code{color:#f1c54d!important}
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', installV428AccurateHeader, {once:true});
+  else installV428AccurateHeader();
+})();
+
+
+;(()=>{
+  const installV429DirectionalHeader=()=>{
+    if(document.getElementById('v429-directional-header')) return;
+    const style=document.createElement('style');
+    style.id='v429-directional-header';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v429 — bigger logo + proper RTL/LTR motion
+   Fixes: logo too small, location before brand, directional flow.
+   ========================================================= */
+@media (min-width: 901px){
+  .ref-customer-header{
+    min-height:94px!important;
+    height:94px!important;
+    padding:0 22px!important;
+    grid-template-columns:minmax(330px,1.12fr) minmax(430px,1fr) minmax(320px,1.05fr)!important;
+    gap:16px!important;
+  }
+  .ref-customer-header .customer-brand,
+  .ref-customer-header .desktop-main-nav,
+  .ref-customer-header .premium-action-dock{min-width:0!important}
+
+  /* Logical areas per language direction */
+  html[dir="rtl"] .ref-customer-header{
+    grid-template-areas:"actions nav brand"!important;
+  }
+  html[dir="ltr"] .ref-customer-header{
+    grid-template-areas:"brand nav actions"!important;
+  }
+  .ref-customer-header .customer-brand{grid-area:brand!important}
+  .ref-customer-header .desktop-main-nav{grid-area:nav!important}
+  .ref-customer-header .premium-action-dock{grid-area:actions!important}
+
+  /* Brand block */
+  .ref-customer-header .customer-brand{
+    display:flex!important;
+    align-items:center!important;
+    gap:16px!important;
+    min-width:0!important;
+  }
+  html[dir="rtl"] .ref-customer-header .customer-brand{
+    direction:rtl!important;
+    flex-direction:row!important;        /* logo first in RTL */
+    justify-content:flex-start!important;
+  }
+  html[dir="ltr"] .ref-customer-header .customer-brand{
+    direction:ltr!important;
+    flex-direction:row!important;
+    justify-content:flex-start!important;
+  }
+
+  .ref-customer-header .customer-logo{
+    width:228px!important;
+    min-width:228px!important;
+    height:78px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    padding:0!important;
+    background:transparent!important;
+    border:0!important;
+    box-shadow:none!important;
+    overflow:visible!important;
+  }
+  .ref-customer-header .customer-logo img{
+    width:214px!important;
+    height:74px!important;
+    object-fit:contain!important;
+    filter:none!important;
+    display:block!important;
+  }
+  .ref-customer-header .customer-logo span{display:none!important}
+
+  .ref-customer-header .ref-location-pill{
+    width:198px!important;
+    min-width:198px!important;
+    height:56px!important;
+    border-radius:16px!important;
+    display:grid!important;
+    grid-template-columns:34px 1fr 16px!important;
+    align-items:center!important;
+    gap:10px!important;
+    padding:0 14px!important;
+    background:rgba(255,255,255,.07)!important;
+    border:1px solid rgba(233,185,64,.32)!important;
+    color:#fff!important;
+    box-shadow:none!important;
+  }
+  .ref-customer-header .ref-location-copy small{font-size:10px!important;font-weight:700!important}
+  .ref-customer-header .ref-location-copy b{font-size:12px!important;font-weight:900!important}
+
+  /* Nav */
+  .ref-customer-header .desktop-main-nav{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:8px!important;
+  }
+  .ref-customer-header .desktop-main-nav button{
+    min-width:80px!important;
+    height:70px!important;
+    padding:8px 10px 6px!important;
+    border-radius:14px!important;
+  }
+  .ref-customer-header .desktop-main-nav button.active{min-width:104px!important}
+
+  /* Top actions */
+  .ref-customer-header .premium-action-dock{
+    display:flex!important;
+    align-items:center!important;
+    gap:8px!important;
+  }
+  html[dir="rtl"] .ref-customer-header .premium-action-dock{
+    direction:rtl!important;
+    flex-direction:row!important;
+    justify-content:flex-start!important;
+  }
+  html[dir="ltr"] .ref-customer-header .premium-action-dock{
+    direction:ltr!important;
+    flex-direction:row-reverse!important;
+    justify-content:flex-start!important;
+  }
+  .ref-customer-header .premium-action-dock .top-search{
+    width:248px!important;min-width:248px!important;max-width:248px!important;
+  }
+
+  /* Ensure right/left alignment changes with language */
+  html[dir="rtl"] .ref-customer-header .ref-location-copy,
+  html[dir="rtl"] .ref-customer-header .desktop-main-nav button,
+  html[dir="rtl"] .ref-customer-header .top-search-copy{text-align:right!important}
+  html[dir="ltr"] .ref-customer-header .ref-location-copy,
+  html[dir="ltr"] .ref-customer-header .desktop-main-nav button,
+  html[dir="ltr"] .ref-customer-header .top-search-copy{text-align:left!important}
+}
+
+@media (max-width: 900px){
+  .ref-customer-header .customer-logo{
+    width:112px!important;min-width:112px!important;height:58px!important;
+    background:transparent!important;border:0!important;box-shadow:none!important;
+  }
+  .ref-customer-header .customer-logo img{
+    width:104px!important;height:54px!important;object-fit:contain!important;display:block!important;
+  }
+  .ref-customer-header .customer-logo span{display:none!important}
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', installV429DirectionalHeader, {once:true});
+  else installV429DirectionalHeader();
+})();
+
+
+;(()=>{
+  const installV430ExactHeader=()=>{
+    if(document.getElementById('v430-exact-header-fix')) return;
+    const style=document.createElement('style');
+    style.id='v430-exact-header-fix';
+    style.textContent=`
+/* =====================================================================
+   Ass Al Halaal v430 — exact directional header fix
+   IMPORTANT: selectors intentionally outrank legacy v405 home CSS.
+   ===================================================================== */
+
+@media (min-width:901px){
+  /* Lock the grid itself to physical left-to-right so RTL cannot mirror columns. */
+  html[dir="rtl"] .app-shell:has(.v405-home-ui) .ref-customer-header,
+  html[dir="ltr"] .app-shell:has(.v405-home-ui) .ref-customer-header,
+  html[dir="rtl"] .app-shell:not(.admin-shell) .ref-customer-header,
+  html[dir="ltr"] .app-shell:not(.admin-shell) .ref-customer-header{
+    direction:ltr!important;
+    display:grid!important;
+    align-items:center!important;
+    min-height:94px!important;
+    height:94px!important;
+    padding:0 22px!important;
+    gap:14px!important;
+    grid-template-columns:minmax(350px,1.08fr) minmax(430px,1fr) minmax(350px,1.08fr)!important;
+    background:linear-gradient(180deg,#075741 0%,#044f3b 100%)!important;
+    border:0!important;
+    border-bottom:1px solid rgba(255,255,255,.09)!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    overflow:visible!important;
+  }
+
+  /* Arabic physical order: ACTIONS | NAV | BRAND */
+  html[dir="rtl"] .app-shell:has(.v405-home-ui) .ref-customer-header,
+  html[dir="rtl"] .app-shell:not(.admin-shell) .ref-customer-header{
+    grid-template-areas:"actions nav brand"!important;
+  }
+  /* English physical order: BRAND | NAV | ACTIONS */
+  html[dir="ltr"] .app-shell:has(.v405-home-ui) .ref-customer-header,
+  html[dir="ltr"] .app-shell:not(.admin-shell) .ref-customer-header{
+    grid-template-areas:"brand nav actions"!important;
+  }
+
+  .app-shell:has(.v405-home-ui) .ref-customer-header .customer-brand,
+  .app-shell:not(.admin-shell) .ref-customer-header .customer-brand{
+    grid-area:brand!important;
+    display:flex!important;
+    align-items:center!important;
+    min-width:0!important;
+    gap:14px!important;
+    padding:0!important;
+    margin:0!important;
+    background:transparent!important;
+    border:0!important;
+  }
+  html[dir="rtl"] .app-shell:has(.v405-home-ui) .ref-customer-header .customer-brand,
+  html[dir="rtl"] .app-shell:not(.admin-shell) .ref-customer-header .customer-brand{
+    direction:rtl!important;
+    flex-direction:row!important; /* DOM logo first => logo at far right */
+    justify-content:flex-start!important;
+  }
+  html[dir="ltr"] .app-shell:has(.v405-home-ui) .ref-customer-header .customer-brand,
+  html[dir="ltr"] .app-shell:not(.admin-shell) .ref-customer-header .customer-brand{
+    direction:ltr!important;
+    flex-direction:row!important; /* DOM logo first => logo at far left */
+    justify-content:flex-start!important;
+  }
+
+  /* White original logo — large enough to read, without increasing header height */
+  .app-shell:has(.v405-home-ui) .ref-customer-header .customer-logo,
+  .app-shell:not(.admin-shell) .ref-customer-header .customer-logo{
+    flex:0 0 164px!important;
+    width:164px!important;
+    min-width:164px!important;
+    height:82px!important;
+    display:grid!important;
+    place-items:center!important;
+    padding:0!important;
+    margin:0!important;
+    background:transparent!important;
+    border:0!important;
+    box-shadow:none!important;
+    overflow:visible!important;
+  }
+  .app-shell:has(.v405-home-ui) .ref-customer-header .customer-logo img,
+  .app-shell:not(.admin-shell) .ref-customer-header .customer-logo img{
+    width:156px!important;
+    height:78px!important;
+    max-width:156px!important;
+    max-height:78px!important;
+    object-fit:contain!important;
+    display:block!important;
+    filter:none!important;
+  }
+  .app-shell:has(.v405-home-ui) .ref-customer-header .customer-logo span,
+  .app-shell:not(.admin-shell) .ref-customer-header .customer-logo span{display:none!important}
+
+  /* Location is always second to the brand mark, never before it. */
+  .app-shell:has(.v405-home-ui) .ref-customer-header .ref-location-pill,
+  .app-shell:not(.admin-shell) .ref-customer-header .ref-location-pill{
+    flex:0 0 186px!important;
+    width:186px!important;
+    min-width:186px!important;
+    max-width:186px!important;
+    height:54px!important;
+    min-height:54px!important;
+    display:grid!important;
+    grid-template-columns:34px minmax(0,1fr) 16px!important;
+    align-items:center!important;
+    gap:9px!important;
+    padding:0 12px!important;
+    margin:0!important;
+    border-radius:15px!important;
+    background:rgba(255,255,255,.07)!important;
+    border:1px solid rgba(232,185,65,.38)!important;
+    color:#fff!important;
+    box-shadow:none!important;
+  }
+  html[dir="rtl"] .ref-customer-header .ref-location-copy{direction:rtl!important;text-align:right!important}
+  html[dir="ltr"] .ref-customer-header .ref-location-copy{direction:ltr!important;text-align:left!important}
+  .ref-customer-header .ref-location-copy small{color:#d9ebe5!important;font-size:9px!important;font-weight:700!important}
+  .ref-customer-header .ref-location-copy b{color:#fff!important;font-size:11px!important;font-weight:900!important}
+  .app-shell:has(.v405-home-ui) .ref-customer-header .ref-location-pin{
+    width:32px!important;height:32px!important;display:grid!important;place-items:center!important;
+    background:#dbb03b!important;color:#0b4c3b!important;border:0!important;border-radius:50%!important;
+  }
+
+  /* NAV center. DOM order itself flips with direction, exactly like language. */
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav,
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav{
+    grid-area:nav!important;
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:6px!important;
+    min-width:0!important;
+    padding:0!important;
+    margin:0!important;
+    background:transparent!important;
+    border:0!important;
+    box-shadow:none!important;
+  }
+  html[dir="rtl"] .ref-customer-header .desktop-main-nav{direction:rtl!important}
+  html[dir="ltr"] .ref-customer-header .desktop-main-nav{direction:ltr!important}
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav button,
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav button{
+    position:relative!important;
+    min-width:76px!important;
+    height:68px!important;
+    padding:7px 8px 5px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:5px!important;
+    border:0!important;
+    border-radius:12px!important;
+    background:transparent!important;
+    color:#f5faf7!important;
+    box-shadow:none!important;
+  }
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav button.active,
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav button.active{
+    min-width:100px!important;
+    color:#f1c64d!important;
+    background:rgba(255,255,255,.055)!important;
+    border:1.5px solid #d7aa34!important;
+    box-shadow:inset 0 -2px 0 #e0b43f!important;
+  }
+  .ref-customer-header .desktop-main-nav small{font-size:10px!important;font-weight:900!important;white-space:nowrap!important}
+
+  /* Replace inconsistent inline nav SVGs with one clean asset family. */
+  .ref-customer-header .desktop-main-nav .nav-icon,
+  .ref-customer-header .premium-action-dock .action-icon{
+    display:block!important;
+    width:24px!important;
+    height:24px!important;
+    background-color:currentColor!important;
+    -webkit-mask-repeat:no-repeat!important;
+    -webkit-mask-position:center!important;
+    -webkit-mask-size:contain!important;
+    mask-repeat:no-repeat!important;
+    mask-position:center!important;
+    mask-size:contain!important;
+  }
+  .ref-customer-header .desktop-main-nav .nav-icon svg,
+  .ref-customer-header .premium-action-dock .action-icon svg{display:none!important}
+  .ref-customer-header button[data-nav="home"] .nav-icon{-webkit-mask-image:url('assets/header-icons/home.svg')!important;mask-image:url('assets/header-icons/home.svg')!important}
+  .ref-customer-header .js-products .nav-icon{-webkit-mask-image:url('assets/header-icons/products.svg')!important;mask-image:url('assets/header-icons/products.svg')!important}
+  .ref-customer-header .js-cart .nav-icon{-webkit-mask-image:url('assets/header-icons/cart.svg')!important;mask-image:url('assets/header-icons/cart.svg')!important}
+  .ref-customer-header button[data-nav="orders"] .nav-icon{-webkit-mask-image:url('assets/header-icons/orders.svg')!important;mask-image:url('assets/header-icons/orders.svg')!important}
+  .ref-customer-header button[data-nav="account"] .nav-icon{-webkit-mask-image:url('assets/header-icons/account.svg')!important;mask-image:url('assets/header-icons/account.svg')!important}
+
+  /* ACTIONS physical left in Arabic, right in English. */
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock{
+    grid-area:actions!important;
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    gap:7px!important;
+    min-width:0!important;
+    padding:0!important;
+    margin:0!important;
+    background:transparent!important;
+  }
+  html[dir="rtl"] .ref-customer-header .premium-action-dock{direction:rtl!important;justify-content:flex-start!important}
+  html[dir="ltr"] .ref-customer-header .premium-action-dock{direction:ltr!important;justify-content:flex-end!important}
+
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-action,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-action{
+    flex:0 0 auto!important;
+    width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important;
+    padding:0!important;border-radius:11px!important;
+    background:rgba(255,255,255,.07)!important;
+    border:1px solid rgba(255,255,255,.14)!important;
+    color:#fff!important;box-shadow:none!important;
+  }
+  .ref-customer-header .premium-action-dock .top-search .action-icon{-webkit-mask-image:url('assets/header-icons/search.svg')!important;mask-image:url('assets/header-icons/search.svg')!important}
+  .ref-customer-header .premium-action-dock .top-bell .action-icon{-webkit-mask-image:url('assets/header-icons/bell.svg')!important;mask-image:url('assets/header-icons/bell.svg')!important}
+  .ref-customer-header .premium-action-dock .top-cart .action-icon{-webkit-mask-image:url('assets/header-icons/bag.svg')!important;mask-image:url('assets/header-icons/bag.svg')!important}
+
+  /* Search is the large action at the inner side of the action group. */
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-search,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-search{
+    flex:1 1 220px!important;
+    width:228px!important;min-width:228px!important;max-width:228px!important;
+    height:50px!important;
+    display:grid!important;grid-template-columns:20px minmax(0,1fr)!important;
+    align-items:center!important;gap:9px!important;padding:0 13px!important;
+    border-radius:15px!important;background:rgba(255,255,255,.07)!important;
+    border:1px solid rgba(255,255,255,.14)!important;color:#fff!important;
+  }
+  html[dir="rtl"] .ref-customer-header .top-search-copy{text-align:right!important;direction:rtl!important}
+  html[dir="ltr"] .ref-customer-header .top-search-copy{text-align:left!important;direction:ltr!important}
+  .ref-customer-header .top-search-copy{color:#dce9e4!important;font-size:10px!important;font-weight:700!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+
+  /* Bell white, language dark-green/gold, bag dark-green/gold. */
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-bell,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-bell{
+    width:44px!important;height:44px!important;min-width:44px!important;
+    background:#fff!important;border-color:#fff!important;color:#0b5d49!important;
+  }
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-language,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-language{
+    width:42px!important;min-width:42px!important;border-color:rgba(229,183,62,.52)!important;
+  }
+  .ref-customer-header .top-language .lang-code{color:#f0c44d!important;font-size:11px!important;font-weight:950!important}
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-cart,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-cart{
+    width:44px!important;height:44px!important;min-width:44px!important;
+    background:rgba(255,255,255,.06)!important;border:1px solid rgba(229,183,62,.6)!important;color:#fff!important;
+  }
+  .ref-customer-header .top-bell i{top:6px!important;right:6px!important;width:8px!important;height:8px!important;background:#e54848!important;border:2px solid #fff!important}
+}
+
+@media (max-width:900px){
+  html[dir="rtl"] .ref-customer-header{direction:ltr!important}
+  html[dir="ltr"] .ref-customer-header{direction:ltr!important}
+  .app-shell:has(.v405-home-ui) .ref-customer-header .customer-logo,
+  .app-shell:not(.admin-shell) .ref-customer-header .customer-logo{
+    width:98px!important;min-width:98px!important;height:58px!important;background:transparent!important;border:0!important;box-shadow:none!important;
+  }
+  .app-shell:has(.v405-home-ui) .ref-customer-header .customer-logo img,
+  .app-shell:not(.admin-shell) .ref-customer-header .customer-logo img{
+    width:92px!important;height:54px!important;max-width:92px!important;max-height:54px!important;object-fit:contain!important;filter:none!important;
+  }
+  .ref-customer-header .customer-logo span{display:none!important}
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',installV430ExactHeader,{once:true});
+  else installV430ExactHeader();
+})();
+
+
+;(()=>{
+  const installV431LogoContrast=()=>{
+    if(document.getElementById('v431-logo-contrast')) return;
+    const style=document.createElement('style');
+    style.id='v431-logo-contrast';
+    style.textContent=`
+/* Ass Al Halaal v431 — context-aware logo contrast */
+
+/* Light authentication card: original colored brand mark */
+.simple-auth-shell .simple-auth-logo-wrap{
+  background:#fff!important;
+  border:1px solid #e4e8e5!important;
+  box-shadow:0 8px 22px rgba(7,72,54,.08)!important;
+}
+.simple-auth-shell .simple-auth-logo-wrap img{
+  width:96px!important;
+  height:96px!important;
+  max-width:96px!important;
+  max-height:96px!important;
+  object-fit:contain!important;
+  filter:none!important;
+  opacity:1!important;
+}
+
+/* Dark surfaces must stay white for contrast */
+.ref-customer-header .customer-logo img,
+.customer-mega-footer .mega-footer-brand-head img,
+.floating-whatsapp-head .floating-whatsapp-logo img,
+.signed-customer-hero img,
+.reference-sidebar .reference-brand-mark img{
+  filter:none!important;
+  opacity:1!important;
+}
+
+/* Never tint the colored auth logo via generic logo rules */
+.simple-auth-shell .simple-auth-logo-wrap img[src*="logo-colored"]{
+  filter:none!important;
+  mix-blend-mode:normal!important;
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV431LogoContrast,{once:true});
+  }else{
+    installV431LogoContrast();
+  }
+})();
+
+
+;(()=>{
+  const installV432LoginLogoCircleFix=()=>{
+    if(document.getElementById('v432-login-logo-circle-fix')) return;
+    const style=document.createElement('style');
+    style.id='v432-login-logo-circle-fix';
+    style.textContent=`
+/* Ass Al Halaal v432 — keep full colored logo safely inside login badge */
+.simple-auth-shell .simple-auth-icon.simple-auth-logo-wrap{
+  width:106px!important;
+  height:106px!important;
+  min-width:106px!important;
+  min-height:106px!important;
+  max-width:106px!important;
+  max-height:106px!important;
+  margin:0 auto 12px!important;
+  padding:10px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:50%!important;
+  background:#fff!important;
+  border:1px solid #dfe7e2!important;
+  box-shadow:0 8px 22px rgba(7,72,54,.08)!important;
+  overflow:hidden!important;
+}
+.simple-auth-shell .simple-auth-icon.simple-auth-logo-wrap img,
+.simple-auth-shell .simple-auth-icon.simple-auth-logo-wrap img[src*="logo-colored"]{
+  width:80px!important;
+  height:67px!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-width:80px!important;
+  max-height:67px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  display:block!important;
+  margin:auto!important;
+  filter:none!important;
+  opacity:1!important;
+  transform:none!important;
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV432LoginLogoCircleFix,{once:true});
+  }else{
+    installV432LoginLogoCircleFix();
+  }
+})();
+
+
+;(()=>{
+  const installV433WhatsAppLogoFix=()=>{
+    if(document.getElementById('v433-whatsapp-logo-fix')) return;
+    const style=document.createElement('style');
+    style.id='v433-whatsapp-logo-fix';
+    style.textContent=`
+/* Ass Al Halaal v433 — WhatsApp popup logo contrast fix */
+.floating-whatsapp-head .floating-whatsapp-logo{
+  width:72px!important;
+  height:72px!important;
+  min-width:72px!important;
+  min-height:72px!important;
+  border-radius:50%!important;
+  background:#fff!important;
+  display:grid!important;
+  place-items:center!important;
+  overflow:hidden!important;
+  padding:7px!important;
+  box-shadow:0 7px 18px rgba(0,0,0,.14)!important;
+}
+.floating-whatsapp-head .floating-whatsapp-logo img,
+.floating-whatsapp-head .floating-whatsapp-logo img[src*="logo-colored"]{
+  width:58px!important;
+  height:50px!important;
+  max-width:58px!important;
+  max-height:50px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  display:block!important;
+  margin:auto!important;
+  filter:none!important;
+  opacity:1!important;
+  transform:none!important;
+  mix-blend-mode:normal!important;
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV433WhatsAppLogoFix,{once:true});
+  }else{
+    installV433WhatsAppLogoFix();
+  }
+})();
+
+
+;(()=>{
+  const installV436WhatsAppCleanHeader=()=>{
+    if(document.getElementById('v436-whatsapp-clean-header')) return;
+    const style=document.createElement('style');
+    style.id='v436-whatsapp-clean-header';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v436 — CLEAN WhatsApp header rebuild
+   ========================================================= */
+
+.floating-whatsapp-card{
+  width:340px!important;
+  max-width:calc(100vw - 24px)!important;
+  overflow:hidden!important;
+}
+
+.floating-whatsapp-head{
+  position:relative!important;
+  min-height:96px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:12px!important;
+  padding:14px 14px 14px 48px!important;
+  background:#24916f!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+
+/* RTL keeps the close button on the opposite side */
+html[dir="rtl"] .floating-whatsapp-head{
+  flex-direction:row-reverse!important;
+  padding:14px 48px 14px 14px!important;
+}
+
+/* Brand copy gets the full remaining width */
+.floating-whatsapp-head .floating-whatsapp-brand-copy{
+  flex:1 1 auto!important;
+  min-width:0!important;
+  max-width:none!important;
+  width:auto!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:4px!important;
+  padding:0 4px!important;
+  margin:0!important;
+  text-align:center!important;
+  overflow:visible!important;
+  transform:none!important;
+}
+
+.floating-whatsapp-head .floating-whatsapp-brand-copy::before{
+  display:none!important;
+  content:none!important;
+}
+
+.floating-whatsapp-head .floating-whatsapp-brand-copy b{
+  display:block!important;
+  width:100%!important;
+  margin:0!important;
+  color:#fff!important;
+  font-size:16px!important;
+  line-height:1.18!important;
+  font-weight:900!important;
+  letter-spacing:0!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  text-align:center!important;
+}
+
+.floating-whatsapp-head .floating-whatsapp-brand-copy small{
+  display:block!important;
+  width:100%!important;
+  max-width:205px!important;
+  margin:0 auto!important;
+  color:rgba(255,255,255,.96)!important;
+  font-size:9px!important;
+  line-height:1.35!important;
+  font-weight:700!important;
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+  text-align:center!important;
+}
+
+/* Logo is isolated and cannot overlap text */
+.floating-whatsapp-head .floating-whatsapp-logo{
+  position:static!important;
+  flex:0 0 62px!important;
+  width:62px!important;
+  height:62px!important;
+  min-width:62px!important;
+  min-height:62px!important;
+  max-width:62px!important;
+  max-height:62px!important;
+  display:grid!important;
+  place-items:center!important;
+  margin:0!important;
+  padding:6px!important;
+  border-radius:50%!important;
+  background:#fff!important;
+  border:0!important;
+  box-shadow:0 6px 16px rgba(0,0,0,.14)!important;
+  overflow:hidden!important;
+  transform:none!important;
+}
+
+.floating-whatsapp-head .floating-whatsapp-logo img{
+  width:50px!important;
+  height:43px!important;
+  max-width:50px!important;
+  max-height:43px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  display:block!important;
+  margin:auto!important;
+  padding:0!important;
+  filter:none!important;
+  opacity:1!important;
+  transform:none!important;
+}
+
+/* Close button floats independently */
+.floating-whatsapp-head .floating-whatsapp-close{
+  position:absolute!important;
+  top:10px!important;
+  left:10px!important;
+  right:auto!important;
+  width:28px!important;
+  height:28px!important;
+  min-width:28px!important;
+  min-height:28px!important;
+  display:grid!important;
+  place-items:center!important;
+  margin:0!important;
+  padding:0 0 2px!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:rgba(255,255,255,.12)!important;
+  color:#fff!important;
+  box-shadow:none!important;
+  font-size:22px!important;
+  line-height:1!important;
+  z-index:5!important;
+}
+
+html[dir="rtl"] .floating-whatsapp-head .floating-whatsapp-close{
+  right:10px!important;
+  left:auto!important;
+}
+
+@media (max-width:480px){
+  .floating-whatsapp-card{
+    width:min(320px,calc(100vw - 20px))!important;
+  }
+
+  .floating-whatsapp-head{
+    min-height:90px!important;
+    gap:8px!important;
+    padding:12px 10px 12px 42px!important;
+  }
+
+  html[dir="rtl"] .floating-whatsapp-head{
+    padding:12px 42px 12px 10px!important;
+  }
+
+  .floating-whatsapp-head .floating-whatsapp-brand-copy b{
+    font-size:14px!important;
+  }
+
+  .floating-whatsapp-head .floating-whatsapp-brand-copy small{
+    max-width:170px!important;
+    font-size:8px!important;
+  }
+
+  .floating-whatsapp-head .floating-whatsapp-logo{
+    flex-basis:54px!important;
+    width:54px!important;
+    height:54px!important;
+    min-width:54px!important;
+    min-height:54px!important;
+    max-width:54px!important;
+    max-height:54px!important;
+    padding:5px!important;
+  }
+
+  .floating-whatsapp-head .floating-whatsapp-logo img{
+    width:44px!important;
+    height:38px!important;
+    max-width:44px!important;
+    max-height:38px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV436WhatsAppCleanHeader,{once:true});
+  }else{
+    installV436WhatsAppCleanHeader();
+  }
+})();
+
+
+;(()=>{
+  const installV437WhatsAppFullLogoFix=()=>{
+    if(document.getElementById('v437-whatsapp-full-logo-fix')) return;
+    const style=document.createElement('style');
+    style.id='v437-whatsapp-full-logo-fix';
+    style.textContent=`
+/* Ass Al Halaal v437 — show full colored logo + Arabic brand name */
+.floating-whatsapp-head .floating-whatsapp-logo{
+  flex:0 0 86px!important;
+  width:86px!important;
+  height:68px!important;
+  min-width:86px!important;
+  min-height:68px!important;
+  max-width:86px!important;
+  max-height:68px!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:5px 6px!important;
+  margin:0!important;
+  border-radius:16px!important;
+  background:#fff!important;
+  border:1px solid rgba(5,91,68,.10)!important;
+  box-shadow:0 6px 16px rgba(0,0,0,.13)!important;
+  overflow:visible!important;
+  transform:none!important;
+}
+
+.floating-whatsapp-head .floating-whatsapp-logo img,
+.floating-whatsapp-head .floating-whatsapp-logo img[src*="logo-colored"]{
+  width:76px!important;
+  height:58px!important;
+  max-width:76px!important;
+  max-height:58px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  display:block!important;
+  margin:auto!important;
+  padding:0!important;
+  filter:none!important;
+  opacity:1!important;
+  transform:none!important;
+  clip-path:none!important;
+  border-radius:0!important;
+}
+
+/* Give brand copy enough width beside the larger full logo */
+.floating-whatsapp-head .floating-whatsapp-brand-copy{
+  flex:1 1 auto!important;
+  min-width:0!important;
+  padding:0 6px!important;
+}
+
+@media (max-width:480px){
+  .floating-whatsapp-head .floating-whatsapp-logo{
+    flex-basis:76px!important;
+    width:76px!important;
+    height:60px!important;
+    min-width:76px!important;
+    min-height:60px!important;
+    max-width:76px!important;
+    max-height:60px!important;
+    border-radius:14px!important;
+    padding:4px 5px!important;
+  }
+  .floating-whatsapp-head .floating-whatsapp-logo img{
+    width:66px!important;
+    height:50px!important;
+    max-width:66px!important;
+    max-height:50px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV437WhatsAppFullLogoFix,{once:true});
+  }else{
+    installV437WhatsAppFullLogoFix();
+  }
+})();
+
+
+;(()=>{
+  const installV440HeroPolish=()=>{
+    if(document.getElementById('v440-hero-polish')) return;
+    const style=document.createElement('style');
+    style.id='v440-hero-polish';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v440 — contained premium home hero
+   Header / delivery area / routes untouched.
+   ========================================================= */
+
+.app-shell:not(.admin-shell) .v94-hero-slider{
+  position:relative!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  margin:18px 0 28px!important;
+  min-height:540px!important;
+  border:1px solid #d8ab38!important;
+  border-radius:24px!important;
+  overflow:hidden!important;
+  background:#043d30!important;
+  box-shadow:0 18px 40px rgba(18,54,43,.18)!important;
+  box-sizing:border-box!important;
+  isolation:isolate!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .hero-slides{
+  position:relative!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  min-height:540px!important;
+  overflow:hidden!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .hero-slide,
+.app-shell:not(.admin-shell) .v94-hero-slider .quality-hero{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  min-height:540px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,52%) minmax(0,48%)!important;
+  align-items:stretch!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+  background:
+    radial-gradient(circle at 82% 12%,rgba(25,116,85,.42),transparent 34%),
+    linear-gradient(115deg,#07503d 0%,#043d31 62%,#062f27 100%)!important;
+}
+
+/* English: image left, copy right. Arabic: image right, copy left. */
+html[dir="ltr"] .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero{
+  grid-template-areas:"media copy"!important;
+}
+html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero{
+  grid-template-areas:"copy media"!important;
+}
+
+.app-shell:not(.admin-shell) .v94-hero-slider .hero-media{
+  grid-area:media!important;
+  position:relative!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  height:540px!important;
+  min-height:540px!important;
+  overflow:hidden!important;
+  background:#0b4b3a!important;
+  box-sizing:border-box!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .hero-media img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  border:0!important;
+  border-radius:0!important;
+  margin:0!important;
+  transform:none!important;
+  filter:saturate(1.04) contrast(1.02)!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-delivery .hero-media img,
+.app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-premium .hero-media img{
+  object-position:center 8%!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .hero-media:after{
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  pointer-events:none!important;
+  z-index:1!important;
+}
+html[dir="ltr"] .app-shell:not(.admin-shell) .v94-hero-slider .hero-media:after{
+  background:linear-gradient(90deg,rgba(4,61,49,.10) 0%,transparent 58%,rgba(4,61,49,.82) 100%)!important;
+}
+html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .hero-media:after{
+  background:linear-gradient(270deg,rgba(4,61,49,.10) 0%,transparent 58%,rgba(4,61,49,.82) 100%)!important;
+}
+
+.app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+  grid-area:copy!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  min-height:540px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  gap:0!important;
+  padding:52px clamp(30px,2.8vw,46px) 54px!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+  position:relative!important;
+  z-index:2!important;
+  color:#fff!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .hero-copy:after{
+  content:""!important;
+  position:absolute!important;
+  width:220px!important;
+  height:220px!important;
+  inset-inline-end:-80px!important;
+  top:-70px!important;
+  border:1px solid rgba(233,190,79,.10)!important;
+  border-radius:50%!important;
+  box-shadow:0 0 0 34px rgba(255,255,255,.018),0 0 0 68px rgba(255,255,255,.012)!important;
+  pointer-events:none!important;
+}
+
+.app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  flex-wrap:wrap!important;
+  margin:0 0 14px!important;
+  overflow:hidden!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges>span{
+  flex:0 1 auto!important;
+  max-width:100%!important;
+  padding:8px 14px!important;
+  border-radius:999px!important;
+  background:linear-gradient(180deg,#f3d36f,#d8a735)!important;
+  color:#49350f!important;
+  border:1px solid #f2d47b!important;
+  font-size:10px!important;
+  font-weight:900!important;
+  line-height:1.15!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  box-shadow:0 7px 15px rgba(217,169,54,.17)!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges small{
+  flex:0 1 auto!important;
+  min-width:0!important;
+  color:#f1f6f3!important;
+  font-size:9.5px!important;
+  font-weight:750!important;
+  line-height:1.2!important;
+  white-space:nowrap!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges i{
+  color:#efc95d!important;
+  font-style:normal!important;
+}
+
+.app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+  width:100%!important;
+  max-width:100%!important;
+  margin:2px 0 12px!important;
+  color:#fff!important;
+  font-size:clamp(34px,3vw,48px)!important;
+  line-height:1.04!important;
+  font-weight:900!important;
+  letter-spacing:-.5px!important;
+  overflow-wrap:anywhere!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .hero-title-gold{
+  display:block!important;
+  color:#e5b94f!important;
+  font-weight:950!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p{
+  width:100%!important;
+  max-width:620px!important;
+  margin:0!important;
+  color:#dfece7!important;
+  font-size:14px!important;
+  line-height:1.7!important;
+  font-weight:500!important;
+}
+
+/* Feature boxes are forced inside the copy column. */
+.app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:8px!important;
+  margin:17px 0 0!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  min-height:68px!important;
+  display:grid!important;
+  grid-template-columns:34px minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:7px!important;
+  padding:9px!important;
+  border:1px solid rgba(225,185,75,.34)!important;
+  border-radius:13px!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.025))!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.035)!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div>span{
+  width:34px!important;
+  height:34px!important;
+  min-width:34px!important;
+  margin:0!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:50%!important;
+  border:1px solid rgba(231,190,79,.55)!important;
+  color:#f0c95d!important;
+  font-size:17px!important;
+  line-height:1!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div>b{
+  min-width:0!important;
+  color:#f7faf8!important;
+  font-size:10.5px!important;
+  line-height:1.25!important;
+  font-weight:850!important;
+  text-align:start!important;
+  overflow-wrap:anywhere!important;
+}
+
+.app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  margin:17px 0 0!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:12px!important;
+  flex-wrap:wrap!important;
+  overflow:hidden!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero{
+  flex:0 0 auto!important;
+  min-width:180px!important;
+  min-height:46px!important;
+  padding:0 22px!important;
+  border-radius:999px!important;
+  background:linear-gradient(180deg,#f3d26f,#dda936)!important;
+  border:1px solid #f1d77f!important;
+  color:#4d380e!important;
+  font-weight:900!important;
+  box-shadow:0 8px 18px rgba(0,0,0,.15)!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small{
+  flex:1 1 180px!important;
+  min-width:0!important;
+  color:#edf4f1!important;
+  font-size:9px!important;
+  line-height:1.35!important;
+  white-space:normal!important;
+}
+
+/* Navigation controls always remain inside the hero frame. */
+.app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+  position:absolute!important;
+  top:50%!important;
+  transform:translateY(-50%)!important;
+  width:38px!important;
+  height:38px!important;
+  min-width:38px!important;
+  min-height:38px!important;
+  margin:0!important;
+  border-radius:50%!important;
+  background:linear-gradient(180deg,#f3d16f,#d6a02e)!important;
+  border:1px solid #f5dc8d!important;
+  color:#4f3b0f!important;
+  box-shadow:0 7px 16px rgba(0,0,0,.18)!important;
+  z-index:8!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-prev{left:14px!important;right:auto!important}
+.app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-next{right:14px!important;left:auto!important}
+.app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-dots{
+  position:absolute!important;
+  left:50%!important;
+  right:auto!important;
+  bottom:13px!important;
+  transform:translateX(-50%)!important;
+  z-index:8!important;
+  max-width:calc(100% - 120px)!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-progress{
+  left:24px!important;
+  right:24px!important;
+  bottom:0!important;
+  max-width:calc(100% - 48px)!important;
+}
+
+/* Medium screens: feature cards become 2x2 before they can overflow. */
+@media (min-width:901px) and (max-width:1220px){
+  .app-shell:not(.admin-shell) .v94-hero-slider,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slides,
+  .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero{
+    min-height:560px!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media{
+    height:500px!important;
+    min-height:560px!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    min-height:560px!important;
+    padding:34px 28px 38px!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    font-size:36px!important;
+  }
+}
+
+/* Tablet/mobile: clean stacked hero, never horizontal overflow. */
+@media (max-width:900px){
+  .app-shell:not(.admin-shell) .v94-hero-slider{
+    margin:14px 0 20px!important;
+    min-height:0!important;
+    border-radius:18px!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slides{
+    min-height:0!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero{
+    min-height:0!important;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    grid-template-rows:260px auto!important;
+    grid-template-areas:"media" "copy"!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media{
+    width:100%!important;
+    height:260px!important;
+    min-height:260px!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media:after{
+    background:linear-gradient(180deg,transparent 46%,rgba(4,61,49,.86) 100%)!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    min-height:0!important;
+    padding:24px 20px 58px!important;
+    overflow:hidden!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    font-size:32px!important;
+    line-height:1.08!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p{
+    font-size:13px!important;
+    line-height:1.65!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div{
+    min-height:62px!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions{
+    align-items:stretch!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero{
+    min-width:150px!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-prev{left:10px!important}
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-next{right:10px!important}
+}
+
+@media (max-width:520px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero{
+    grid-template-rows:220px auto!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media{
+    height:220px!important;
+    min-height:220px!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    padding:20px 15px 54px!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges{
+    gap:6px!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges small{
+    font-size:8.5px!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    font-size:28px!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div{
+    min-height:54px!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero{
+    width:100%!important;
+    min-width:0!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',installV440HeroPolish,{once:true});
+  else installV440HeroPolish();
+})();
+
+;(()=>{
+  const installV441HeroLoginPolish=()=>{
+    if(document.getElementById('v441-hero-login-polish')) return;
+    const style=document.createElement('style');
+    style.id='v441-hero-login-polish';
+    style.textContent=`
+/* Ass Al Halaal v441 — premium hero login CTA only */
+.app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions{
+  gap:14px!important;
+  overflow:visible!important;
+}
+
+.app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero{
+  position:relative!important;
+  flex:0 0 auto!important;
+  min-width:210px!important;
+  min-height:52px!important;
+  display:grid!important;
+  grid-template-columns:34px minmax(0,1fr) 28px!important;
+  align-items:center!important;
+  gap:10px!important;
+  padding:6px 10px 6px 12px!important;
+  border-radius:16px!important;
+  border:1px solid rgba(255,224,135,.82)!important;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 44%),
+    linear-gradient(135deg,#f4d66d 0%,#e9b83c 55%,#dca52e 100%)!important;
+  color:#3f300d!important;
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.18),
+    inset 0 1px 0 rgba(255,255,255,.42)!important;
+  font-size:12px!important;
+  font-weight:950!important;
+  letter-spacing:.05px!important;
+  overflow:hidden!important;
+  transition:transform .18s ease,box-shadow .18s ease,filter .18s ease!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero:before{
+  content:""!important;
+  position:absolute!important;
+  left:-35%!important;
+  top:-120%!important;
+  width:34%!important;
+  height:320%!important;
+  transform:rotate(22deg)!important;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent)!important;
+  pointer-events:none!important;
+  transition:left .45s ease!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero:hover{
+  transform:translateY(-2px)!important;
+  filter:saturate(1.05) brightness(1.02)!important;
+  box-shadow:
+    0 14px 30px rgba(0,0,0,.22),
+    0 0 0 3px rgba(235,190,72,.08),
+    inset 0 1px 0 rgba(255,255,255,.48)!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero:hover:before{
+  left:115%!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero:active{
+  transform:translateY(0)!important;
+  box-shadow:0 7px 16px rgba(0,0,0,.16),inset 0 1px rgba(255,255,255,.35)!important;
+}
+
+.app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero .unified-login-icon{
+  width:34px!important;
+  height:34px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:50%!important;
+  background:rgba(75,55,10,.10)!important;
+  border:1px solid rgba(83,61,12,.13)!important;
+  color:#58420f!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.28)!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero .unified-login-icon svg{
+  width:17px!important;
+  height:17px!important;
+  stroke-width:1.8!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero>span:nth-child(2){
+  min-width:0!important;
+  text-align:center!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero>i{
+  width:28px!important;
+  height:28px!important;
+  display:grid!important;
+  place-items:center!important;
+  margin:0!important;
+  border-radius:50%!important;
+  background:rgba(64,47,8,.10)!important;
+  border:1px solid rgba(73,54,10,.11)!important;
+  color:#513c0d!important;
+  font-style:normal!important;
+  font-size:14px!important;
+  line-height:1!important;
+  transition:transform .18s ease!important;
+}
+html[dir="ltr"] .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero:hover>i{
+  transform:translateX(2px)!important;
+}
+html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero>i{
+  transform:rotate(180deg)!important;
+}
+html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero:hover>i{
+  transform:rotate(180deg) translateX(2px)!important;
+}
+
+/* Secure-login note becomes a restrained trust pill */
+.app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small{
+  flex:0 1 auto!important;
+  min-width:0!important;
+  max-width:320px!important;
+  min-height:34px!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  padding:7px 11px!important;
+  border:1px solid rgba(255,255,255,.10)!important;
+  border-radius:999px!important;
+  background:rgba(255,255,255,.035)!important;
+  color:#eaf3ef!important;
+  font-size:8.5px!important;
+  line-height:1.25!important;
+  font-weight:700!important;
+  white-space:normal!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.025)!important;
+}
+.app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small>i{
+  flex:0 0 18px!important;
+  width:18px!important;
+  height:18px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:50%!important;
+  background:#e8bb45!important;
+  color:#104c3c!important;
+  font-style:normal!important;
+  font-size:10px!important;
+  font-weight:950!important;
+}
+
+@media(max-width:520px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero{
+    width:100%!important;
+    min-width:0!important;
+    grid-template-columns:32px minmax(0,1fr) 28px!important;
+    min-height:50px!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small{
+    max-width:none!important;
+    width:100%!important;
+    border-radius:14px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',installV441HeroLoginPolish,{once:true});
+  else installV441HeroLoginPolish();
+})();
+
+
+;(()=>{
+  const installV442StickyTopNavigation=()=>{
+    if(document.getElementById('v442-sticky-top-navigation')) return;
+    const style=document.createElement('style');
+    style.id='v442-sticky-top-navigation';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v442 — sticky customer navigation
+   Keeps current header design unchanged while locking the
+   main header + utility strip during page scroll.
+   ========================================================= */
+
+/* Main customer header remains in normal flow, then sticks to viewport top. */
+.app-shell:not(.admin-shell) .ref-customer-header,
+.app-shell:has(.v405-home-ui) .ref-customer-header{
+  position:sticky!important;
+  top:0!important;
+  z-index:1200!important;
+  transform:translateZ(0)!important;
+  -webkit-transform:translateZ(0)!important;
+}
+
+/* The utility/coverage strip follows directly below the 94px desktop header. */
+@media (min-width:901px){
+  .app-shell:not(.admin-shell) .ref-announcement,
+  .app-shell:has(.v405-home-ui) .ref-announcement{
+    position:sticky!important;
+    top:94px!important;
+    z-index:1190!important;
+    transform:translateZ(0)!important;
+    -webkit-transform:translateZ(0)!important;
+    box-shadow:0 6px 14px rgba(4,50,38,.10)!important;
+  }
+}
+
+/* Mobile header is shorter; keep the second bar attached below it. */
+@media (max-width:900px){
+  .app-shell:not(.admin-shell) .ref-customer-header,
+  .app-shell:has(.v405-home-ui) .ref-customer-header{
+    top:0!important;
+    z-index:1200!important;
+  }
+  .app-shell:not(.admin-shell) .ref-announcement,
+  .app-shell:has(.v405-home-ui) .ref-announcement{
+    position:sticky!important;
+    top:70px!important;
+    z-index:1190!important;
+    transform:translateZ(0)!important;
+    -webkit-transform:translateZ(0)!important;
+    box-shadow:0 5px 12px rgba(4,50,38,.10)!important;
+  }
+}
+
+/* Anchored sections stop below the locked navigation instead of hiding behind it. */
+.app-shell:not(.admin-shell) section[id],
+.app-shell:not(.admin-shell) [data-scroll-target]{
+  scroll-margin-top:158px!important;
+}
+@media (max-width:900px){
+  .app-shell:not(.admin-shell) section[id],
+  .app-shell:not(.admin-shell) [data-scroll-target]{
+    scroll-margin-top:120px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV442StickyTopNavigation,{once:true});
+  }else{
+    installV442StickyTopNavigation();
+  }
+})();
+
+
+;(()=>{
+  const STYLE_ID='v443-true-fixed-top-navigation';
+
+  function ensureV443Style(){
+    if(document.getElementById(STYLE_ID)) return;
+    const style=document.createElement('style');
+    style.id=STYLE_ID;
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v443 — TRUE FIXED TOP NAVIGATION
+   Uses fixed positioning + spacers, so ancestor overflow
+   cannot make the header scroll away.
+   ========================================================= */
+
+html{
+  --v443-locked-nav-height:0px;
+}
+
+.app-shell:not(.admin-shell) .ref-customer-header.v443-fixed-header{
+  position:fixed!important;
+  top:0!important;
+  margin:0!important;
+  z-index:9999!important;
+  transform:none!important;
+  -webkit-transform:none!important;
+  will-change:auto!important;
+}
+
+.app-shell:not(.admin-shell) .ref-announcement.v443-fixed-announcement{
+  position:fixed!important;
+  margin:0!important;
+  z-index:9998!important;
+  transform:none!important;
+  -webkit-transform:none!important;
+  will-change:auto!important;
+  box-shadow:0 7px 18px rgba(3,47,35,.16)!important;
+}
+
+.v443-header-spacer,
+.v443-announcement-spacer{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  pointer-events:none!important;
+  visibility:hidden!important;
+}
+
+.app-shell:not(.admin-shell) section[id],
+.app-shell:not(.admin-shell) [data-scroll-target],
+.app-shell:not(.admin-shell) .ref-categories,
+.app-shell:not(.admin-shell) .ref-collection,
+.app-shell:not(.admin-shell) #products{
+  scroll-margin-top:calc(var(--v443-locked-nav-height) + 16px)!important;
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  }
+
+  function px(n){ return `${Math.max(0,Math.round(n))}px`; }
+
+  window.applyV443LockedTopNav=function applyV443LockedTopNav(){
+    ensureV443Style();
+
+    const shell=document.querySelector('.app-shell:not(.admin-shell)');
+    if(!shell){
+      document.documentElement.style.setProperty('--v443-locked-nav-height','0px');
+      return;
+    }
+
+    const header=shell.querySelector(':scope > .ref-customer-header') || shell.querySelector('.ref-customer-header');
+    if(!header) return;
+
+    let headerSpacer=shell.querySelector(':scope > .v443-header-spacer');
+    if(!headerSpacer){
+      headerSpacer=document.createElement('div');
+      headerSpacer.className='v443-header-spacer';
+      header.insertAdjacentElement('afterend',headerSpacer);
+    }
+
+    const shellRect=shell.getBoundingClientRect();
+    const headerH=header.offsetHeight || 94;
+
+    header.classList.add('v443-fixed-header');
+    header.style.setProperty('left',px(shellRect.left),'important');
+    header.style.setProperty('right','auto','important');
+    header.style.setProperty('width',px(shellRect.width),'important');
+    header.style.setProperty('max-width',px(shellRect.width),'important');
+    header.style.setProperty('top','0px','important');
+    headerSpacer.style.height=px(headerH);
+    headerSpacer.style.minHeight=px(headerH);
+
+    const announcement=shell.querySelector('.ref-announcement');
+    let totalH=headerH;
+
+    if(announcement){
+      const screen=announcement.closest('.screen') || shell.querySelector('.screen');
+      let announcementSpacer=screen?.querySelector(':scope > .v443-announcement-spacer');
+      if(!announcementSpacer && screen){
+        announcementSpacer=document.createElement('div');
+        announcementSpacer.className='v443-announcement-spacer';
+        screen.insertBefore(announcementSpacer,announcement);
+      }
+
+      const announcementH=announcement.offsetHeight || 52;
+      announcement.classList.add('v443-fixed-announcement');
+      announcement.style.setProperty('left',px(shellRect.left),'important');
+      announcement.style.setProperty('right','auto','important');
+      announcement.style.setProperty('width',px(shellRect.width),'important');
+      announcement.style.setProperty('max-width',px(shellRect.width),'important');
+      announcement.style.setProperty('top',px(headerH),'important');
+      if(announcementSpacer){
+        announcementSpacer.style.height=px(announcementH);
+        announcementSpacer.style.minHeight=px(announcementH);
+      }
+      totalH+=announcementH;
+    }
+
+    document.documentElement.style.setProperty('--v443-locked-nav-height',px(totalH));
+  };
+
+  let raf=0;
+  const schedule=()=>{
+    cancelAnimationFrame(raf);
+    raf=requestAnimationFrame(()=>requestAnimationFrame(()=>window.applyV443LockedTopNav()));
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',schedule,{once:true});
+  }else{
+    schedule();
+  }
+
+  window.addEventListener('resize',schedule,{passive:true});
+  window.addEventListener('orientationchange',schedule,{passive:true});
+
+  const app=document.querySelector('#app');
+  if(app){
+    new MutationObserver(schedule).observe(app,{childList:true,subtree:false});
+  }
+})();
+
+;(()=>{
+  const installV444PremiumUtilityBar=()=>{
+    if(document.getElementById('v444-premium-utility-bar')) return;
+    const style=document.createElement('style');
+    style.id='v444-premium-utility-bar';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v444 — premium utility / trust status bar
+   Keeps v443 fixed navigation behavior intact.
+   ========================================================= */
+
+.app-shell:not(.admin-shell) .ref-announcement,
+.app-shell:has(.v405-home-ui) .ref-announcement{
+  min-height:58px!important;
+  display:grid!important;
+  grid-template-columns:auto minmax(0,1fr) auto auto!important;
+  align-items:center!important;
+  gap:14px!important;
+  padding:8px 24px!important;
+  margin:0!important;
+  border:0!important;
+  border-top:1px solid rgba(255,255,255,.07)!important;
+  border-bottom:1px solid rgba(214,176,72,.20)!important;
+  border-radius:0!important;
+  background:
+    radial-gradient(circle at 78% -120%,rgba(42,151,113,.20),transparent 46%),
+    linear-gradient(180deg,#0b6a50 0%,#075a45 100%)!important;
+  color:#fff!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.035)!important;
+  box-sizing:border-box!important;
+}
+
+html[dir="rtl"] .app-shell:not(.admin-shell) .ref-announcement,
+html[dir="rtl"] .app-shell:has(.v405-home-ui) .ref-announcement{
+  direction:rtl!important;
+  grid-template-columns:auto minmax(0,1fr) auto auto!important;
+}
+html[dir="ltr"] .app-shell:not(.admin-shell) .ref-announcement,
+html[dir="ltr"] .app-shell:has(.v405-home-ui) .ref-announcement{
+  direction:ltr!important;
+}
+
+/* gold verification medallion */
+.app-shell:not(.admin-shell) .ref-announcement>span,
+.app-shell:has(.v405-home-ui) .ref-announcement>span{
+  width:40px!important;
+  height:40px!important;
+  min-width:40px!important;
+  display:grid!important;
+  place-items:center!important;
+  margin:0!important;
+  border-radius:50%!important;
+  background:linear-gradient(180deg,#f5cd5b 0%,#dfad31 100%)!important;
+  color:#084a38!important;
+  border:1px solid rgba(255,228,139,.78)!important;
+  box-shadow:0 6px 14px rgba(95,67,8,.17),inset 0 1px rgba(255,255,255,.48)!important;
+  font-size:17px!important;
+  font-weight:950!important;
+  line-height:1!important;
+}
+
+/* main trust statement */
+.app-shell:not(.admin-shell) .ref-announcement>p,
+.app-shell:has(.v405-home-ui) .ref-announcement>p{
+  min-width:0!important;
+  margin:0!important;
+  color:#fff!important;
+  font-size:12.5px!important;
+  line-height:1.25!important;
+  font-weight:850!important;
+  letter-spacing:.01em!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+
+/* right side service trust cluster */
+.app-shell:not(.admin-shell) .ref-announcement .announcement-features,
+.app-shell:has(.v405-home-ui) .ref-announcement .announcement-features{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:0!important;
+  min-height:36px!important;
+  padding:0 4px!important;
+  margin:0!important;
+  border:1px solid rgba(255,255,255,.09)!important;
+  border-radius:14px!important;
+  background:rgba(0,52,40,.18)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.025)!important;
+  overflow:hidden!important;
+}
+
+.app-shell:not(.admin-shell) .ref-announcement .announcement-features small,
+.app-shell:has(.v405-home-ui) .ref-announcement .announcement-features small{
+  position:relative!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:6px!important;
+  height:34px!important;
+  padding:0 12px!important;
+  margin:0!important;
+  color:#edf8f4!important;
+  font-size:9.5px!important;
+  line-height:1!important;
+  font-weight:750!important;
+  white-space:nowrap!important;
+  background:transparent!important;
+}
+
+.app-shell:not(.admin-shell) .ref-announcement .announcement-features small+small,
+.app-shell:has(.v405-home-ui) .ref-announcement .announcement-features small+small{
+  border-inline-start:1px solid rgba(255,255,255,.10)!important;
+}
+
+/* make leading symbols gold */
+.app-shell:not(.admin-shell) .ref-announcement .announcement-features small::first-letter,
+.app-shell:has(.v405-home-ui) .ref-announcement .announcement-features small::first-letter{
+  color:#efc550!important;
+}
+
+/* LIVE status */
+.app-shell:not(.admin-shell) .ref-announcement>b,
+.app-shell:has(.v405-home-ui) .ref-announcement>b{
+  position:relative!important;
+  min-width:72px!important;
+  height:34px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:7px!important;
+  padding:0 13px!important;
+  margin:0!important;
+  border-radius:999px!important;
+  border:1px solid rgba(86,219,157,.24)!important;
+  background:linear-gradient(180deg,#11815d,#0c7252)!important;
+  color:#dfffea!important;
+  box-shadow:0 4px 10px rgba(0,47,34,.12),inset 0 1px rgba(255,255,255,.07)!important;
+  font-size:9px!important;
+  line-height:1!important;
+  font-weight:900!important;
+  letter-spacing:.05em!important;
+  white-space:nowrap!important;
+}
+
+.app-shell:not(.admin-shell) .ref-announcement>b::before,
+.app-shell:has(.v405-home-ui) .ref-announcement>b::before{
+  content:""!important;
+  width:7px!important;
+  height:7px!important;
+  flex:0 0 7px!important;
+  border-radius:50%!important;
+  background:#7df0a0!important;
+  box-shadow:0 0 0 3px rgba(125,240,160,.10),0 0 8px rgba(125,240,160,.42)!important;
+}
+
+/* subtle hover only on the informational cluster */
+@media (hover:hover){
+  .app-shell:not(.admin-shell) .ref-announcement .announcement-features small:hover,
+  .app-shell:has(.v405-home-ui) .ref-announcement .announcement-features small:hover{
+    background:rgba(255,255,255,.035)!important;
+  }
+}
+
+/* medium desktop */
+@media (min-width:901px) and (max-width:1180px){
+  .app-shell:not(.admin-shell) .ref-announcement,
+  .app-shell:has(.v405-home-ui) .ref-announcement{
+    gap:10px!important;
+    padding-inline:16px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-announcement>p,
+  .app-shell:has(.v405-home-ui) .ref-announcement>p{
+    font-size:11px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-announcement .announcement-features small,
+  .app-shell:has(.v405-home-ui) .ref-announcement .announcement-features small{
+    padding-inline:9px!important;
+    font-size:8.5px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-announcement>b,
+  .app-shell:has(.v405-home-ui) .ref-announcement>b{
+    min-width:62px!important;
+  }
+}
+
+/* mobile: preserve trust message without overcrowding */
+@media (max-width:900px){
+  .app-shell:not(.admin-shell) .ref-announcement,
+  .app-shell:has(.v405-home-ui) .ref-announcement{
+    min-height:48px!important;
+    grid-template-columns:32px minmax(0,1fr) auto!important;
+    gap:8px!important;
+    padding:7px 10px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-announcement>span,
+  .app-shell:has(.v405-home-ui) .ref-announcement>span{
+    width:32px!important;
+    height:32px!important;
+    min-width:32px!important;
+    font-size:13px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-announcement>p,
+  .app-shell:has(.v405-home-ui) .ref-announcement>p{
+    font-size:9px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-announcement .announcement-features,
+  .app-shell:has(.v405-home-ui) .ref-announcement .announcement-features{
+    display:none!important;
+  }
+  .app-shell:not(.admin-shell) .ref-announcement>b,
+  .app-shell:has(.v405-home-ui) .ref-announcement>b{
+    min-width:54px!important;
+    height:30px!important;
+    padding-inline:9px!important;
+    font-size:8px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-announcement>b::before,
+  .app-shell:has(.v405-home-ui) .ref-announcement>b::before{
+    width:6px!important;
+    height:6px!important;
+    flex-basis:6px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+    requestAnimationFrame(()=>{
+      if(typeof window.applyV443LockedTopNav==='function') window.applyV443LockedTopNav();
+    });
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV444PremiumUtilityBar,{once:true});
+  }else{
+    installV444PremiumUtilityBar();
+  }
+})();
+
+;(()=>{
+  const installV445CrispUtilityFont=()=>{
+    if(document.getElementById('v445-crisp-utility-font')) return;
+    const style=document.createElement('style');
+    style.id='v445-crisp-utility-font';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v445 — crisp utility/status bar typography
+   Visual typography only; layout + fixed nav untouched.
+   ========================================================= */
+.app-shell:not(.admin-shell) .ref-announcement,
+.app-shell:has(.v405-home-ui) .ref-announcement,
+.app-shell:not(.admin-shell) .ref-announcement *,
+.app-shell:has(.v405-home-ui) .ref-announcement *{
+  font-family:"Segoe UI Variable","Segoe UI",Arial,sans-serif!important;
+  -webkit-font-smoothing:antialiased!important;
+  -moz-osx-font-smoothing:grayscale!important;
+  text-rendering:optimizeLegibility!important;
+  font-synthesis:none!important;
+  text-shadow:none!important;
+}
+
+.app-shell:not(.admin-shell) .ref-announcement>p,
+.app-shell:has(.v405-home-ui) .ref-announcement>p{
+  font-size:13px!important;
+  line-height:1.35!important;
+  font-weight:700!important;
+  letter-spacing:0!important;
+  word-spacing:0!important;
+  color:#f8fbfa!important;
+}
+
+.app-shell:not(.admin-shell) .ref-announcement .announcement-features small,
+.app-shell:has(.v405-home-ui) .ref-announcement .announcement-features small{
+  font-size:10px!important;
+  line-height:1.2!important;
+  font-weight:650!important;
+  letter-spacing:0!important;
+  color:#f5faf8!important;
+}
+
+.app-shell:not(.admin-shell) .ref-announcement>b,
+.app-shell:has(.v405-home-ui) .ref-announcement>b{
+  font-size:9.5px!important;
+  font-weight:750!important;
+  letter-spacing:.025em!important;
+}
+
+.app-shell:not(.admin-shell) .ref-announcement>span,
+.app-shell:has(.v405-home-ui) .ref-announcement>span{
+  font-family:"Segoe UI Symbol","Segoe UI",Arial,sans-serif!important;
+  font-weight:700!important;
+}
+
+@media (min-width:901px) and (max-width:1180px){
+  .app-shell:not(.admin-shell) .ref-announcement>p,
+  .app-shell:has(.v405-home-ui) .ref-announcement>p{
+    font-size:11.5px!important;
+    font-weight:700!important;
+  }
+  .app-shell:not(.admin-shell) .ref-announcement .announcement-features small,
+  .app-shell:has(.v405-home-ui) .ref-announcement .announcement-features small{
+    font-size:9px!important;
+    font-weight:650!important;
+  }
+}
+
+@media (max-width:900px){
+  .app-shell:not(.admin-shell) .ref-announcement>p,
+  .app-shell:has(.v405-home-ui) .ref-announcement>p{
+    font-size:9.5px!important;
+    font-weight:700!important;
+    line-height:1.3!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+    requestAnimationFrame(()=>{
+      if(typeof window.applyV443LockedTopNav==='function') window.applyV443LockedTopNav();
+    });
+  };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',installV445CrispUtilityFont,{once:true});
+  else installV445CrispUtilityFont();
+})();
+
+;(()=>{
+  const installV446MobileBrandNotification=()=>{
+    if(document.getElementById('v446-mobile-brand-notification')) return;
+    const style=document.createElement('style');
+    style.id='v446-mobile-brand-notification';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v446 — mobile header brand + bell refinement
+   Mobile only. Desktop header untouched.
+   ========================================================= */
+@media (max-width:900px){
+  /* Keep the current mobile header dimensions and use the empty center space. */
+  .app-shell:not(.admin-shell) .ref-customer-header,
+  .app-shell:has(.v405-home-ui) .ref-customer-header{
+    position:fixed!important;
+    overflow:visible!important;
+  }
+
+  /* Elegant English wordmark in the previously empty green center area. */
+  .app-shell:not(.admin-shell) .ref-customer-header::after,
+  .app-shell:has(.v405-home-ui) .ref-customer-header::after{
+    content:"ASS AL HALAAL"!important;
+    position:absolute!important;
+    left:50%!important;
+    top:50%!important;
+    transform:translate(-50%,-50%)!important;
+    z-index:3!important;
+    display:block!important;
+    width:max-content!important;
+    max-width:42vw!important;
+    padding:0 2px 7px!important;
+    color:#ffffff!important;
+    border-bottom:2px solid rgba(231,187,70,.82)!important;
+    font-family:"Segoe UI Variable","Segoe UI",Arial,sans-serif!important;
+    font-size:16px!important;
+    line-height:1!important;
+    font-weight:800!important;
+    letter-spacing:.11em!important;
+    white-space:nowrap!important;
+    text-align:center!important;
+    text-transform:uppercase!important;
+    text-shadow:0 1px 1px rgba(0,0,0,.12)!important;
+    pointer-events:none!important;
+  }
+
+  /* Notification: clean white control with a crisp green bell. */
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-bell,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-bell{
+    position:relative!important;
+    width:42px!important;
+    height:42px!important;
+    min-width:42px!important;
+    min-height:42px!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    border-radius:12px!important;
+    background:linear-gradient(180deg,#ffffff 0%,#f5fbf8 100%)!important;
+    border:1px solid rgba(255,255,255,.92)!important;
+    color:#075741!important;
+    box-shadow:0 5px 14px rgba(0,39,29,.18),inset 0 1px 0 rgba(255,255,255,.9)!important;
+    transform:none!important;
+    overflow:visible!important;
+  }
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-bell .action-icon,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-bell .action-icon{
+    display:block!important;
+    width:20px!important;
+    height:20px!important;
+    margin:0!important;
+    color:#075741!important;
+    background-color:#075741!important;
+    -webkit-mask-image:url('assets/header-icons/bell.svg')!important;
+    mask-image:url('assets/header-icons/bell.svg')!important;
+    -webkit-mask-repeat:no-repeat!important;
+    mask-repeat:no-repeat!important;
+    -webkit-mask-position:center!important;
+    mask-position:center!important;
+    -webkit-mask-size:contain!important;
+    mask-size:contain!important;
+  }
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-bell .action-icon svg,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-bell .action-icon svg{
+    display:none!important;
+  }
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-bell i,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-bell i{
+    position:absolute!important;
+    top:5px!important;
+    right:5px!important;
+    left:auto!important;
+    width:8px!important;
+    height:8px!important;
+    min-width:8px!important;
+    min-height:8px!important;
+    margin:0!important;
+    padding:0!important;
+    border-radius:50%!important;
+    background:#e44848!important;
+    border:2px solid #ffffff!important;
+    box-shadow:0 1px 4px rgba(159,27,27,.28)!important;
+  }
+
+  @media (hover:hover){
+    .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-bell:hover,
+    .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-bell:hover{
+      background:#ffffff!important;
+      box-shadow:0 7px 16px rgba(0,39,29,.22),0 0 0 2px rgba(231,187,70,.13)!important;
+    }
+  }
+}
+
+@media (max-width:390px){
+  .app-shell:not(.admin-shell) .ref-customer-header::after,
+  .app-shell:has(.v405-home-ui) .ref-customer-header::after{
+    max-width:38vw!important;
+    font-size:13px!important;
+    letter-spacing:.075em!important;
+    padding-bottom:6px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-bell,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-bell{
+    width:38px!important;
+    height:38px!important;
+    min-width:38px!important;
+    min-height:38px!important;
+    border-radius:11px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+    requestAnimationFrame(()=>{
+      if(typeof window.applyV443LockedTopNav==='function') window.applyV443LockedTopNav();
+    });
+  };
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV446MobileBrandNotification,{once:true});
+  }else{
+    installV446MobileBrandNotification();
+  }
+})();
+
+
+;(()=>{
+  const installV447MobileBrandSafeZone=()=>{
+    if(document.getElementById('v447-mobile-brand-safe-zone')) return;
+    const style=document.createElement('style');
+    style.id='v447-mobile-brand-safe-zone';
+    style.textContent=`
+/* Ass Al Halaal v447 — keep mobile wordmark clear of notification/actions */
+@media (max-width:900px){
+  .app-shell:not(.admin-shell) .ref-customer-header,
+  .app-shell:has(.v405-home-ui) .ref-customer-header{
+    isolation:isolate!important;
+  }
+
+  /* Reserve a real center lane between logo and the action group. */
+  .app-shell:not(.admin-shell) .ref-customer-header::after,
+  .app-shell:has(.v405-home-ui) .ref-customer-header::after{
+    left:108px!important;
+    right:150px!important;
+    top:50%!important;
+    width:auto!important;
+    max-width:none!important;
+    transform:translateY(-50%)!important;
+    padding:0 0 6px!important;
+    font-size:13px!important;
+    line-height:1!important;
+    font-weight:800!important;
+    letter-spacing:.075em!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:clip!important;
+    text-align:center!important;
+    z-index:2!important;
+    box-sizing:border-box!important;
+  }
+
+  /* Action group always sits above and outside the wordmark lane. */
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock{
+    position:relative!important;
+    z-index:6!important;
+    flex:0 0 auto!important;
+    background:#075741!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .customer-brand,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .customer-brand{
+    position:relative!important;
+    z-index:6!important;
+    flex:0 0 auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-bell,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-bell{
+    margin-inline:3px!important;
+  }
+}
+
+@media (max-width:430px){
+  .app-shell:not(.admin-shell) .ref-customer-header::after,
+  .app-shell:has(.v405-home-ui) .ref-customer-header::after{
+    left:100px!important;
+    right:146px!important;
+    font-size:12px!important;
+    letter-spacing:.055em!important;
+  }
+}
+
+@media (max-width:390px){
+  .app-shell:not(.admin-shell) .ref-customer-header::after,
+  .app-shell:has(.v405-home-ui) .ref-customer-header::after{
+    left:92px!important;
+    right:136px!important;
+    font-size:11px!important;
+    letter-spacing:.045em!important;
+    padding-bottom:5px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+    requestAnimationFrame(()=>{
+      if(typeof window.applyV443LockedTopNav==='function') window.applyV443LockedTopNav();
+    });
+  };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',installV447MobileBrandSafeZone,{once:true});
+  else installV447MobileBrandSafeZone();
+})();
+
+
+;(()=>{
+  const installV448WhatsAppResponsiveLogo=()=>{
+    if(document.getElementById('v448-whatsapp-responsive-logo')) return;
+    const style=document.createElement('style');
+    style.id='v448-whatsapp-responsive-logo';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v448 — WhatsApp logo responsive sizing
+   Full colored logo stays visible on desktop and mobile.
+   ========================================================= */
+
+/* Desktop / tablet */
+.floating-whatsapp-head .floating-whatsapp-logo{
+  flex:0 0 88px!important;
+  width:88px!important;
+  height:70px!important;
+  min-width:88px!important;
+  min-height:70px!important;
+  max-width:88px!important;
+  max-height:70px!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:6px!important;
+  margin:0!important;
+  border-radius:15px!important;
+  background:#fff!important;
+  border:1px solid rgba(5,91,68,.12)!important;
+  box-shadow:0 6px 16px rgba(0,0,0,.13)!important;
+  overflow:hidden!important;
+  transform:none!important;
+  box-sizing:border-box!important;
+}
+
+.floating-whatsapp-head .floating-whatsapp-logo img,
+.floating-whatsapp-head .floating-whatsapp-logo img[src*="logo-colored"]{
+  width:76px!important;
+  height:58px!important;
+  max-width:76px!important;
+  max-height:58px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  display:block!important;
+  margin:auto!important;
+  padding:0!important;
+  filter:none!important;
+  opacity:1!important;
+  transform:none!important;
+  clip-path:none!important;
+  border-radius:0!important;
+}
+
+/* Keep brand copy protected beside the logo */
+.floating-whatsapp-head .floating-whatsapp-brand-copy{
+  flex:1 1 auto!important;
+  min-width:0!important;
+  max-width:none!important;
+  padding:0 8px!important;
+  overflow:visible!important;
+}
+
+/* Mobile */
+@media (max-width:600px){
+  .floating-whatsapp-head{
+    min-height:88px!important;
+    gap:8px!important;
+  }
+
+  .floating-whatsapp-head .floating-whatsapp-logo{
+    flex:0 0 64px!important;
+    width:64px!important;
+    height:54px!important;
+    min-width:64px!important;
+    min-height:54px!important;
+    max-width:64px!important;
+    max-height:54px!important;
+    padding:4px!important;
+    border-radius:12px!important;
+    box-shadow:0 4px 12px rgba(0,0,0,.12)!important;
+  }
+
+  .floating-whatsapp-head .floating-whatsapp-logo img,
+  .floating-whatsapp-head .floating-whatsapp-logo img[src*="logo-colored"]{
+    width:56px!important;
+    height:44px!important;
+    max-width:56px!important;
+    max-height:44px!important;
+  }
+
+  .floating-whatsapp-head .floating-whatsapp-brand-copy{
+    padding:0 4px!important;
+  }
+}
+
+/* Small phones */
+@media (max-width:390px){
+  .floating-whatsapp-head .floating-whatsapp-logo{
+    flex-basis:58px!important;
+    width:58px!important;
+    height:50px!important;
+    min-width:58px!important;
+    min-height:50px!important;
+    max-width:58px!important;
+    max-height:50px!important;
+    padding:4px!important;
+  }
+
+  .floating-whatsapp-head .floating-whatsapp-logo img,
+  .floating-whatsapp-head .floating-whatsapp-logo img[src*="logo-colored"]{
+    width:50px!important;
+    height:40px!important;
+    max-width:50px!important;
+    max-height:40px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV448WhatsAppResponsiveLogo,{once:true});
+  }else{
+    installV448WhatsAppResponsiveLogo();
+  }
+})();
+
+
+;(()=>{
+  const STYLE_ID='v449-expandable-header-search';
+  const OVERLAY_ID='v449-top-search-overlay';
+
+  function ensureV449SearchStyle(){
+    if(document.getElementById(STYLE_ID)) return;
+    const style=document.createElement('style');
+    style.id=STYLE_ID;
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v449 — icon-only header search + live overlay
+   ========================================================= */
+
+/* Header search is icon-only by default */
+.app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock>.top-search,
+.app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock>.top-search{
+  flex:0 0 44px!important;
+  width:44px!important;
+  min-width:44px!important;
+  max-width:44px!important;
+  height:44px!important;
+  min-height:44px!important;
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  place-items:center!important;
+  gap:0!important;
+  padding:0!important;
+  border-radius:13px!important;
+  border:1px solid rgba(255,255,255,.18)!important;
+  background:rgba(255,255,255,.06)!important;
+  color:#fff!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+  transition:background .18s ease,border-color .18s ease,transform .18s ease!important;
+}
+.app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock>.top-search:hover,
+.app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock>.top-search:hover{
+  background:rgba(255,255,255,.11)!important;
+  border-color:rgba(240,197,75,.55)!important;
+  transform:translateY(-1px)!important;
+}
+.ref-customer-header .premium-action-dock>.top-search .top-search-copy{
+  display:none!important;
+}
+.ref-customer-header .premium-action-dock>.top-search .action-icon,
+.ref-customer-header .premium-action-dock>.top-search .action-icon svg{
+  width:21px!important;
+  height:21px!important;
+}
+
+/* Search overlay begins below the locked header / utility strip */
+.v449-search-overlay{
+  position:fixed!important;
+  left:0!important;
+  right:0!important;
+  top:var(--v443-locked-nav-height,0px)!important;
+  bottom:0!important;
+  z-index:9997!important;
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:center!important;
+  padding:18px 20px 28px!important;
+  background:rgba(16,28,24,.58)!important;
+  backdrop-filter:blur(2px)!important;
+  -webkit-backdrop-filter:blur(2px)!important;
+  animation:v449SearchFade .16s ease both!important;
+  box-sizing:border-box!important;
+}
+@keyframes v449SearchFade{from{opacity:0}to{opacity:1}}
+
+.v449-search-panel{
+  width:min(1080px,calc(100vw - 40px))!important;
+  max-height:calc(100vh - var(--v443-locked-nav-height,0px) - 38px)!important;
+  overflow:auto!important;
+  background:#fff!important;
+  border:1px solid #e2e5e2!important;
+  border-radius:18px!important;
+  box-shadow:0 24px 60px rgba(5,39,29,.22)!important;
+  padding:18px 20px 20px!important;
+  box-sizing:border-box!important;
+  animation:v449PanelDrop .18s ease both!important;
+}
+@keyframes v449PanelDrop{from{transform:translateY(-8px);opacity:.5}to{transform:translateY(0);opacity:1}}
+
+.v449-search-topline{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 42px!important;
+  align-items:center!important;
+  gap:10px!important;
+}
+.v449-search-field{
+  height:58px!important;
+  display:grid!important;
+  grid-template-columns:24px minmax(0,1fr) 32px!important;
+  align-items:center!important;
+  gap:10px!important;
+  padding:0 16px!important;
+  border:1px solid #d9deda!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  box-shadow:inset 0 1px rgba(0,0,0,.015)!important;
+}
+.v449-search-field:focus-within{
+  border-color:#0b6a50!important;
+  box-shadow:0 0 0 3px rgba(11,106,80,.10)!important;
+}
+.v449-search-field svg{
+  width:21px!important;
+  height:21px!important;
+  stroke:#526a62!important;
+  stroke-width:1.8!important;
+}
+.v449-search-field input{
+  width:100%!important;
+  min-width:0!important;
+  height:100%!important;
+  padding:0!important;
+  border:0!important;
+  outline:0!important;
+  background:transparent!important;
+  color:#173f34!important;
+  font:600 15px/1.2 "Segoe UI",Arial,sans-serif!important;
+}
+.v449-search-field input::placeholder{color:#8b9994!important;font-weight:500!important}
+.v449-search-clear{
+  width:30px!important;height:30px!important;display:grid!important;place-items:center!important;
+  border:0!important;border-radius:50%!important;background:#f1f4f2!important;color:#53645e!important;
+  font-size:18px!important;line-height:1!important;cursor:pointer!important;
+}
+.v449-search-close{
+  width:42px!important;height:42px!important;border:1px solid #dfe4e1!important;border-radius:12px!important;
+  background:#f7f9f8!important;color:#214b3f!important;font-size:22px!important;line-height:1!important;cursor:pointer!important;
+}
+
+.v449-search-section{
+  padding-top:16px!important;
+  margin-top:14px!important;
+  border-top:1px solid #eef0ee!important;
+}
+.v449-search-section-head{
+  display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;margin-bottom:10px!important;
+}
+.v449-search-section-head b{
+  color:#36554b!important;font:800 13px/1.2 "Segoe UI",Arial,sans-serif!important;
+}
+.v449-search-section-head small{color:#9aa5a1!important;font:600 11px/1.2 "Segoe UI",Arial,sans-serif!important}
+
+.v449-search-chips{
+  display:flex!important;align-items:center!important;gap:8px!important;flex-wrap:wrap!important;
+}
+.v449-search-chip{
+  min-height:34px!important;padding:0 14px!important;border:1px solid #e1e5e2!important;border-radius:999px!important;
+  background:#f6f8f7!important;color:#405a51!important;font:700 12px/1 "Segoe UI",Arial,sans-serif!important;cursor:pointer!important;
+}
+.v449-search-chip:hover,.v449-search-chip.is-active{
+  background:#0b6a50!important;color:#fff!important;border-color:#0b6a50!important;
+}
+
+.v449-search-results{
+  display:grid!important;gap:4px!important;margin-top:4px!important;
+}
+.v449-search-result{
+  width:100%!important;display:grid!important;grid-template-columns:34px minmax(0,1fr) auto!important;align-items:center!important;
+  gap:11px!important;padding:9px 10px!important;border:0!important;border-radius:10px!important;background:transparent!important;
+  text-align:start!important;cursor:pointer!important;color:#274b40!important;
+}
+.v449-search-result:hover{background:#f4f8f6!important}
+.v449-search-result-icon{
+  width:34px!important;height:34px!important;border-radius:50%!important;display:grid!important;place-items:center!important;
+  background:#edf6f2!important;color:#0b6a50!important;font-size:15px!important;
+}
+.v449-search-result-copy{min-width:0!important;display:grid!important;gap:3px!important}
+.v449-search-result-copy b{
+  color:#1a493b!important;font:800 13px/1.2 "Segoe UI",Arial,sans-serif!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+}
+.v449-search-result-copy small{
+  color:#778983!important;font:600 11px/1.25 "Segoe UI",Arial,sans-serif!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+}
+.v449-search-result-arrow{color:#c3992f!important;font-size:16px!important;font-weight:900!important}
+.v449-search-empty{
+  padding:22px 10px!important;text-align:center!important;color:#7a8984!important;font:600 13px/1.5 "Segoe UI",Arial,sans-serif!important;
+}
+.v449-search-hint{
+  display:flex!important;align-items:center!important;gap:8px!important;margin-top:14px!important;padding:11px 13px!important;
+  border-radius:10px!important;background:#f3faf7!important;color:#466158!important;font:600 11px/1.35 "Segoe UI",Arial,sans-serif!important;
+}
+.v449-search-hint span{color:#0b6a50!important;font-weight:900!important}
+
+html[dir="rtl"] .v449-search-panel{direction:rtl!important}
+html[dir="rtl"] .v449-search-result{text-align:right!important}
+html[dir="ltr"] .v449-search-panel{direction:ltr!important}
+
+@media(max-width:900px){
+  /* Mobile: search icon is visible in the header */
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock>.top-search,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock>.top-search{
+    display:grid!important;
+    flex:0 0 38px!important;width:38px!important;min-width:38px!important;max-width:38px!important;height:38px!important;min-height:38px!important;
+    border-radius:11px!important;
+  }
+  .v449-search-overlay{padding:10px!important}
+  .v449-search-panel{
+    width:100%!important;max-height:calc(100vh - var(--v443-locked-nav-height,0px) - 18px)!important;border-radius:14px!important;padding:12px!important;
+  }
+  .v449-search-field{height:52px!important;padding:0 12px!important;grid-template-columns:22px minmax(0,1fr) 30px!important}
+  .v449-search-field input{font-size:14px!important}
+  .v449-search-section{padding-top:12px!important;margin-top:11px!important}
+  .v449-search-result{padding:8px 6px!important;grid-template-columns:32px minmax(0,1fr) auto!important;gap:9px!important}
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  }
+
+  const esc=s=>String(s??'').replace(/[&<>\"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[m]));
+  const searchSvg=`<svg viewBox="0 0 24 24" fill="none"><circle cx="10.5" cy="10.5" r="5.7"></circle><path d="m15 15 4.2 4.2"></path></svg>`;
+
+  function searchableText(p){
+    return [p?.ar,p?.en,p?.subAr,p?.subEn,p?.category,p?.weightLabelAr,p?.weightLabelEn,p?.badgeAr,p?.badgeEn].filter(Boolean).join(' ').toLowerCase();
+  }
+
+  function matchesFor(term='',limit=7){
+    const q=String(term||'').trim().toLowerCase();
+    let rows=(Array.isArray(products)?products:[]).filter(p=>!isRemovedProduct(p));
+    if(filter!=='all') rows=rows.filter(p=>p.category===filter);
+    if(q) rows=rows.filter(p=>searchableText(p).includes(q));
+    return rows.slice(0,limit);
+  }
+
+  function closeTopSearchOverlay(){
+    const overlay=document.getElementById(OVERLAY_ID);
+    if(overlay) overlay.remove();
+    document.body.classList.remove('v449-search-open');
+  }
+
+  function renderOverlayResults(root,term=''){
+    const results=root.querySelector('[data-v449-search-results]');
+    const count=root.querySelector('[data-v449-result-count]');
+    if(!results) return;
+    const rows=matchesFor(term,7);
+    if(count) count.textContent=rows.length?`${rows.length} ${lang==='ar'?'نتائج':'results'}`:'';
+    if(!rows.length){
+      results.innerHTML=`<div class="v449-search-empty">${lang==='ar'?'لا توجد نتائج مطابقة. جرّب اسم نوع آخر أو تصنيف مختلف.':'No matching results. Try another product or category.'}</div>`;
+      return;
+    }
+    results.innerHTML=rows.map(p=>`<button type="button" class="v449-search-result" data-v449-product="${esc(p.id)}"><span class="v449-search-result-icon">⌕</span><span class="v449-search-result-copy"><b>${esc(lang==='ar'?p.ar:p.en)}</b><small>${esc(lang==='ar'?(p.subAr||''):(p.subEn||''))}</small></span><span class="v449-search-result-arrow">${lang==='ar'?'←':'→'}</span></button>`).join('');
+    results.querySelectorAll('[data-v449-product]').forEach(btn=>btn.addEventListener('click',()=>{
+      const id=btn.dataset.v449Product;
+      closeTopSearchOverlay();
+      setView('product/'+encodeURIComponent(id));
+    }));
+  }
+
+  window.openTopSearchOverlay=function openTopSearchOverlay(){
+    ensureV449SearchStyle();
+    const existing=document.getElementById(OVERLAY_ID);
+    if(existing){ existing.querySelector('input')?.focus(); return; }
+
+    const overlay=document.createElement('div');
+    overlay.id=OVERLAY_ID;
+    overlay.className='v449-search-overlay';
+    overlay.setAttribute('role','presentation');
+    overlay.innerHTML=`
+      <section class="v449-search-panel" role="dialog" aria-modal="true" aria-label="${lang==='ar'?'البحث':'Search'}">
+        <div class="v449-search-topline">
+          <label class="v449-search-field">
+            ${searchSvg}
+            <input type="search" autocomplete="off" spellcheck="false" value="${esc(query)}" placeholder="${lang==='ar'?'ابحث عن الذبائح واللحوم والمنتجات…':'Search livestock, meat, products…'}" aria-label="${lang==='ar'?'بحث المنتجات':'Search products'}">
+            <button class="v449-search-clear" type="button" aria-label="${lang==='ar'?'مسح البحث':'Clear search'}">×</button>
+          </label>
+          <button class="v449-search-close" type="button" aria-label="${lang==='ar'?'إغلاق':'Close'}">×</button>
+        </div>
+        <div class="v449-search-section">
+          <div class="v449-search-section-head"><b>${lang==='ar'?'التصنيفات الأكثر بحثاً':'Popular categories'}</b><small>${lang==='ar'?'اختر تصنيفاً للفلترة':'Choose a category'}</small></div>
+          <div class="v449-search-chips">
+            ${[
+              ['all',lang==='ar'?'الكل':'All'],
+              ['goat-breeds',lang==='ar'?'سلالات الماعز':'Goat breeds'],
+              ['whole',lang==='ar'?'ذبائح كاملة':'Whole'],
+              ['boxes',lang==='ar'?'بوكسات':'Boxes'],
+              ['grill',lang==='ar'?'شواء':'Grill'],
+              ['premium',lang==='ar'?'مميز':'Premium']
+            ].map(([id,label])=>`<button type="button" class="v449-search-chip ${filter===id?'is-active':''}" data-v449-filter="${id}">${label}</button>`).join('')}
+          </div>
+        </div>
+        <div class="v449-search-section">
+          <div class="v449-search-section-head"><b>${lang==='ar'?'الأكثر صلة':'Matching products'}</b><small data-v449-result-count></small></div>
+          <div class="v449-search-results" data-v449-search-results></div>
+        </div>
+        <div class="v449-search-hint"><span>↵</span>${lang==='ar'?'اكتب ثم اضغط Enter لعرض كل النتائج في قسم المنتجات.':'Type and press Enter to view all matching products.'}</div>
+      </section>`;
+
+    document.body.appendChild(overlay);
+    document.body.classList.add('v449-search-open');
+
+    const panel=overlay.querySelector('.v449-search-panel');
+    const input=overlay.querySelector('input');
+    const clear=overlay.querySelector('.v449-search-clear');
+    const close=overlay.querySelector('.v449-search-close');
+
+    const sync=()=>{
+      query=input.value;
+      if(view()==='home') renderProducts();
+      renderOverlayResults(overlay,query);
+    };
+
+    input.addEventListener('input',sync);
+    input.addEventListener('keydown',e=>{
+      if(e.key==='Escape'){ e.preventDefault(); closeTopSearchOverlay(); return; }
+      if(e.key==='Enter'){
+        e.preventDefault();
+        query=input.value;
+        filter='all';
+        closeTopSearchOverlay();
+        if(view()!=='home') setView('home');
+        setTimeout(()=>{
+          renderProducts();
+          const search=document.querySelector('#search');
+          if(search) search.value=query;
+          document.querySelector('#collection')?.scrollIntoView({behavior:'smooth',block:'start'});
+        },120);
+      }
+    });
+
+    clear.addEventListener('click',()=>{input.value='';query='';sync();input.focus()});
+    close.addEventListener('click',closeTopSearchOverlay);
+    overlay.addEventListener('mousedown',e=>{if(e.target===overlay) closeTopSearchOverlay()});
+    overlay.addEventListener('keydown',e=>{if(e.key==='Escape') closeTopSearchOverlay()});
+
+    overlay.querySelectorAll('[data-v449-filter]').forEach(btn=>btn.addEventListener('click',()=>{
+      filter=btn.dataset.v449Filter||'all';
+      query='';
+      input.value='';
+      overlay.querySelectorAll('[data-v449-filter]').forEach(x=>x.classList.toggle('is-active',x===btn));
+      if(view()==='home') renderProducts();
+      renderOverlayResults(overlay,'');
+      input.focus();
+    }));
+
+    renderOverlayResults(overlay,query);
+    requestAnimationFrame(()=>input.focus());
+  };
+
+  ensureV449SearchStyle();
+})();
+
+
+;(()=>{
+  const installV450MostRequested=()=>{
+    if(document.getElementById('v450-most-requested')) return;
+    const style=document.createElement('style');
+    style.id='v450-most-requested';
+    style.textContent=`
+/* Ass Al Halaal v450 — remove duplicate product search, center MOST REQUESTED */
+.app-shell:not(.admin-shell) .ref-collection>.section-row.most-requested-heading{
+  width:100%!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  margin:0 0 18px!important;
+  padding:0!important;
+  text-align:center!important;
+}
+.app-shell:not(.admin-shell) .ref-collection>.section-row.most-requested-heading>div{
+  width:auto!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8px!important;
+}
+.app-shell:not(.admin-shell) .ref-collection>.section-row.most-requested-heading h2{
+  position:relative!important;
+  margin:0!important;
+  padding:0 0 11px!important;
+  color:#0a6049!important;
+  font-family:Segoe UI,Arial,sans-serif!important;
+  font-size:clamp(22px,2vw,30px)!important;
+  line-height:1!important;
+  font-weight:800!important;
+  letter-spacing:1.4px!important;
+  text-align:center!important;
+  text-transform:uppercase!important;
+}
+.app-shell:not(.admin-shell) .ref-collection>.section-row.most-requested-heading h2:after{
+  content:""!important;
+  position:absolute!important;
+  left:50%!important;
+  bottom:0!important;
+  width:58px!important;
+  height:3px!important;
+  transform:translateX(-50%)!important;
+  border-radius:999px!important;
+  background:linear-gradient(90deg,#d9aa38,#f0cd63,#d9aa38)!important;
+}
+.app-shell:not(.admin-shell) .ref-collection>.ref-search{
+  display:none!important;
+}
+.app-shell:not(.admin-shell) .ref-collection>.filters{
+  margin-top:0!important;
+}
+@media(max-width:600px){
+  .app-shell:not(.admin-shell) .ref-collection>.section-row.most-requested-heading{
+    margin-bottom:14px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-collection>.section-row.most-requested-heading h2{
+    font-size:21px!important;
+    letter-spacing:1px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',installV450MostRequested,{once:true});
+  else installV450MostRequested();
+})();
+
+
+;(()=>{
+  const installV451MostRequestedHeading=()=>{
+    if(document.getElementById('v451-most-requested-heading')) return;
+    const style=document.createElement('style');
+    style.id='v451-most-requested-heading';
+    style.textContent=`
+/* Ass Al Halaal v451 — clean MOST REQUESTED section */
+.app-shell:not(.admin-shell) .ref-collection>.filters{
+  display:none!important;
+}
+
+.app-shell:not(.admin-shell) .ref-collection>.section-row.most-requested-heading{
+  width:100%!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  margin:4px 0 28px!important;
+  padding:0!important;
+  text-align:center!important;
+}
+
+.app-shell:not(.admin-shell) .ref-collection>.section-row.most-requested-heading>div{
+  width:auto!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:10px!important;
+}
+
+.app-shell:not(.admin-shell) .ref-collection>.section-row.most-requested-heading h2{
+  position:relative!important;
+  margin:0!important;
+  padding:0 0 14px!important;
+  color:#075f47!important;
+  font-family:Arial,sans-serif!important;
+  font-size:clamp(32px,2.6vw,42px)!important;
+  line-height:1!important;
+  font-weight:700!important;
+  letter-spacing:.8px!important;
+  text-align:center!important;
+  text-transform:uppercase!important;
+  text-rendering:geometricPrecision!important;
+  -webkit-font-smoothing:antialiased!important;
+  -moz-osx-font-smoothing:grayscale!important;
+}
+
+.app-shell:not(.admin-shell) .ref-collection>.section-row.most-requested-heading h2:after{
+  content:""!important;
+  position:absolute!important;
+  left:50%!important;
+  bottom:0!important;
+  width:72px!important;
+  height:4px!important;
+  transform:translateX(-50%)!important;
+  border-radius:999px!important;
+  background:linear-gradient(90deg,#d4a12e,#f0ca5f,#d4a12e)!important;
+}
+
+@media(max-width:600px){
+  .app-shell:not(.admin-shell) .ref-collection>.section-row.most-requested-heading{
+    margin:2px 0 22px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-collection>.section-row.most-requested-heading h2{
+    font-size:27px!important;
+    letter-spacing:.5px!important;
+    padding-bottom:12px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-collection>.section-row.most-requested-heading h2:after{
+    width:58px!important;
+    height:3px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV451MostRequestedHeading,{once:true});
+  }else{
+    installV451MostRequestedHeading();
+  }
+})();
+
+
+;(()=>{
+  const installV452DistrictStampCleanup=()=>{
+    if(document.getElementById('v452-district-stamp-cleanup')) return;
+    const style=document.createElement('style');
+    style.id='v452-district-stamp-cleanup';
+    style.textContent=`
+/* Ass Al Halaal v452 — district strip cleanup + central stamp */
+.app-shell:has(.v405-home-ui) .ref-district-card{
+  position:relative!important;
+  overflow:hidden!important;
+  min-height:176px!important;
+  padding:14px 18px 16px!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-title{
+  position:relative!important;
+  z-index:2!important;
+  margin-bottom:12px!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-title h2{
+  margin:0 0 4px!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-title .fast,
+.app-shell:has(.v405-home-ui) .dispatch{
+  display:none!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-prep-stamp{
+  position:absolute!important;
+  inset-block-start:22px!important;
+  inset-inline-end:225px!important;
+  width:170px!important;
+  height:170px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  z-index:1!important;
+  pointer-events:none!important;
+  filter:drop-shadow(0 10px 18px rgba(97,71,15,.16))!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-prep-stamp-ring{
+  width:100%!important;
+  height:100%!important;
+  border-radius:50%!important;
+  background:
+    radial-gradient(circle at 30% 30%,rgba(255,255,255,.7),rgba(255,255,255,0) 30%),
+    linear-gradient(180deg,#fff4c9 0%,#efcb67 18%,#d6a32d 52%,#f2d37a 80%,#b37d13 100%)!important;
+  padding:10px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  position:relative!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-prep-stamp-ring:before{
+  content:""!important;
+  position:absolute!important;
+  inset:10px!important;
+  border-radius:50%!important;
+  background:linear-gradient(180deg,#0b6b54 0%,#084b3e 100%)!important;
+  box-shadow:
+    inset 0 0 0 2px rgba(244,216,121,.85),
+    inset 0 0 0 8px rgba(8,79,63,.45)!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-prep-stamp-ring:after{
+  content:""!important;
+  position:absolute!important;
+  left:50%!important;
+  bottom:-18px!important;
+  transform:translateX(-50%)!important;
+  width:38px!important;
+  height:42px!important;
+  background:linear-gradient(180deg,#f3d26f,#c69220)!important;
+  clip-path:polygon(0 0,100% 0,100% 75%,50% 100%,0 75%)!important;
+  box-shadow:0 6px 12px rgba(131,92,13,.18)!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-prep-stamp-ring > *{
+  position:relative!important;
+  z-index:2!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-prep-stamp-crown{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:26px!important;
+  height:26px!important;
+  margin-bottom:4px!important;
+  color:#f0cb67!important;
+  font-size:17px!important;
+  line-height:1!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-prep-stamp-ring{
+  flex-direction:column!important;
+  text-align:center!important;
+  color:#fff8dc!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-prep-stamp-ring strong{
+  display:block!important;
+  width:112px!important;
+  margin:0 auto!important;
+  color:#fff0b1!important;
+  font-size:14px!important;
+  line-height:1.22!important;
+  font-weight:800!important;
+  letter-spacing:.2px!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-prep-stamp-ring small{
+  display:block!important;
+  width:116px!important;
+  margin:5px auto 0!important;
+  color:#f8f1d4!important;
+  font-size:11px!important;
+  line-height:1.28!important;
+  font-weight:700!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-chips{
+  position:relative!important;
+  z-index:2!important;
+  max-width:60%!important;
+}
+
+@media(max-width:1100px){
+  .app-shell:has(.v405-home-ui) .district-prep-stamp{
+    inset-inline-end:140px!important;
+    width:148px!important;
+    height:148px!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-chips{
+    max-width:68%!important;
+  }
+}
+
+@media(max-width:860px){
+  .app-shell:has(.v405-home-ui) .ref-district-card{
+    min-height:auto!important;
+    padding:14px 14px 14px!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-prep-stamp{
+    position:relative!important;
+    inset:auto!important;
+    width:132px!important;
+    height:132px!important;
+    margin:4px auto 12px!important;
+    display:flex!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-prep-stamp-ring strong{
+    width:96px!important;
+    font-size:12px!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-prep-stamp-ring small{
+    width:100px!important;
+    font-size:10px!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-chips{
+    max-width:100%!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV452DistrictStampCleanup,{once:true});
+  }else{
+    installV452DistrictStampCleanup();
+  }
+})();
+
+
+;(()=>{
+  const installV453ApprovedStamp=()=>{
+    if(document.getElementById('v453-approved-style-stamp')) return;
+    const style=document.createElement('style');
+    style.id='v453-approved-style-stamp';
+    style.textContent=`
+/* Ass Al Halaal v453 — approved-style delivery stamp */
+.app-shell:has(.v405-home-ui) .district-prep-stamp{
+  position:absolute!important;
+  inset-block-start:20px!important;
+  inset-inline-end:220px!important;
+  width:170px!important;
+  height:170px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  z-index:1!important;
+  pointer-events:none!important;
+  filter:drop-shadow(0 12px 18px rgba(146,72,22,.12))!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-approved-stamp{
+  --seal-color-1:#ff7043;
+  --seal-color-2:#e64a19;
+  --seal-color-3:#c63d14;
+  width:100%!important;
+  height:100%!important;
+  border-radius:50%!important;
+  position:relative!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex-direction:column!important;
+  text-align:center!important;
+  background:
+    radial-gradient(circle at center, #ffffff 0 58%, transparent 58%) ,
+    repeating-conic-gradient(from 0deg, var(--seal-color-1) 0deg 10deg, var(--seal-color-2) 10deg 20deg)!important;
+  clip-path:polygon(50% 0%,56% 2%,62% 0.8%,68% 3%,74% 1.2%,79% 5%,85% 3.2%,89% 7%,94% 6%,97% 11%,99.2% 16%,100% 22%,98.6% 28%,100% 34%,98.2% 40%,100% 46%,98.8% 52%,100% 58%,98.6% 64%,100% 70%,98.2% 76%,100% 82%,97% 88%,94% 94%,89% 93%,85% 96.8%,79% 95%,74% 98.8%,68% 97%,62% 99.2%,56% 98%,50% 100%,44% 98%,38% 99.2%,32% 97%,26% 98.8%,21% 95%,15% 96.8%,11% 93%,6% 94%,3% 88%,0% 82%,1.8% 76%,0% 70%,1.4% 64%,0% 58%,1.2% 52%,0% 46%,1.8% 40%,0% 34%,1.4% 28%,0% 22%,0.8% 16%,3% 11%,6% 6%,11% 7%,15% 3.2%,21% 5%,26% 1.2%,32% 3%,38% 0.8%,44% 2%)!important;
+  box-shadow:0 0 0 8px rgba(255,255,255,.62), 0 10px 20px rgba(171,75,26,.16)!important;
+  overflow:visible!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-approved-stamp:before{
+  content:""!important;
+  position:absolute!important;
+  inset:18px!important;
+  border-radius:50%!important;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255,255,255,.35), rgba(255,255,255,0) 38%),
+    linear-gradient(180deg,#fffaf1 0%, #fff5e6 100%)!important;
+  box-shadow:inset 0 0 0 2px rgba(229,110,43,.22)!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-approved-stamp:after{
+  content:""!important;
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
+  width:150px!important;
+  height:46px!important;
+  transform:translate(-50%,-50%) rotate(-8deg)!important;
+  background:linear-gradient(180deg,var(--seal-color-1),var(--seal-color-2))!important;
+  box-shadow:0 6px 12px rgba(166,67,20,.18)!important;
+  border-top:2px solid rgba(255,255,255,.4)!important;
+  border-bottom:2px solid rgba(140,39,12,.18)!important;
+  z-index:2!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-approved-stamp > *{
+  position:relative!important;
+  z-index:3!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-prep-stamp-crown{
+  display:none!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-approved-top{
+  position:absolute!important;
+  top:28px!important;
+  left:50%!important;
+  transform:translateX(-50%)!important;
+  display:block!important;
+  width:120px!important;
+  color:#d65b22!important;
+  font-size:12px!important;
+  font-weight:800!important;
+  letter-spacing:.9px!important;
+  text-transform:uppercase!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-approved-bottom{
+  position:absolute!important;
+  bottom:28px!important;
+  left:50%!important;
+  transform:translateX(-50%)!important;
+  display:block!important;
+  width:120px!important;
+  color:#d65b22!important;
+  font-size:11px!important;
+  font-weight:800!important;
+  letter-spacing:.5px!important;
+  text-transform:uppercase!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-approved-stamp strong{
+  width:120px!important;
+  margin:0 auto 0!important;
+  color:#fff!important;
+  font-size:24px!important;
+  line-height:1!important;
+  font-weight:900!important;
+  letter-spacing:1.2px!important;
+  text-transform:uppercase!important;
+  transform:rotate(-8deg)!important;
+  text-shadow:0 1px 0 rgba(0,0,0,.08)!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-approved-stamp small{
+  position:absolute!important;
+  left:50%!important;
+  top:95px!important;
+  transform:translateX(-50%) rotate(-8deg)!important;
+  width:118px!important;
+  color:#fff5ea!important;
+  font-size:9px!important;
+  line-height:1.2!important;
+  font-weight:800!important;
+  letter-spacing:.15px!important;
+}
+
+@media(max-width:1100px){
+  .app-shell:has(.v405-home-ui) .district-prep-stamp{
+    inset-inline-end:130px!important;
+    width:154px!important;
+    height:154px!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-approved-stamp:after{
+    width:136px!important;
+    height:42px!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-approved-stamp strong{
+    font-size:21px!important;
+    width:110px!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-approved-stamp small{
+    width:106px!important;
+    top:89px!important;
+    font-size:8.5px!important;
+  }
+}
+
+@media(max-width:860px){
+  .app-shell:has(.v405-home-ui) .district-prep-stamp{
+    position:relative!important;
+    inset:auto!important;
+    width:134px!important;
+    height:134px!important;
+    margin:6px auto 12px!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-approved-stamp:after{
+    width:118px!important;
+    height:38px!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-approved-top{
+    top:22px!important;
+    width:96px!important;
+    font-size:10px!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-approved-bottom{
+    bottom:22px!important;
+    width:96px!important;
+    font-size:9px!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-approved-stamp strong{
+    width:90px!important;
+    font-size:18px!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-approved-stamp small{
+    width:90px!important;
+    top:79px!important;
+    font-size:7.7px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV453ApprovedStamp,{once:true});
+  }else{
+    installV453ApprovedStamp();
+  }
+})();
+
+
+;(()=>{
+  const installV454Green3DStamp=()=>{
+    if(document.getElementById('v454-green-3d-stamp')) return;
+    const style=document.createElement('style');
+    style.id='v454-green-3d-stamp';
+    style.textContent=`
+/* Ass Al Halaal v454 — premium 3D emerald-green stamp */
+
+.app-shell:has(.v405-home-ui) .district-prep-stamp{
+  filter:drop-shadow(0 16px 22px rgba(0,63,48,.24))!important;
+  transform:translateZ(0)!important;
+  perspective:700px!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-approved-stamp{
+  --green-1:#0b7659;
+  --green-2:#07533f;
+  --green-3:#043c30;
+  --gold-1:#f4d776;
+  --gold-2:#d7a83d;
+  --gold-3:#9d6e18;
+
+  width:100%!important;
+  height:100%!important;
+  border-radius:50%!important;
+  clip-path:none!important;
+  overflow:visible!important;
+  position:relative!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex-direction:column!important;
+  text-align:center!important;
+
+  background:
+    radial-gradient(circle at 32% 26%,rgba(255,255,255,.38),rgba(255,255,255,0) 26%),
+    radial-gradient(circle at 50% 50%,var(--green-1) 0 51%,var(--green-2) 52% 65%,transparent 66%),
+    conic-gradient(from 20deg,var(--gold-1),var(--gold-2),#f8df8c,var(--gold-3),var(--gold-2),var(--gold-1))!important;
+
+  border:0!important;
+  box-shadow:
+    0 10px 0 #8d681f,
+    0 14px 24px rgba(73,53,13,.26),
+    inset 0 4px 6px rgba(255,255,255,.48),
+    inset 0 -7px 9px rgba(81,55,8,.22)!important;
+
+  transform:rotate(-2deg) rotateX(4deg)!important;
+}
+
+/* inner raised green coin */
+.app-shell:has(.v405-home-ui) .district-approved-stamp:before{
+  content:""!important;
+  position:absolute!important;
+  inset:14px!important;
+  border-radius:50%!important;
+  background:
+    radial-gradient(circle at 34% 24%,rgba(255,255,255,.24),transparent 28%),
+    radial-gradient(circle at 50% 88%,rgba(0,0,0,.14),transparent 42%),
+    linear-gradient(180deg,#0b7659 0%,#07543f 58%,#04392e 100%)!important;
+  border:3px solid rgba(250,218,119,.86)!important;
+  box-shadow:
+    inset 0 3px 4px rgba(255,255,255,.18),
+    inset 0 -7px 11px rgba(0,0,0,.26),
+    0 4px 6px rgba(0,0,0,.18)!important;
+  z-index:1!important;
+}
+
+/* subtle metallic inner ring instead of flat diagonal red band */
+.app-shell:has(.v405-home-ui) .district-approved-stamp:after{
+  content:""!important;
+  position:absolute!important;
+  inset:27px!important;
+  border-radius:50%!important;
+  width:auto!important;
+  height:auto!important;
+  left:auto!important;
+  top:auto!important;
+  transform:none!important;
+  background:transparent!important;
+  border:1.5px solid rgba(246,211,104,.55)!important;
+  box-shadow:
+    inset 0 0 0 4px rgba(255,255,255,.025),
+    0 0 0 1px rgba(0,0,0,.08)!important;
+  z-index:2!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-approved-stamp > *{
+  position:relative!important;
+  z-index:4!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-approved-top{
+  position:absolute!important;
+  top:29px!important;
+  left:50%!important;
+  transform:translateX(-50%)!important;
+  width:118px!important;
+  color:#f5d773!important;
+  font-family:Arial,sans-serif!important;
+  font-size:10px!important;
+  line-height:1.05!important;
+  font-weight:700!important;
+  letter-spacing:1.2px!important;
+  text-transform:uppercase!important;
+  text-shadow:0 1px 1px rgba(0,0,0,.35)!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-approved-bottom{
+  position:absolute!important;
+  bottom:29px!important;
+  left:50%!important;
+  transform:translateX(-50%)!important;
+  width:118px!important;
+  color:#f6dea0!important;
+  font-family:Arial,sans-serif!important;
+  font-size:9px!important;
+  line-height:1.05!important;
+  font-weight:700!important;
+  letter-spacing:.8px!important;
+  text-transform:uppercase!important;
+  text-shadow:0 1px 1px rgba(0,0,0,.32)!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-approved-stamp strong{
+  width:122px!important;
+  margin:-2px auto 0!important;
+  color:#ffffff!important;
+  font-family:Arial,sans-serif!important;
+  font-size:24px!important;
+  line-height:.98!important;
+  font-weight:900!important;
+  letter-spacing:1px!important;
+  text-transform:uppercase!important;
+  transform:none!important;
+  text-shadow:
+    0 2px 0 rgba(0,0,0,.20),
+    0 3px 5px rgba(0,0,0,.22)!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-approved-stamp small{
+  position:absolute!important;
+  left:50%!important;
+  top:100px!important;
+  transform:translateX(-50%)!important;
+  width:118px!important;
+  color:#f8e6ad!important;
+  font-family:Arial,sans-serif!important;
+  font-size:8px!important;
+  line-height:1.2!important;
+  font-weight:700!important;
+  letter-spacing:.1px!important;
+  text-shadow:0 1px 1px rgba(0,0,0,.25)!important;
+}
+
+/* tiny top shine for 3D feel */
+.app-shell:has(.v405-home-ui) .district-prep-stamp:after{
+  content:""!important;
+  position:absolute!important;
+  top:19px!important;
+  left:50%!important;
+  transform:translateX(-50%) rotate(-8deg)!important;
+  width:76px!important;
+  height:18px!important;
+  border-radius:50%!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,0))!important;
+  filter:blur(.2px)!important;
+  z-index:5!important;
+  pointer-events:none!important;
+}
+
+/* medium desktop */
+@media(max-width:1100px){
+  .app-shell:has(.v405-home-ui) .district-approved-top{
+    top:26px!important;
+    font-size:9px!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-approved-bottom{
+    bottom:26px!important;
+    font-size:8px!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-approved-stamp strong{
+    font-size:21px!important;
+    width:106px!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-approved-stamp small{
+    top:91px!important;
+    width:104px!important;
+    font-size:7.4px!important;
+  }
+}
+
+/* mobile */
+@media(max-width:860px){
+  .app-shell:has(.v405-home-ui) .district-approved-stamp{
+    transform:rotate(-1deg) rotateX(3deg)!important;
+    box-shadow:
+      0 7px 0 #8d681f,
+      0 10px 18px rgba(73,53,13,.22),
+      inset 0 3px 5px rgba(255,255,255,.42),
+      inset 0 -5px 7px rgba(81,55,8,.20)!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-approved-stamp:before{
+    inset:11px!important;
+    border-width:2px!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-approved-stamp:after{
+    inset:22px!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-approved-top{
+    top:22px!important;
+    width:94px!important;
+    font-size:8px!important;
+    letter-spacing:.8px!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-approved-bottom{
+    bottom:22px!important;
+    width:94px!important;
+    font-size:7.5px!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-approved-stamp strong{
+    width:90px!important;
+    font-size:18px!important;
+  }
+  .app-shell:has(.v405-home-ui) .district-approved-stamp small{
+    top:79px!important;
+    width:88px!important;
+    font-size:6.6px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV454Green3DStamp,{once:true});
+  }else{
+    installV454Green3DStamp();
+  }
+})();
+
+
+;(()=>{
+  const installV455StampImage=()=>{
+    if(document.getElementById('v455-stamp-image')) return;
+
+    const style=document.createElement('style');
+    style.id='v455-stamp-image';
+    style.textContent=`
+/* Ass Al Halaal v455 — real 3D stamp image asset */
+
+.app-shell:has(.v405-home-ui) .district-prep-stamp{
+  position:absolute!important;
+  inset-block-start:12px!important;
+  inset-inline-end:205px!important;
+  width:178px!important;
+  height:178px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  z-index:2!important;
+  pointer-events:none!important;
+  perspective:none!important;
+  transform:none!important;
+  filter:drop-shadow(0 14px 18px rgba(5,66,50,.20))!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-prep-stamp:before,
+.app-shell:has(.v405-home-ui) .district-prep-stamp:after{
+  content:none!important;
+  display:none!important;
+}
+
+.app-shell:has(.v405-home-ui) .district-prep-stamp-image{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  filter:none!important;
+  transform:none!important;
+  opacity:1!important;
+  clip-path:none!important;
+}
+
+@media(max-width:1100px){
+  .app-shell:has(.v405-home-ui) .district-prep-stamp{
+    inset-inline-end:128px!important;
+    width:156px!important;
+    height:156px!important;
+  }
+}
+
+@media(max-width:860px){
+  .app-shell:has(.v405-home-ui) .district-prep-stamp{
+    position:relative!important;
+    inset:auto!important;
+    width:128px!important;
+    height:128px!important;
+    margin:4px auto 14px!important;
+    filter:drop-shadow(0 9px 13px rgba(5,66,50,.18))!important;
+  }
+}
+
+@media(max-width:430px){
+  .app-shell:has(.v405-home-ui) .district-prep-stamp{
+    width:116px!important;
+    height:116px!important;
+    margin:2px auto 12px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV455StampImage,{once:true});
+  }else{
+    installV455StampImage();
+  }
+})();
+
+
+;(()=>{
+  const installV456StampUplift=()=>{
+    if(document.getElementById('v456-stamp-uplift')) return;
+
+    const style=document.createElement('style');
+    style.id='v456-stamp-uplift';
+    style.textContent=`
+/* Ass Al Halaal v456 — lift the 3D district stamp slightly upward */
+
+@media(min-width:1101px){
+  .app-shell:has(.v405-home-ui) .district-prep-stamp{
+    inset-block-start:2px!important;
+  }
+}
+
+@media(min-width:861px) and (max-width:1100px){
+  .app-shell:has(.v405-home-ui) .district-prep-stamp{
+    inset-block-start:0!important;
+  }
+}
+
+@media(max-width:860px){
+  .app-shell:has(.v405-home-ui) .district-prep-stamp{
+    margin:-4px auto 12px!important;
+  }
+}
+
+@media(max-width:430px){
+  .app-shell:has(.v405-home-ui) .district-prep-stamp{
+    margin:-6px auto 10px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV456StampUplift,{once:true});
+  }else{
+    installV456StampUplift();
+  }
+})();
+
+
+;(()=>{
+  const installV457StampRotation=()=>{
+    if(document.getElementById('v457-stamp-rotation')) return;
+
+    const style=document.createElement('style');
+    style.id='v457-stamp-rotation';
+    style.textContent=`
+/* Ass Al Halaal v457 — rotate stamp 30deg, keep same position */
+
+.app-shell:has(.v405-home-ui) .district-prep-stamp-image{
+  transform:rotate(30deg)!important;
+  transform-origin:center center!important;
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV457StampRotation,{once:true});
+  }else{
+    installV457StampRotation();
+  }
+})();
+
+
+;(()=>{
+  const installV458MobileHeroImages=()=>{
+    if(document.getElementById('v458-mobile-hero-images')) return;
+
+    const style=document.createElement('style');
+    style.id='v458-mobile-hero-images';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v458 — mobile hero images visible
+   Desktop remains unchanged.
+   ========================================================= */
+
+@media (max-width:900px){
+  .app-shell:not(.admin-shell) .v94-hero-slider,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slides{
+    min-height:0!important;
+    height:auto!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide,
+  .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero{
+    position:relative!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    grid-template-rows:240px auto!important;
+    grid-template-areas:
+      "media"
+      "copy"!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media{
+    grid-area:media!important;
+    display:block!important;
+    visibility:visible!important;
+    opacity:1!important;
+    position:relative!important;
+    width:100%!important;
+    height:240px!important;
+    min-height:240px!important;
+    max-height:240px!important;
+    overflow:hidden!important;
+    z-index:1!important;
+    background:#0a4b3b!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media img{
+    display:block!important;
+    visibility:visible!important;
+    opacity:1!important;
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    height:100%!important;
+    min-width:100%!important;
+    min-height:100%!important;
+    max-width:none!important;
+    max-height:none!important;
+    object-fit:cover!important;
+    object-position:center center!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    transform:none!important;
+    z-index:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-delivery .hero-media img,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-premium .hero-media img{
+    object-position:center 18%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media:after{
+    display:block!important;
+    content:""!important;
+    position:absolute!important;
+    inset:0!important;
+    z-index:1!important;
+    background:linear-gradient(180deg,rgba(4,61,49,0) 56%,rgba(4,61,49,.48) 100%)!important;
+    pointer-events:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    grid-area:copy!important;
+    position:relative!important;
+    z-index:2!important;
+    width:100%!important;
+    min-height:0!important;
+    height:auto!important;
+  }
+}
+
+@media (max-width:520px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide,
+  .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero{
+    grid-template-rows:220px auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media{
+    height:220px!important;
+    min-height:220px!important;
+    max-height:220px!important;
+  }
+}
+
+@media (max-width:390px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide,
+  .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero{
+    grid-template-rows:205px auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media{
+    height:205px!important;
+    min-height:205px!important;
+    max-height:205px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV458MobileHeroImages,{once:true});
+  }else{
+    installV458MobileHeroImages();
+  }
+})();
+
+
+;(()=>{
+  const installV459MobileHeroSliderStackFix=()=>{
+    if(document.getElementById('v459-mobile-hero-slider-stack-fix')) return;
+
+    const style=document.createElement('style');
+    style.id='v459-mobile-hero-slider-stack-fix';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v459
+   Restore v94 slider stacking on mobile while keeping image visible.
+   ========================================================= */
+
+@media (max-width:900px){
+
+  .app-shell:not(.admin-shell) .v94-hero-slider{
+    position:relative!important;
+    min-height:0!important;
+    height:auto!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slides{
+    position:relative!important;
+    min-height:0!important;
+    height:auto!important;
+    overflow:hidden!important;
+  }
+
+  /* Inactive slides must remain stacked/hidden exactly like the desktop slider. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide,
+  .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero{
+    position:absolute!important;
+    inset:0 0 auto 0!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    grid-template-rows:240px auto!important;
+    grid-template-areas:
+      "media"
+      "copy"!important;
+    opacity:0!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+    overflow:hidden!important;
+    z-index:0!important;
+  }
+
+  /* Only the active slide participates in document height. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active,
+  .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero.is-active{
+    position:relative!important;
+    inset:auto!important;
+    opacity:1!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+    z-index:2!important;
+  }
+
+  /* Image panel */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide .hero-media,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide .luxury-hero-media{
+    grid-area:media!important;
+    order:initial!important;
+    position:relative!important;
+    display:block!important;
+    visibility:visible!important;
+    opacity:1!important;
+    width:100%!important;
+    height:240px!important;
+    min-height:240px!important;
+    max-height:240px!important;
+    margin:0!important;
+    overflow:hidden!important;
+    background:#0a4b3b!important;
+    z-index:3!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide .hero-media img,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide .luxury-hero-media img{
+    position:absolute!important;
+    inset:0!important;
+    display:block!important;
+    visibility:visible!important;
+    opacity:1!important;
+    width:100%!important;
+    height:100%!important;
+    min-width:100%!important;
+    min-height:100%!important;
+    max-width:none!important;
+    max-height:none!important;
+    margin:0!important;
+    padding:0!important;
+    object-fit:cover!important;
+    object-position:center center!important;
+    transform:none!important;
+    filter:saturate(1.04) contrast(1.02)!important;
+    z-index:0!important;
+  }
+
+  /* Preserve sensible crop per slide. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-premium .hero-media img{
+    object-position:52% center!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-livestock .hero-media img{
+    object-position:58% 44%!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-naimi .hero-media img{
+    object-position:60% 42%!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-delivery .hero-media img{
+    object-position:55% 50%!important;
+  }
+
+  /* Keep only a light bottom blend so the photo remains clearly visible. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide .hero-media:before,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide .luxury-hero-media:before{
+    content:""!important;
+    display:block!important;
+    position:absolute!important;
+    left:0!important;
+    right:0!important;
+    top:auto!important;
+    bottom:0!important;
+    width:100%!important;
+    height:64px!important;
+    background:linear-gradient(180deg,rgba(4,63,48,0) 0%,rgba(4,63,48,.45) 100%)!important;
+    z-index:2!important;
+    pointer-events:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide .hero-media:after,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide .luxury-hero-media:after{
+    display:none!important;
+  }
+
+  /* Copy panel follows the photo. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide .hero-copy{
+    grid-area:copy!important;
+    order:initial!important;
+    position:relative!important;
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    width:100%!important;
+    min-height:0!important;
+    height:auto!important;
+    padding:22px 18px 58px!important;
+    overflow:hidden!important;
+    z-index:2!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide .hero-copy:after{
+    display:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+    top:120px!important;
+    margin-top:-18px!important;
+    z-index:9!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-dots{
+    bottom:10px!important;
+    z-index:10!important;
+  }
+}
+
+@media (max-width:520px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide,
+  .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero{
+    grid-template-rows:220px auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide .hero-media,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide .luxury-hero-media{
+    height:220px!important;
+    min-height:220px!important;
+    max-height:220px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+    top:110px!important;
+  }
+}
+
+@media (max-width:390px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide,
+  .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero{
+    grid-template-rows:205px auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide .hero-media,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide .luxury-hero-media{
+    height:205px!important;
+    min-height:205px!important;
+    max-height:205px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+    top:102px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV459MobileHeroSliderStackFix,{once:true});
+  }else{
+    installV459MobileHeroSliderStackFix();
+  }
+})();
+
+
+;(()=>{
+  const installV460MobileHeroBackgroundFallback=()=>{
+    if(document.getElementById('v460-mobile-hero-background-fallback')) return;
+
+    const style=document.createElement('style');
+    style.id='v460-mobile-hero-background-fallback';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v460
+   Mobile hero: force image through background-image fallback
+   and use simple flex stacking.
+   ========================================================= */
+
+@media (max-width:900px){
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide,
+  .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
+    width:100%!important;
+    min-height:0!important;
+    height:auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide:not(.is-active),
+  .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero:not(.is-active){
+    position:absolute!important;
+    inset:0!important;
+    opacity:0!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+    z-index:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active,
+  .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero.is-active{
+    position:relative!important;
+    inset:auto!important;
+    opacity:1!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+    z-index:2!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media,
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-media{
+    order:1!important;
+    flex:0 0 245px!important;
+    display:block!important;
+    position:relative!important;
+    width:100%!important;
+    height:245px!important;
+    min-height:245px!important;
+    max-height:245px!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+
+    background-image:var(--hero-mobile-image)!important;
+    background-size:cover!important;
+    background-repeat:no-repeat!important;
+    background-position:center center!important;
+    background-color:#0a4b3b!important;
+
+    opacity:1!important;
+    visibility:visible!important;
+    z-index:3!important;
+  }
+
+  /* Keep IMG as a second fallback, but background already guarantees visibility. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media img,
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-media img{
+    display:block!important;
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
+    object-position:center center!important;
+    opacity:1!important;
+    visibility:visible!important;
+    z-index:1!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-premium .hero-media,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-premium .luxury-hero-media{
+    background-position:52% center!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-livestock .hero-media,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-livestock .luxury-hero-media{
+    background-position:58% 44%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-naimi .hero-media,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-naimi .luxury-hero-media{
+    background-position:60% 42%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-delivery .hero-media,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-delivery .luxury-hero-media{
+    background-position:55% 50%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    order:2!important;
+    flex:0 0 auto!important;
+    width:100%!important;
+    min-height:0!important;
+    height:auto!important;
+    position:relative!important;
+    display:flex!important;
+    padding:22px 18px 58px!important;
+    opacity:1!important;
+    visibility:visible!important;
+    z-index:2!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+    top:122px!important;
+    margin-top:-18px!important;
+  }
+}
+
+@media (max-width:520px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media,
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-media{
+    flex-basis:225px!important;
+    height:225px!important;
+    min-height:225px!important;
+    max-height:225px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+    top:112px!important;
+  }
+}
+
+@media (max-width:390px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media,
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-media{
+    flex-basis:210px!important;
+    height:210px!important;
+    min-height:210px!important;
+    max-height:210px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+    top:105px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV460MobileHeroBackgroundFallback,{once:true});
+  }else{
+    installV460MobileHeroBackgroundFallback();
+  }
+})();
+
+
+;(()=>{
+  const installV462BalancedHeader=()=>{
+    if(document.getElementById('v462-balanced-rtl-ltr-header')) return;
+
+    const style=document.createElement('style');
+    style.id='v462-balanced-rtl-ltr-header';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v462 — balanced desktop header for RTL/LTR
+   Removes empty zones and gives all nav items equal spacing.
+   ========================================================= */
+
+@media (min-width:901px){
+
+  html[dir="ltr"] .app-shell:not(.admin-shell) .ref-customer-header,
+  html[dir="rtl"] .app-shell:not(.admin-shell) .ref-customer-header,
+  html[dir="ltr"] .app-shell:has(.v405-home-ui) .ref-customer-header,
+  html[dir="rtl"] .app-shell:has(.v405-home-ui) .ref-customer-header{
+    grid-template-columns:max-content minmax(480px,1fr) max-content!important;
+    column-gap:16px!important;
+    padding-inline:22px!important;
+  }
+
+  /* Keep the same physical order logic, only remove wasted column space. */
+  html[dir="ltr"] .app-shell:not(.admin-shell) .ref-customer-header,
+  html[dir="ltr"] .app-shell:has(.v405-home-ui) .ref-customer-header{
+    grid-template-areas:"brand nav actions"!important;
+  }
+
+  html[dir="rtl"] .app-shell:not(.admin-shell) .ref-customer-header,
+  html[dir="rtl"] .app-shell:has(.v405-home-ui) .ref-customer-header{
+    grid-template-areas:"actions nav brand"!important;
+  }
+
+  /* Brand block keeps its real width instead of reserving extra empty area. */
+  .app-shell:not(.admin-shell) .ref-customer-header .customer-brand,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .customer-brand{
+    width:max-content!important;
+    max-width:none!important;
+    justify-self:start!important;
+    gap:12px!important;
+  }
+
+  /* Navigation now fills the complete middle zone evenly. */
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    display:grid!important;
+    grid-template-columns:repeat(5,minmax(82px,1fr))!important;
+    align-items:center!important;
+    justify-items:stretch!important;
+    gap:8px!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav button,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav button{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    height:72px!important;
+    padding:8px 8px 6px!important;
+    gap:6px!important;
+    border-radius:13px!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav button.active,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav button.active{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+  }
+
+  .ref-customer-header .desktop-main-nav .nav-icon{
+    width:26px!important;
+    height:26px!important;
+    min-width:26px!important;
+    min-height:26px!important;
+  }
+
+  .ref-customer-header .desktop-main-nav small{
+    font-size:10.5px!important;
+    line-height:1.1!important;
+  }
+
+  /* Actions use only the space they actually need. */
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock{
+    width:max-content!important;
+    min-width:0!important;
+    max-width:none!important;
+    justify-self:end!important;
+    display:grid!important;
+    grid-template-columns:repeat(4,46px)!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:8px!important;
+    direction:ltr!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-action,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-action,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock>.top-search,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock>.top-search,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-bell,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-bell,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-language,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-language,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-cart,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-cart{
+    width:46px!important;
+    min-width:46px!important;
+    max-width:46px!important;
+    height:46px!important;
+    min-height:46px!important;
+    max-height:46px!important;
+    flex:0 0 46px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .action-icon{
+    width:23px!important;
+    height:23px!important;
+    min-width:23px!important;
+    min-height:23px!important;
+  }
+
+  /* Physical edge alignment is identical in both languages. */
+  html[dir="ltr"] .ref-customer-header .premium-action-dock{
+    justify-self:end!important;
+  }
+  html[dir="rtl"] .ref-customer-header .premium-action-dock{
+    justify-self:start!important;
+  }
+
+  html[dir="ltr"] .ref-customer-header .customer-brand{
+    justify-self:start!important;
+  }
+  html[dir="rtl"] .ref-customer-header .customer-brand{
+    justify-self:end!important;
+  }
+}
+
+/* Slightly tighter desktop fallback so 5 nav items never create overflow. */
+@media (min-width:901px) and (max-width:1240px){
+  html[dir="ltr"] .app-shell:not(.admin-shell) .ref-customer-header,
+  html[dir="rtl"] .app-shell:not(.admin-shell) .ref-customer-header,
+  html[dir="ltr"] .app-shell:has(.v405-home-ui) .ref-customer-header,
+  html[dir="rtl"] .app-shell:has(.v405-home-ui) .ref-customer-header{
+    grid-template-columns:max-content minmax(405px,1fr) max-content!important;
+    column-gap:10px!important;
+    padding-inline:14px!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav{
+    gap:5px!important;
+    grid-template-columns:repeat(5,minmax(72px,1fr))!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav button,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav button{
+    padding-inline:5px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV462BalancedHeader,{once:true});
+  }else{
+    installV462BalancedHeader();
+  }
+})();
+
+
+;(()=>{
+  const installV463MobileBrandFront=()=>{
+    if(document.getElementById('v463-mobile-brand-front')) return;
+
+    const style=document.createElement('style');
+    style.id='v463-mobile-brand-front';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v463 — mobile brand in front, compact actions
+   ========================================================= */
+
+@media (max-width:900px){
+
+  .ref-customer-header{
+    position:relative!important;
+    overflow:visible!important;
+  }
+
+  /* Keep English brand wordmark in a protected center lane. */
+  .ref-customer-header .mobile-brand-wordmark,
+  .ref-customer-header [data-mobile-brand-wordmark]{
+    position:absolute!important;
+    left:118px!important;
+    right:170px!important;
+    top:50%!important;
+    transform:translateY(-50%)!important;
+    z-index:20!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    pointer-events:none!important;
+    text-align:center!important;
+    overflow:visible!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong,
+  .ref-customer-header [data-mobile-brand-wordmark] strong{
+    display:block!important;
+    width:100%!important;
+    max-width:100%!important;
+    margin:0!important;
+    color:#fff!important;
+    font-family:Arial,sans-serif!important;
+    font-size:14px!important;
+    line-height:1!important;
+    font-weight:700!important;
+    letter-spacing:1.4px!important;
+    white-space:nowrap!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+    text-shadow:0 1px 2px rgba(0,0,0,.22)!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark:after,
+  .ref-customer-header [data-mobile-brand-wordmark]:after{
+    content:""!important;
+    display:block!important;
+    width:86%!important;
+    max-width:145px!important;
+    height:2px!important;
+    margin-top:7px!important;
+    border-radius:999px!important;
+    background:linear-gradient(90deg,transparent,#e4b63e 18%,#f0d070 50%,#e4b63e 82%,transparent)!important;
+  }
+
+  /* Compact mobile action dock so it never covers the brand. */
+  .ref-customer-header .premium-action-dock{
+    position:relative!important;
+    z-index:12!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:5px!important;
+    width:auto!important;
+    min-width:0!important;
+    max-width:none!important;
+    flex-wrap:nowrap!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-action,
+  .ref-customer-header .premium-action-dock>.top-search,
+  .ref-customer-header .premium-action-dock .top-bell,
+  .ref-customer-header .premium-action-dock .top-language,
+  .ref-customer-header .premium-action-dock .top-cart{
+    width:40px!important;
+    min-width:40px!important;
+    max-width:40px!important;
+    height:40px!important;
+    min-height:40px!important;
+    max-height:40px!important;
+    flex:0 0 40px!important;
+    border-radius:10px!important;
+    padding:0!important;
+  }
+
+  .ref-customer-header .premium-action-dock .action-icon{
+    width:20px!important;
+    height:20px!important;
+    min-width:20px!important;
+    min-height:20px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-language{
+    font-size:12px!important;
+    font-weight:700!important;
+  }
+
+  /* Keep logo above background, but below wordmark overlap lane. */
+  .ref-customer-header .customer-logo{
+    position:relative!important;
+    z-index:14!important;
+  }
+}
+
+@media (max-width:430px){
+  .ref-customer-header .mobile-brand-wordmark,
+  .ref-customer-header [data-mobile-brand-wordmark]{
+    left:105px!important;
+    right:155px!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong,
+  .ref-customer-header [data-mobile-brand-wordmark] strong{
+    font-size:12.5px!important;
+    letter-spacing:1.1px!important;
+  }
+
+  .ref-customer-header .premium-action-dock{
+    gap:4px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-action,
+  .ref-customer-header .premium-action-dock>.top-search,
+  .ref-customer-header .premium-action-dock .top-bell,
+  .ref-customer-header .premium-action-dock .top-language,
+  .ref-customer-header .premium-action-dock .top-cart{
+    width:38px!important;
+    min-width:38px!important;
+    max-width:38px!important;
+    height:38px!important;
+    min-height:38px!important;
+    max-height:38px!important;
+    flex-basis:38px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .action-icon{
+    width:19px!important;
+    height:19px!important;
+  }
+}
+
+@media (max-width:380px){
+  .ref-customer-header .mobile-brand-wordmark,
+  .ref-customer-header [data-mobile-brand-wordmark]{
+    left:98px!important;
+    right:145px!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong,
+  .ref-customer-header [data-mobile-brand-wordmark] strong{
+    font-size:11.5px!important;
+    letter-spacing:.9px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV463MobileBrandFront,{once:true});
+  }else{
+    installV463MobileBrandFront();
+  }
+})();
+
+
+;(()=>{
+  const installV464MobileThreeZoneHeader=()=>{
+    if(document.getElementById('v464-mobile-three-zone-header')) return;
+
+    const style=document.createElement('style');
+    style.id='v464-mobile-three-zone-header';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v464 — REAL 3-zone mobile header
+   Logo | Brand wordmark | Actions
+   ========================================================= */
+
+/* Desktop: new mobile wordmark does not participate. */
+@media (min-width:901px){
+  .ref-customer-header .mobile-brand-wordmark{
+    display:none!important;
+  }
+}
+
+@media (max-width:900px){
+
+  /* Disable the old pseudo-element brand completely. */
+  .app-shell:not(.admin-shell) .ref-customer-header::after,
+  .app-shell:has(.v405-home-ui) .ref-customer-header::after{
+    content:none!important;
+    display:none!important;
+  }
+
+  /* Physical three-column mobile layout. */
+  .app-shell:not(.admin-shell) .ref-customer-header,
+  .app-shell:has(.v405-home-ui) .ref-customer-header{
+    direction:ltr!important;
+    display:grid!important;
+    grid-template-columns:92px minmax(0,1fr) max-content!important;
+    grid-template-areas:"brand mobilebrand actions"!important;
+    align-items:center!important;
+    column-gap:8px!important;
+    min-height:78px!important;
+    height:78px!important;
+    padding:0 10px!important;
+    overflow:visible!important;
+    isolation:isolate!important;
+  }
+
+  .ref-customer-header .customer-brand{
+    grid-area:brand!important;
+    display:block!important;
+    width:92px!important;
+    min-width:92px!important;
+    max-width:92px!important;
+    margin:0!important;
+    padding:0!important;
+    justify-self:start!important;
+    align-self:center!important;
+    z-index:3!important;
+  }
+
+  .ref-customer-header .customer-brand .ref-location-pill{
+    display:none!important;
+  }
+
+  .ref-customer-header .customer-logo{
+    width:92px!important;
+    min-width:92px!important;
+    max-width:92px!important;
+    height:60px!important;
+    min-height:60px!important;
+    padding:0!important;
+    margin:0!important;
+    display:grid!important;
+    place-items:center!important;
+  }
+
+  .ref-customer-header .customer-logo img{
+    width:88px!important;
+    height:56px!important;
+    max-width:88px!important;
+    max-height:56px!important;
+    object-fit:contain!important;
+  }
+
+  /* Real brand element occupies its own column. */
+  .ref-customer-header .mobile-brand-wordmark{
+    grid-area:mobilebrand!important;
+    position:relative!important;
+    inset:auto!important;
+    transform:none!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    justify-self:stretch!important;
+    align-self:center!important;
+    min-width:0!important;
+    width:100%!important;
+    height:48px!important;
+    padding:0 4px!important;
+    margin:0!important;
+    overflow:hidden!important;
+    z-index:8!important;
+    pointer-events:none!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    display:block!important;
+    width:100%!important;
+    margin:0!important;
+    color:#fff!important;
+    font-family:Arial,sans-serif!important;
+    font-size:13.5px!important;
+    line-height:1!important;
+    font-weight:700!important;
+    letter-spacing:1.25px!important;
+    text-align:center!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:clip!important;
+    text-shadow:0 1px 2px rgba(0,0,0,.22)!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark:after{
+    content:""!important;
+    display:block!important;
+    width:min(130px,92%)!important;
+    height:2px!important;
+    margin-top:8px!important;
+    border-radius:999px!important;
+    background:linear-gradient(90deg,transparent,#d8aa35 16%,#f0cd68 50%,#d8aa35 84%,transparent)!important;
+  }
+
+  .ref-customer-header .desktop-main-nav{
+    display:none!important;
+  }
+
+  /* Action group is a separate fixed-width zone. */
+  .ref-customer-header .premium-action-dock{
+    grid-area:actions!important;
+    position:relative!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-end!important;
+    justify-self:end!important;
+    width:max-content!important;
+    min-width:0!important;
+    max-width:none!important;
+    gap:4px!important;
+    padding:0!important;
+    margin:0!important;
+    background:transparent!important;
+    z-index:10!important;
+    direction:ltr!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-action,
+  .ref-customer-header .premium-action-dock>.top-search,
+  .ref-customer-header .premium-action-dock .top-bell,
+  .ref-customer-header .premium-action-dock .top-language,
+  .ref-customer-header .premium-action-dock .top-cart{
+    display:grid!important;
+    place-items:center!important;
+    width:38px!important;
+    min-width:38px!important;
+    max-width:38px!important;
+    height:38px!important;
+    min-height:38px!important;
+    max-height:38px!important;
+    flex:0 0 38px!important;
+    padding:0!important;
+    margin:0!important;
+    border-radius:10px!important;
+  }
+
+  .ref-customer-header .premium-action-dock>.top-search{
+    grid-template-columns:1fr!important;
+  }
+
+  .ref-customer-header .premium-action-dock>.top-search .top-search-copy{
+    display:none!important;
+  }
+
+  .ref-customer-header .premium-action-dock .action-icon{
+    width:18px!important;
+    height:18px!important;
+    min-width:18px!important;
+    min-height:18px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-language{
+    font-size:11px!important;
+    font-weight:800!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-bell{
+    margin:0!important;
+  }
+}
+
+@media (max-width:430px){
+  .app-shell:not(.admin-shell) .ref-customer-header,
+  .app-shell:has(.v405-home-ui) .ref-customer-header{
+    grid-template-columns:88px minmax(0,1fr) max-content!important;
+    column-gap:6px!important;
+    padding-inline:8px!important;
+  }
+
+  .ref-customer-header .customer-brand{
+    width:88px!important;
+    min-width:88px!important;
+    max-width:88px!important;
+  }
+
+  .ref-customer-header .customer-logo{
+    width:88px!important;
+    min-width:88px!important;
+    max-width:88px!important;
+  }
+
+  .ref-customer-header .customer-logo img{
+    width:84px!important;
+    height:54px!important;
+    max-width:84px!important;
+    max-height:54px!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    font-size:12px!important;
+    letter-spacing:.9px!important;
+  }
+
+  .ref-customer-header .premium-action-dock{
+    gap:3px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-action,
+  .ref-customer-header .premium-action-dock>.top-search,
+  .ref-customer-header .premium-action-dock .top-bell,
+  .ref-customer-header .premium-action-dock .top-language,
+  .ref-customer-header .premium-action-dock .top-cart{
+    width:36px!important;
+    min-width:36px!important;
+    max-width:36px!important;
+    height:36px!important;
+    min-height:36px!important;
+    max-height:36px!important;
+    flex-basis:36px!important;
+  }
+}
+
+@media (max-width:390px){
+  .app-shell:not(.admin-shell) .ref-customer-header,
+  .app-shell:has(.v405-home-ui) .ref-customer-header{
+    grid-template-columns:82px minmax(0,1fr) max-content!important;
+    column-gap:4px!important;
+    padding-inline:7px!important;
+  }
+
+  .ref-customer-header .customer-brand{
+    width:82px!important;
+    min-width:82px!important;
+    max-width:82px!important;
+  }
+
+  .ref-customer-header .customer-logo{
+    width:82px!important;
+    min-width:82px!important;
+    max-width:82px!important;
+  }
+
+  .ref-customer-header .customer-logo img{
+    width:78px!important;
+    height:50px!important;
+    max-width:78px!important;
+    max-height:50px!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    font-size:10.8px!important;
+    letter-spacing:.7px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-action,
+  .ref-customer-header .premium-action-dock>.top-search,
+  .ref-customer-header .premium-action-dock .top-bell,
+  .ref-customer-header .premium-action-dock .top-language,
+  .ref-customer-header .premium-action-dock .top-cart{
+    width:34px!important;
+    min-width:34px!important;
+    max-width:34px!important;
+    height:34px!important;
+    min-height:34px!important;
+    max-height:34px!important;
+    flex-basis:34px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .action-icon{
+    width:17px!important;
+    height:17px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+
+    requestAnimationFrame(()=>{
+      if(typeof window.applyV443LockedTopNav==='function') window.applyV443LockedTopNav();
+    });
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV464MobileThreeZoneHeader,{once:true});
+  }else{
+    installV464MobileThreeZoneHeader();
+  }
+})();
+
+
+;(()=>{
+  const installV465MobileBrandReadable=()=>{
+    if(document.getElementById('v465-mobile-brand-readable')) return;
+
+    const style=document.createElement('style');
+    style.id='v465-mobile-brand-readable';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v465 — mobile brand readability hard fix
+   ========================================================= */
+
+@media (max-width:900px){
+
+  /* Completely disable every older pseudo wordmark. */
+  .app-shell:not(.admin-shell) .ref-customer-header::after,
+  .app-shell:has(.v405-home-ui) .ref-customer-header::after,
+  .ref-customer-header::after{
+    content:none!important;
+    display:none!important;
+    opacity:0!important;
+    visibility:hidden!important;
+  }
+
+  /* Guaranteed physical layout: logo | brand | actions */
+  .app-shell:not(.admin-shell) .ref-customer-header,
+  .app-shell:has(.v405-home-ui) .ref-customer-header,
+  .ref-customer-header{
+    display:grid!important;
+    grid-template-columns:72px minmax(132px,1fr) 140px!important;
+    grid-template-areas:"brand mobilebrand actions"!important;
+    align-items:center!important;
+    justify-items:stretch!important;
+    column-gap:7px!important;
+    min-height:76px!important;
+    height:76px!important;
+    padding:0 8px!important;
+    box-sizing:border-box!important;
+    overflow:visible!important;
+    direction:ltr!important;
+  }
+
+  .ref-customer-header .customer-brand{
+    grid-area:brand!important;
+    width:72px!important;
+    min-width:72px!important;
+    max-width:72px!important;
+    justify-self:start!important;
+    overflow:visible!important;
+  }
+
+  .ref-customer-header .customer-logo{
+    width:72px!important;
+    min-width:72px!important;
+    max-width:72px!important;
+    height:56px!important;
+    min-height:56px!important;
+    max-height:56px!important;
+    display:grid!important;
+    place-items:center!important;
+    padding:0!important;
+    margin:0!important;
+    overflow:visible!important;
+  }
+
+  .ref-customer-header .customer-logo img{
+    width:70px!important;
+    height:52px!important;
+    max-width:70px!important;
+    max-height:52px!important;
+    object-fit:contain!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark{
+    grid-area:mobilebrand!important;
+    position:relative!important;
+    inset:auto!important;
+    transform:none!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    justify-self:stretch!important;
+    align-self:center!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    height:48px!important;
+    margin:0!important;
+    padding:0 3px!important;
+    opacity:1!important;
+    visibility:visible!important;
+    overflow:visible!important;
+    z-index:50!important;
+    pointer-events:none!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    display:block!important;
+    width:100%!important;
+    margin:0!important;
+    padding:0!important;
+    color:#ffffff!important;
+    font-family:Arial,sans-serif!important;
+    font-size:13px!important;
+    line-height:1.05!important;
+    font-weight:700!important;
+    letter-spacing:.35px!important;
+    text-transform:none!important;
+    white-space:nowrap!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+    text-align:center!important;
+    text-shadow:0 1px 2px rgba(0,0,0,.2)!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark:after{
+    content:""!important;
+    display:block!important;
+    width:92px!important;
+    height:2px!important;
+    margin-top:7px!important;
+    border-radius:999px!important;
+    background:linear-gradient(90deg,transparent,#dfb13b 18%,#f0cf6b 50%,#dfb13b 82%,transparent)!important;
+  }
+
+  .ref-customer-header .premium-action-dock{
+    grid-area:actions!important;
+    position:relative!important;
+    width:140px!important;
+    min-width:140px!important;
+    max-width:140px!important;
+    display:grid!important;
+    grid-template-columns:repeat(4,32px)!important;
+    align-items:center!important;
+    justify-content:end!important;
+    justify-self:end!important;
+    gap:4px!important;
+    padding:0!important;
+    margin:0!important;
+    background:transparent!important;
+    z-index:20!important;
+    direction:ltr!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-action,
+  .ref-customer-header .premium-action-dock>.top-search,
+  .ref-customer-header .premium-action-dock .top-bell,
+  .ref-customer-header .premium-action-dock .top-language,
+  .ref-customer-header .premium-action-dock .top-cart{
+    width:32px!important;
+    min-width:32px!important;
+    max-width:32px!important;
+    height:32px!important;
+    min-height:32px!important;
+    max-height:32px!important;
+    flex:0 0 32px!important;
+    padding:0!important;
+    margin:0!important;
+    border-radius:9px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .action-icon{
+    width:16px!important;
+    height:16px!important;
+    min-width:16px!important;
+    min-height:16px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-language{
+    font-size:10px!important;
+    font-weight:800!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-bell i{
+    top:3px!important;
+    right:3px!important;
+    width:7px!important;
+    height:7px!important;
+  }
+}
+
+@media (max-width:410px){
+  .app-shell:not(.admin-shell) .ref-customer-header,
+  .app-shell:has(.v405-home-ui) .ref-customer-header,
+  .ref-customer-header{
+    grid-template-columns:68px minmax(118px,1fr) 132px!important;
+    column-gap:5px!important;
+    padding-inline:6px!important;
+  }
+
+  .ref-customer-header .customer-brand{
+    width:68px!important;
+    min-width:68px!important;
+    max-width:68px!important;
+  }
+
+  .ref-customer-header .customer-logo{
+    width:68px!important;
+    min-width:68px!important;
+    max-width:68px!important;
+  }
+
+  .ref-customer-header .customer-logo img{
+    width:66px!important;
+    height:49px!important;
+    max-width:66px!important;
+    max-height:49px!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    font-size:12px!important;
+    letter-spacing:.2px!important;
+  }
+
+  .ref-customer-header .premium-action-dock{
+    width:132px!important;
+    min-width:132px!important;
+    max-width:132px!important;
+    grid-template-columns:repeat(4,30px)!important;
+    gap:4px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-action,
+  .ref-customer-header .premium-action-dock>.top-search,
+  .ref-customer-header .premium-action-dock .top-bell,
+  .ref-customer-header .premium-action-dock .top-language,
+  .ref-customer-header .premium-action-dock .top-cart{
+    width:30px!important;
+    min-width:30px!important;
+    max-width:30px!important;
+    height:30px!important;
+    min-height:30px!important;
+    max-height:30px!important;
+    flex-basis:30px!important;
+  }
+}
+
+@media (max-width:370px){
+  .app-shell:not(.admin-shell) .ref-customer-header,
+  .app-shell:has(.v405-home-ui) .ref-customer-header,
+  .ref-customer-header{
+    grid-template-columns:62px minmax(106px,1fr) 124px!important;
+    column-gap:4px!important;
+    padding-inline:5px!important;
+  }
+
+  .ref-customer-header .customer-brand{
+    width:62px!important;
+    min-width:62px!important;
+    max-width:62px!important;
+  }
+
+  .ref-customer-header .customer-logo{
+    width:62px!important;
+    min-width:62px!important;
+    max-width:62px!important;
+  }
+
+  .ref-customer-header .customer-logo img{
+    width:60px!important;
+    height:45px!important;
+    max-width:60px!important;
+    max-height:45px!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    font-size:11px!important;
+  }
+
+  .ref-customer-header .premium-action-dock{
+    width:124px!important;
+    min-width:124px!important;
+    max-width:124px!important;
+    grid-template-columns:repeat(4,28px)!important;
+    gap:4px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-action,
+  .ref-customer-header .premium-action-dock>.top-search,
+  .ref-customer-header .premium-action-dock .top-bell,
+  .ref-customer-header .premium-action-dock .top-language,
+  .ref-customer-header .premium-action-dock .top-cart{
+    width:28px!important;
+    min-width:28px!important;
+    max-width:28px!important;
+    height:28px!important;
+    min-height:28px!important;
+    max-height:28px!important;
+    flex-basis:28px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+
+    requestAnimationFrame(()=>{
+      if(typeof window.applyV443LockedTopNav==='function') window.applyV443LockedTopNav();
+    });
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV465MobileBrandReadable,{once:true});
+  }else{
+    installV465MobileBrandReadable();
+  }
+})();
+
+
+;(()=>{
+  const installV466MobileBrandShiftLeft=()=>{
+    if(document.getElementById('v466-mobile-brand-shift-left')) return;
+
+    const style=document.createElement('style');
+    style.id='v466-mobile-brand-shift-left';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v466 — move mobile brand slightly left
+   Keep current icon sizing unchanged.
+   ========================================================= */
+
+@media (max-width:900px){
+  .ref-customer-header .mobile-brand-wordmark{
+    transform:translateX(-14px)!important;
+    overflow:visible!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    font-size:14px!important;
+    letter-spacing:.45px!important;
+    overflow:visible!important;
+    white-space:nowrap!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark:after{
+    width:104px!important;
+  }
+}
+
+@media (max-width:410px){
+  .ref-customer-header .mobile-brand-wordmark{
+    transform:translateX(-11px)!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    font-size:13.5px!important;
+  }
+}
+
+@media (max-width:370px){
+  .ref-customer-header .mobile-brand-wordmark{
+    transform:translateX(-8px)!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    font-size:12.5px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+
+    requestAnimationFrame(()=>{
+      if(typeof window.applyV443LockedTopNav==='function') window.applyV443LockedTopNav();
+    });
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV466MobileBrandShiftLeft,{once:true});
+  }else{
+    installV466MobileBrandShiftLeft();
+  }
+})();
+
+
+;(()=>{
+  const installV467MobileBrandBiggerLeft=()=>{
+    if(document.getElementById('v467-mobile-brand-bigger-left')) return;
+
+    const style=document.createElement('style');
+    style.id='v467-mobile-brand-bigger-left';
+    style.textContent=`
+/* Ass Al Halaal v467 — bigger mobile brand, shifted further left */
+
+@media (max-width:900px){
+  .ref-customer-header .mobile-brand-wordmark{
+    transform:translateX(-24px)!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    font-size:16px!important;
+    letter-spacing:.5px!important;
+    white-space:nowrap!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark:after{
+    width:118px!important;
+    max-width:118px!important;
+  }
+}
+
+@media (max-width:430px){
+  .ref-customer-header .mobile-brand-wordmark{
+    transform:translateX(-20px)!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    font-size:15px!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark:after{
+    width:110px!important;
+  }
+}
+
+@media (max-width:390px){
+  .ref-customer-header .mobile-brand-wordmark{
+    transform:translateX(-16px)!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    font-size:14px!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark:after{
+    width:102px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV467MobileBrandBiggerLeft,{once:true});
+  }else{
+    installV467MobileBrandBiggerLeft();
+  }
+})();
+
+
+;(()=>{
+  const installV468DedicatedMobileHeroImage=()=>{
+    if(document.getElementById('v468-dedicated-mobile-hero-image')) return;
+
+    const style=document.createElement('style');
+    style.id='v468-dedicated-mobile-hero-image';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v468 — dedicated mobile hero image block
+   Bypasses all old hero-media conflicts.
+   ========================================================= */
+
+/* Desktop keeps the current split hero exactly as-is. */
+.mobile-hero-image-v468{
+  display:none!important;
+}
+
+@media (max-width:900px){
+
+  /* Active slide: simple vertical stack. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active,
+  .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero.is-active{
+    position:relative!important;
+    display:flex!important;
+    flex-direction:column!important;
+    width:100%!important;
+    min-height:0!important;
+    height:auto!important;
+    opacity:1!important;
+    visibility:visible!important;
+    overflow:hidden!important;
+  }
+
+  /* Inactive slides remain out of layout. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide:not(.is-active),
+  .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero:not(.is-active){
+    position:absolute!important;
+    inset:0!important;
+    opacity:0!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+  }
+
+  /* NEW mobile-only image block. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468{
+    order:0!important;
+    display:block!important;
+    position:relative!important;
+    flex:0 0 235px!important;
+    width:100%!important;
+    height:235px!important;
+    min-height:235px!important;
+    max-height:235px!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+    opacity:1!important;
+    visibility:visible!important;
+    background-size:cover!important;
+    background-position:center center!important;
+    background-repeat:no-repeat!important;
+    background-color:#0b4c3b!important;
+    z-index:4!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468 img{
+    display:block!important;
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    height:100%!important;
+    min-width:100%!important;
+    min-height:100%!important;
+    max-width:none!important;
+    max-height:none!important;
+    object-fit:cover!important;
+    object-position:center center!important;
+    opacity:1!important;
+    visibility:visible!important;
+    transform:none!important;
+    filter:saturate(1.04) contrast(1.02)!important;
+    z-index:1!important;
+  }
+
+  /* Per-slide crop tuning. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-premium .mobile-hero-image-v468,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-premium .mobile-hero-image-v468 img{
+    background-position:52% center!important;
+    object-position:52% center!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-livestock .mobile-hero-image-v468,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-livestock .mobile-hero-image-v468 img{
+    background-position:58% 44%!important;
+    object-position:58% 44%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-naimi .mobile-hero-image-v468,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-naimi .mobile-hero-image-v468 img{
+    background-position:60% 42%!important;
+    object-position:60% 42%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-delivery .mobile-hero-image-v468,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-delivery .mobile-hero-image-v468 img{
+    background-position:55% 50%!important;
+    object-position:55% 50%!important;
+  }
+
+  /* Hide the old media block ONLY on mobile to eliminate the conflict. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media,
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-media{
+    display:none!important;
+    width:0!important;
+    height:0!important;
+    min-height:0!important;
+    max-height:0!important;
+    overflow:hidden!important;
+  }
+
+  /* Copy follows the dedicated image. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    order:1!important;
+    display:flex!important;
+    position:relative!important;
+    width:100%!important;
+    min-height:0!important;
+    height:auto!important;
+    padding:22px 18px 58px!important;
+    opacity:1!important;
+    visibility:visible!important;
+    z-index:2!important;
+  }
+
+  /* Arrows sit over the image block. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+    top:117px!important;
+    margin-top:-18px!important;
+    z-index:20!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-dots{
+    bottom:10px!important;
+    z-index:20!important;
+  }
+}
+
+@media (max-width:520px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468{
+    flex-basis:220px!important;
+    height:220px!important;
+    min-height:220px!important;
+    max-height:220px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+    top:110px!important;
+  }
+}
+
+@media (max-width:390px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468{
+    flex-basis:205px!important;
+    height:205px!important;
+    min-height:205px!important;
+    max-height:205px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+    top:102px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV468DedicatedMobileHeroImage,{once:true});
+  }else{
+    installV468DedicatedMobileHeroImage();
+  }
+})();
