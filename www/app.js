@@ -1,5 +1,24 @@
 import {products as fallbackProducts,total,validPhone,safe} from './shop.js';
 
+// v421 — mobile/browser-safe UUID helper.
+// Render serves over HTTPS, but this fallback keeps cart actions working on older
+// mobile browsers and local/LAN testing contexts where crypto.randomUUID may be unavailable.
+function safeRandomUUID(){
+  try{
+    if(globalThis.crypto?.randomUUID)return globalThis.safeRandomUUID();
+    if(globalThis.crypto?.getRandomValues){
+      const bytes=new Uint8Array(16);
+      globalThis.crypto.getRandomValues(bytes);
+      bytes[6]=(bytes[6]&0x0f)|0x40;
+      bytes[8]=(bytes[8]&0x3f)|0x80;
+      const hex=[...bytes].map(b=>b.toString(16).padStart(2,'0')).join('');
+      return `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
+    }
+  }catch{}
+  return `mobile-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,12)}`;
+}
+
+
 // v388 — permanently removed catalog cards (requested cleanup).
 // Match both IDs and exact catalog names so products cannot reappear after API/backend reloads.
 const REMOVED_PRODUCT_IDS=new Set([
@@ -1291,7 +1310,20 @@ const statusLabel=s=>t({received:'تم استلام الطلب',confirmed:'تم 
 
 function persist(){write('kn-cart',cart);write('kn-cart-coupon',cartCouponCode);write('kn-lang',lang);write('kn-lang-mode',langMode);write('kn-district',district);write('kn-phone',myPhone);write('kn-favourites',[...favourites])}
 function toast(message){toastEl.textContent=message;toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),2600)}
-function open(html,klass=''){opener=document.activeElement;modal.className=klass;modal.innerHTML=`<button class="close" type="button" aria-label="${t('إغلاق','Close')}">×</button>${html}`;modal.showModal();modal.querySelector('.close').onclick=()=>modal.close();setTimeout(applyRbacUi,0)}
+function open(html,klass=''){
+  opener=document.activeElement;
+  modal.className=klass;
+  modal.innerHTML=`<button class="close" type="button" aria-label="${t('إغلاق','Close')}">×</button>${html}`;
+  try{
+    if(typeof modal.showModal==='function')modal.showModal();
+    else modal.setAttribute('open','');
+  }catch{
+    modal.setAttribute('open','');
+  }
+  const closeBtn=modal.querySelector('.close');
+  if(closeBtn)closeBtn.onclick=()=>{try{modal.close()}catch{modal.removeAttribute('open')}};
+  setTimeout(applyRbacUi,0);
+}
 modal.addEventListener('close',()=>opener?.focus());
 function openLanguagePicker(){
   const detected=deviceAppLanguage();
@@ -3498,7 +3530,7 @@ function livestockCategoryPage(key){
 
 function quickAddLivestockProduct(id){
   const p=productById(id);if(!p)return;
-  const item={key:crypto.randomUUID(),id:p.id,qty:1,purchaseMode:'whole',purchaseLabel:t('حيوان كامل','Whole animal'),sizeChoice:'whole',sizeLabel:t('حيوان كامل','Whole animal'),boxChoice:'standard',boxLabel:t('صندوق عاس الحلال','Ass Al Halaal box'),cut:'medium',pack:'bags',fat:'regular',head:'raw',tripe:'cleaned',organs:'separate',slaughter:'municipality',deliveryChoice:'',dishCount:'1',partPrefs:{},breedId:p.breedId||'',breedName:p.en||'',unit:Number(p.price||0)};
+  const item={key:safeRandomUUID(),id:p.id,qty:1,purchaseMode:'whole',purchaseLabel:t('حيوان كامل','Whole animal'),sizeChoice:'whole',sizeLabel:t('حيوان كامل','Whole animal'),boxChoice:'standard',boxLabel:t('صندوق عاس الحلال','Ass Al Halaal box'),cut:'medium',pack:'bags',fat:'regular',head:'raw',tripe:'cleaned',organs:'separate',slaughter:'municipality',deliveryChoice:'',dishCount:'1',partPrefs:{},breedId:p.breedId||'',breedName:p.en||'',unit:Number(p.price||0)};
   cart.push(item);persist();toast(t('تمت الإضافة للسلة','Added to cart'));
 }
 
@@ -4805,7 +4837,7 @@ function bindHashiReferenceDetail(){
   const updateQty=()=>{if(qtyValue)qtyValue.textContent=String(orderQty)};
   root.querySelectorAll('[data-hashi-order-qty]').forEach(btn=>btn.addEventListener('click',()=>{orderQty=Math.max(1,Math.min(20,orderQty+Number(btn.dataset.hashiOrderQty||0)));updateQty()}));
   const buildDefaultItem=()=>{
-    const base={key:crypto.randomUUID(),id:root.dataset.productId,qty:orderQty,cut:'medium',cutChoice:'fridge-medium',pack:'bags',fat:'regular',fatChoice:'natural',head:'exclude',extraChoice:'none',tripe:'exclude',organs:'none',slaughter:'municipality',unit:Number((productById(root.dataset.productId)||{}).price||0)};
+    const base={key:safeRandomUUID(),id:root.dataset.productId,qty:orderQty,cut:'medium',cutChoice:'fridge-medium',pack:'bags',fat:'regular',fatChoice:'natural',head:'exclude',extraChoice:'none',tripe:'exclude',organs:'none',slaughter:'municipality',unit:Number((productById(root.dataset.productId)||{}).price||0)};
     if(isHuwar){
       base.huwarProductKind=read('kn-huwar-product-kind','whole');
     }else{
@@ -4962,7 +4994,7 @@ function bindReferenceProductDetail(){
   root.querySelectorAll('[data-pdp-qty]').forEach(b=>b.addEventListener('click',()=>{qty=Math.max(1,Math.min(20,qty+Number(b.dataset.pdpQty||0)));update()}));
   [size,pack,head,cut,delivery,dishes].filter(Boolean).forEach(el=>el.addEventListener('change',update));
   partSelects.forEach(sel=>sel.addEventListener('change',update));
-  const makeMainItem=()=>({key:crypto.randomUUID(),id:p.id,qty,purchaseMode,purchaseLabel:purchaseLabel(),customKg:purchaseMode==='kg'?customKg:null,sizeChoice:size?.value||'small',sizeLabel:purchaseLabel(),boxChoice:'standard',boxLabel:t('صندوق عاس الحلال','Ass Al Halaal box'),cut:cut?.value||'medium',pack:pack?.value||'bags',fat:'regular',head:head?.value||'raw',tripe:'cleaned',organs:'separate',slaughter:'municipality',deliveryChoice:delivery?.value||'',dishCount:dishes?.value||'1',partPrefs:partPrefs(),breedId:selectedBreed?.id||'',breedName:selectedBreed?selectedBreed.en:'',unit:mainUnit()});
+  const makeMainItem=()=>({key:safeRandomUUID(),id:p.id,qty,purchaseMode,purchaseLabel:purchaseLabel(),customKg:purchaseMode==='kg'?customKg:null,sizeChoice:size?.value||'small',sizeLabel:purchaseLabel(),boxChoice:'standard',boxLabel:t('صندوق عاس الحلال','Ass Al Halaal box'),cut:cut?.value||'medium',pack:pack?.value||'bags',fat:'regular',head:head?.value||'raw',tripe:'cleaned',organs:'separate',slaughter:'municipality',deliveryChoice:delivery?.value||'',dishCount:dishes?.value||'1',partPrefs:partPrefs(),breedId:selectedBreed?.id||'',breedName:selectedBreed?selectedBreed.en:'',unit:mainUnit()});
   const addMain=()=>{const item=makeMainItem();cart.push(item);persist();render();showAddedToCartPopup(item)};
   root.querySelector('[data-pdp-add-main]')?.addEventListener('click',addMain);
   root.querySelector('[data-pdp-buy-now]')?.addEventListener('click',()=>{cart.push(makeMainItem());persist();checkout()});
@@ -7707,13 +7739,18 @@ function bind(){
   document.querySelector('#header-cart')?.addEventListener('click',showCart);
   document.querySelectorAll('.js-products,#nav-products').forEach(el=>el.addEventListener('click',()=>{if(view()!=='home')setView('home');setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'}),100)}));
   document.querySelectorAll('[data-hero-browse]').forEach(btn=>btn.addEventListener('click',()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'})));
-  setupHeroSlider();
-  setupCustomBox3DShowcase();
-  setupStandardsExperience();
-  setupFloatingWhatsapp();
-  bindReferenceProductDetail();
-  bindSheepBreedCatalog();
-  bindHashiReferenceDetail();
+  // v421: one optional/mobile-specific enhancement must never stop the rest of
+  // the page from receiving its click/tap handlers.
+  const safeBindSetup=(label,fn)=>{
+    try{fn()}catch(err){console.warn(`[v421] ${label} setup skipped:`,err)}
+  };
+  safeBindSetup('hero slider',setupHeroSlider);
+  safeBindSetup('custom box showcase',setupCustomBox3DShowcase);
+  safeBindSetup('standards experience',setupStandardsExperience);
+  safeBindSetup('floating WhatsApp',setupFloatingWhatsapp);
+  safeBindSetup('product detail',bindReferenceProductDetail);
+  safeBindSetup('sheep breed catalog',bindSheepBreedCatalog);
+  safeBindSetup('Hashi detail',bindHashiReferenceDetail);
   document.querySelectorAll('[data-hashi-variant-button]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();setView('hashi/'+encodeURIComponent(b.dataset.hashiVariantButton))}));
   document.querySelectorAll('[data-hashi-variant]').forEach(card=>{const openVariant=e=>{if(e.target.closest('button'))return;setView('hashi/'+encodeURIComponent(card.dataset.hashiVariant))};card.addEventListener('click',openVariant);card.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('button')){e.preventDefault();openVariant(e)}})});
   document.querySelectorAll('[data-hashi-product]').forEach(card=>{const choose=()=>{const source=hashiVariantById(card.dataset.hashiSource);const item=HASHI_VARIANT_PRODUCTS.find(x=>x.id===card.dataset.hashiProduct);toast(t(`تم اختيار ${item?.ar||''} من ${source?.ar||''}. ستفتح خيارات التقطيع والتغليف في المرحلة التالية.`,`Selected ${item?.en||''} from ${source?.en||''}. Cutting and packaging options are the next layer.`))};card.addEventListener('click',choose);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose()}})});
@@ -7971,7 +8008,7 @@ function productOptionsDialog(id){
     };
     const legacyHead=['head','head_liver'].includes(d.extraChoice)?'raw':'exclude';
     const item={
-      key:crypto.randomUUID(),id:p.id,qty,
+      key:safeRandomUUID(),id:p.id,qty,
       cut:cutMap[d.cutChoice]||'medium',
       cutChoice:d.cutChoice||'fridge-medium',
       pack:'bags',fat:'regular',
@@ -8138,7 +8175,7 @@ function productDialog(id){
     const fatCost=d.fatChoice==='light'?57.5:0;
     // Keep backend-safe legacy fields while preserving the richer customer choices locally.
     const legacyHead=['head','head_liver'].includes(d.extraChoice)?'raw':'exclude';
-    const item={key:crypto.randomUUID(),id:p.id,qty,cut:d.cut,pack:d.pack,fat:'regular',fatChoice:d.fatChoice||'natural',head:legacyHead,extraChoice:d.extraChoice||'head',tripe:'exclude',organs:['liver','head_liver'].includes(d.extraChoice)?'liver':'none',slaughter:d.slaughter,unit:Number(p.price)+packCost+extraCost+fatCost};
+    const item={key:safeRandomUUID(),id:p.id,qty,cut:d.cut,pack:d.pack,fat:'regular',fatChoice:d.fatChoice||'natural',head:legacyHead,extraChoice:d.extraChoice||'head',tripe:'exclude',organs:['liver','head_liver'].includes(d.extraChoice)?'liver':'none',slaughter:d.slaughter,unit:Number(p.price)+packCost+extraCost+fatCost};
     cart.push(item);
     persist();modal.close();render();showAddedToCartPopup(item);
   };
@@ -8459,118 +8496,3 @@ await Promise.all([loadProducts(),loadPublicServiceHealth(),loadCustomerAuth(),r
 render();
 if(view()==='orders'&&customerSession)await loadMyOrders();
 if(view()==='admin'&&adminAuthReady)await loadAdmin();
-
-
-
-
-
-;(()=>{
-  const installV419MobileStyles=()=>{
-    if(document.getElementById('v419-mobile-responsive-fix')) return;
-    const style=document.createElement('style');
-    style.id='v419-mobile-responsive-fix';
-    style.textContent=`
-/* v419 — mobile responsive layer. Visual-only; existing handlers/data attributes remain untouched. */
-@media (max-width: 900px){
-  html,body{overflow-x:hidden!important}
-  .app-shell{max-width:100%!important;width:100%!important;margin:0!important}
-  .screen{padding-left:12px!important;padding-right:12px!important}
-
-  /* Header */
-  .app-header{position:sticky!important;top:0!important;z-index:100!important;display:flex!important;flex-wrap:wrap!important;gap:8px!important;padding:10px!important;border-radius:0 0 16px 16px!important}
-  .customer-brand{min-width:0!important;flex:1 1 170px!important}
-  .customer-logo b{font-size:15px!important}
-  .customer-logo small{font-size:9px!important}
-  .location-pill{flex:1 1 150px!important;min-width:145px!important;padding:8px 10px!important}
-  .desktop-main-nav{order:3!important;width:100%!important;overflow-x:auto!important;display:flex!important;justify-content:flex-start!important;gap:4px!important;padding-bottom:2px!important;scrollbar-width:none!important}
-  .desktop-main-nav::-webkit-scrollbar{display:none!important}
-  .desktop-main-nav button{flex:0 0 auto!important;min-width:74px!important;padding:8px!important;font-size:10px!important}
-  .customer-header-actions{margin-inline-start:auto!important;display:flex!important;gap:6px!important}
-  .header-search{order:4!important;width:100%!important;min-width:0!important}
-  .header-search input{width:100%!important}
-
-  /* Announcement + delivery area */
-  .trust-strip,.top-trust-strip,.customer-trust-strip{font-size:9px!important;gap:8px!important;overflow-x:auto!important;white-space:nowrap!important}
-  .delivery-area-section,.delivery-area-card,.ref-delivery-panel{margin:8px 0 12px!important;padding:12px!important;border-radius:16px!important}
-  .delivery-area-section h2,.delivery-area-card h2,.ref-delivery-panel h2{font-size:18px!important;line-height:1.2!important}
-  .delivery-area-section p,.delivery-area-card p,.ref-delivery-panel p{font-size:10px!important}
-  .delivery-area-section .districts,.delivery-area-card .districts,.ref-delivery-panel .districts{display:flex!important;gap:6px!important;overflow-x:auto!important;white-space:nowrap!important;padding-bottom:2px!important;scrollbar-width:none!important}
-  .delivery-area-section .districts::-webkit-scrollbar,.delivery-area-card .districts::-webkit-scrollbar,.ref-delivery-panel .districts::-webkit-scrollbar{display:none!important}
-  .delivery-area-section button,.delivery-area-card button,.ref-delivery-panel button{font-size:10px!important;padding:8px 11px!important;flex:0 0 auto!important}
-
-  /* Hero */
-  .luxury-hero,.home-hero,.hero-section,.premium-home-hero{min-height:0!important;height:auto!important;border-radius:18px!important;overflow:hidden!important}
-  .luxury-hero .hero-grid,.home-hero .hero-grid,.hero-section .hero-grid,.premium-home-hero .hero-grid{display:grid!important;grid-template-columns:1fr!important}
-  .luxury-hero img,.home-hero img,.hero-section img,.premium-home-hero img{width:100%!important;max-height:300px!important;object-fit:cover!important}
-  .luxury-hero-content,.home-hero-content,.hero-copy,.premium-hero-copy{padding:18px!important}
-  .luxury-hero h1,.home-hero h1,.hero-section h1,.premium-home-hero h1{font-size:30px!important;line-height:1.08!important}
-  .luxury-hero p,.home-hero p,.hero-section p,.premium-home-hero p{font-size:12px!important;line-height:1.6!important}
-  .hero-feature-grid,.hero-benefits,.luxury-hero-features{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
-
-  /* Top categories */
-  .v409-category-row,.top-category-grid,.category-showcase-grid,.livestock-category-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
-  .v409-category-card,.top-category-card,.category-showcase-card,.livestock-category-card{width:100%!important;min-width:0!important}
-  .v409-category-card img,.top-category-card img,.category-showcase-card img,.livestock-category-card img{width:100%!important;height:auto!important;aspect-ratio:4/3!important;object-fit:cover!important}
-  .v409-category-card button,.top-category-card button,.category-showcase-card button,.livestock-category-card button{width:100%!important;min-height:40px!important;font-size:13px!important}
-
-  /* Product list/cards */
-  #products,.products-grid,.product-grid,.ref-products{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;overflow:visible!important;scroll-snap-type:none!important}
-  #products>.product-card,#products>.premium-product-card,#products>.harri-product-card,#products>.hashi-product-card,.products-grid>.product-card,.product-grid>.product-card{width:100%!important;min-width:0!important;max-width:none!important;flex:none!important}
-  .product-card,.premium-product-card,.harri-product-card,.hashi-product-card{border-radius:16px!important}
-  .product-card img,.premium-product-card img,.harri-product-card img,.hashi-product-card img{width:100%!important;height:auto!important;aspect-ratio:4/3!important;object-fit:contain!important;background:#faf7ef!important}
-  .product-content{padding:10px!important}
-  .product-content h3,.product-title-block h3{font-size:14px!important}
-  .product-title-block p,.product-content p{font-size:9px!important}
-  .premium-card-actions{grid-template-columns:1fr auto!important;gap:6px!important}
-  .premium-add-button{min-height:40px!important;font-size:10px!important}
-  .premium-card-share{width:40px!important;height:40px!important}
-  .clean-meta-row,.harri-chip-row{display:flex!important;flex-wrap:wrap!important;gap:5px!important}
-  .clean-price-row,.harri-price-row{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:6px!important}
-  .price b,.harri-price-row b{font-size:18px!important}
-  .product-details-link{font-size:10px!important}
-
-  /* Category / breed hub pages */
-  .livestock-hub-page{padding:10px!important}
-  .livestock-hub-hero{grid-template-columns:1fr!important;padding:18px!important;border-radius:18px!important}
-  .livestock-hub-hero h1{font-size:28px!important}
-  .livestock-hub-hero img{height:auto!important;aspect-ratio:4/3!important;object-fit:cover!important}
-  .livestock-hub-grid{grid-template-columns:1fr 1fr!important;gap:10px!important}
-  .livestock-hub-photo{height:auto!important;aspect-ratio:4/3!important}
-  .livestock-hub-copy{padding:12px!important}
-  .livestock-hub-copy h3{font-size:17px!important}
-  .livestock-hub-actions{grid-template-columns:1fr!important}
-
-  /* Product detail */
-  .ref-product-layout,.product-detail-layout,.pdp-layout{grid-template-columns:1fr!important;gap:14px!important}
-  .ref-product-gallery,.product-gallery{order:1!important}
-  .ref-product-info,.product-info{order:2!important}
-  .ref-product-image-stage img,.product-main-image img{width:100%!important;height:auto!important;max-height:380px!important;object-fit:contain!important}
-  .ref-parts-grid,.parts-grid{grid-template-columns:1fr!important}
-
-  /* Footer / floating whatsapp */
-  .whatsapp-float,.contact-float{right:12px!important;bottom:12px!important;transform:scale(.92)!important;transform-origin:bottom right!important}
-}
-
-@media (max-width: 560px){
-  .screen{padding-left:8px!important;padding-right:8px!important}
-  .customer-logo img{width:38px!important;height:34px!important}
-  .customer-logo b{font-size:13px!important}
-  .location-pill{min-width:132px!important}
-  .desktop-main-nav button{min-width:66px!important;font-size:9px!important}
-
-  .v409-category-row,.top-category-grid,.category-showcase-grid,.livestock-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
-  #products,.products-grid,.product-grid,.ref-products{grid-template-columns:1fr!important;gap:12px!important}
-  .product-card,.premium-product-card,.harri-product-card,.hashi-product-card{max-width:100%!important}
-  .product-card img,.premium-product-card img,.harri-product-card img,.hashi-product-card img{aspect-ratio:16/10!important}
-  .hero-feature-grid,.hero-benefits,.luxury-hero-features{grid-template-columns:1fr 1fr!important}
-  .livestock-hub-grid{grid-template-columns:1fr!important}
-  .livestock-hub-head{align-items:flex-start!important;flex-direction:column!important;gap:8px!important}
-  .ref-product-thumbs,.product-thumbnails{overflow-x:auto!important;display:flex!important;gap:6px!important;scrollbar-width:none!important}
-  .ref-product-thumbs::-webkit-scrollbar,.product-thumbnails::-webkit-scrollbar{display:none!important}
-}
-`;
-    (document.head||document.documentElement).appendChild(style);
-  };
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',installV419MobileStyles,{once:true});
-  else installV419MobileStyles();
-})();

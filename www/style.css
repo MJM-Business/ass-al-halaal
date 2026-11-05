@@ -34362,3 +34362,512 @@ html[dir="rtl"] .hashi-kabsh-media{direction:rtl}
 .harri-breed-pdp .ref-product-image-stage{aspect-ratio:1501 / 1048 !important;min-height:0 !important;height:auto !important;padding:0 !important;overflow:hidden !important;}
 .harri-breed-pdp .ref-product-image-stage>img{position:absolute !important;inset:0 !important;width:100% !important;height:100% !important;object-fit:cover !important;object-position:center center !important;display:block !important;}
 @media(max-width:900px){.harri-breed-pdp .ref-product-image-stage{aspect-ratio:1501 / 1048 !important;min-height:0 !important;height:auto !important;}}
+
+/* =====================================================================
+   v421 — MOBILE RESPONSIVE + TOUCH STABILIZATION
+   Final override for the current Ass Al Halaal customer SPA.
+   This replaces the conflicting runtime v419 mobile layer that was
+   overriding the already-responsive customer CSS.
+   ===================================================================== */
+@media (max-width:900px){
+  html,body{
+    width:100%!important;
+    max-width:100%!important;
+    overflow-x:hidden!important;
+    -webkit-text-size-adjust:100%;
+    overscroll-behavior-x:none;
+  }
+  #app,
+  .app-shell:not(.admin-shell),
+  .app-shell:not(.admin-shell) .screen{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+  }
+  .app-shell:not(.admin-shell){
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    padding-bottom:calc(76px + env(safe-area-inset-bottom))!important;
+  }
+  .app-shell:not(.admin-shell) .screen{
+    padding-left:0!important;
+    padding-right:0!important;
+    overflow-x:clip!important;
+  }
+
+  /* Touch reliability. Decorative pseudo-elements must never intercept taps. */
+  .app-shell:not(.admin-shell) *::before,
+  .app-shell:not(.admin-shell) *::after{
+    pointer-events:none!important;
+  }
+  .app-shell:not(.admin-shell) button,
+  .app-shell:not(.admin-shell) [role="button"],
+  .app-shell:not(.admin-shell) a,
+  dialog button,
+  dialog [role="button"]{
+    touch-action:manipulation;
+    -webkit-tap-highlight-color:rgba(9,91,69,.12);
+  }
+
+  /* Customer header: compact mobile header, desktop nav remains hidden. */
+  .app-shell:not(.admin-shell) .ref-customer-header{
+    position:sticky!important;
+    top:0!important;
+    z-index:90!important;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    align-items:center!important;
+    gap:8px!important;
+    width:100%!important;
+    min-height:64px!important;
+    height:auto!important;
+    padding:8px 10px!important;
+    border-radius:0!important;
+    background:rgba(255,255,255,.97)!important;
+  }
+  .app-shell:not(.admin-shell) .customer-brand{
+    min-width:0!important;
+    display:flex!important;
+    align-items:center!important;
+  }
+  .app-shell:not(.admin-shell) .customer-logo{
+    min-width:0!important;
+    max-width:100%!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:8px!important;
+  }
+  .app-shell:not(.admin-shell) .customer-logo img{
+    width:38px!important;
+    height:38px!important;
+    flex:0 0 38px!important;
+    object-fit:contain!important;
+  }
+  .app-shell:not(.admin-shell) .customer-logo span{
+    min-width:0!important;
+    display:grid!important;
+  }
+  .app-shell:not(.admin-shell) .customer-logo b{
+    font-size:14px!important;
+    line-height:1.15!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  .app-shell:not(.admin-shell) .customer-logo small{
+    font-size:7.5px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  .app-shell:not(.admin-shell) .ref-location-pill{
+    display:none!important;
+  }
+  .app-shell:not(.admin-shell) .desktop-main-nav{
+    display:none!important;
+  }
+  .app-shell:not(.admin-shell) .ref-top-actions{
+    display:flex!important;
+    align-items:center!important;
+    gap:3px!important;
+    min-width:max-content!important;
+  }
+  .app-shell:not(.admin-shell) .ref-top-actions>button{
+    width:35px!important;
+    height:35px!important;
+    min-width:35px!important;
+    min-height:35px!important;
+    padding:0!important;
+  }
+  .app-shell:not(.admin-shell) .top-search-copy{
+    display:none!important;
+  }
+
+  /* Announcement and delivery area */
+  .app-shell:not(.admin-shell) .ref-announcement{
+    width:100%!important;
+    min-height:36px!important;
+    padding:7px 10px!important;
+    gap:6px!important;
+    overflow:hidden!important;
+  }
+  .app-shell:not(.admin-shell) .ref-announcement p{
+    min-width:0!important;
+    font-size:8.5px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  .app-shell:not(.admin-shell) .ref-announcement .announcement-features{
+    display:none!important;
+  }
+  .app-shell:not(.admin-shell) .ref-district-card{
+    width:auto!important;
+    margin:8px 10px 12px!important;
+    padding:12px!important;
+    border-radius:15px!important;
+    overflow:hidden!important;
+  }
+  .app-shell:not(.admin-shell) .ref-district-card .district-visual{
+    display:none!important;
+  }
+  .app-shell:not(.admin-shell) .ref-district-card .district-title{
+    display:grid!important;
+    grid-template-columns:36px minmax(0,1fr)!important;
+    gap:8px!important;
+    align-items:center!important;
+  }
+  .app-shell:not(.admin-shell) .ref-district-card .near{
+    width:36px!important;
+    height:36px!important;
+    font-size:14px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-district-card .district-title>div{
+    min-width:0!important;
+  }
+  .app-shell:not(.admin-shell) .ref-district-card h2{
+    font-size:15px!important;
+    line-height:1.2!important;
+  }
+  .app-shell:not(.admin-shell) .ref-district-card p{
+    font-size:8.5px!important;
+    line-height:1.35!important;
+  }
+  .app-shell:not(.admin-shell) .ref-district-card .fast{
+    grid-column:1 / -1!important;
+    justify-self:start!important;
+    margin-top:2px!important;
+    padding:5px 8px!important;
+    font-size:7.5px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-district-card .district-chips{
+    display:flex!important;
+    gap:6px!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    white-space:nowrap!important;
+    padding:9px 0 5px!important;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .app-shell:not(.admin-shell) .ref-district-card .district-chips::-webkit-scrollbar{display:none!important}
+  .app-shell:not(.admin-shell) .ref-district-card .district-chips button{
+    flex:0 0 auto!important;
+    min-height:36px!important;
+    padding:8px 11px!important;
+    font-size:9px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-district-card .dispatch{
+    margin-top:5px!important;
+    font-size:7.5px!important;
+    line-height:1.35!important;
+  }
+
+  /* Hero */
+  .app-shell:not(.admin-shell) .v94-hero-slider{
+    width:auto!important;
+    margin:0 10px!important;
+    overflow:hidden!important;
+    border-radius:17px!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slides{
+    overflow:hidden!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .ref-quality-hero{
+    width:100%!important;
+    margin:0!important;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    min-height:0!important;
+    border-radius:17px!important;
+    overflow:hidden!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    padding:18px 16px 20px!important;
+    min-width:0!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-badges{
+    gap:5px!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-badges span,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-badges small{
+    font-size:7.5px!important;
+    padding:5px 7px!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider h1{
+    font-size:27px!important;
+    line-height:1.08!important;
+    margin:13px 0 8px!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider p{
+    font-size:10px!important;
+    line-height:1.55!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:6px!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div{
+    min-width:0!important;
+    padding:8px!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media{
+    width:100%!important;
+    min-width:0!important;
+    height:205px!important;
+    min-height:205px!important;
+    margin:0!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media img{
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-prev{left:8px!important}
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-next{right:8px!important}
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+    width:34px!important;
+    height:34px!important;
+    margin-top:-17px!important;
+    font-size:21px!important;
+    pointer-events:auto!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-dots button{
+    pointer-events:auto!important;
+  }
+
+  /* Category cards: true two-column mobile grid instead of fixed 220px horizontal cards. */
+  html body .app-shell:not(.admin-shell) .ref-categories{
+    width:100%!important;
+    padding:0 10px!important;
+    margin:0!important;
+  }
+  html body .app-shell:not(.admin-shell) .ref-categories .section-row{
+    align-items:flex-start!important;
+  }
+  html body .app-shell:not(.admin-shell) .ref-categories .section-row h2{
+    font-size:17px!important;
+  }
+  html body .app-shell:not(.admin-shell) .ref-categories .category-row{
+    width:100%!important;
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:10px!important;
+    overflow:visible!important;
+    padding:4px 0 8px!important;
+    scroll-snap-type:none!important;
+  }
+  html body .app-shell:not(.admin-shell) .ref-categories .livestock-type-card{
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    flex:none!important;
+    gap:7px!important;
+    scroll-snap-align:none!important;
+  }
+  html body .app-shell:not(.admin-shell) .ref-categories .livestock-type-card .category-image-button{
+    width:100%!important;
+    min-width:0!important;
+    pointer-events:auto!important;
+  }
+  html body .app-shell:not(.admin-shell) .ref-categories .livestock-type-card .category-photo{
+    width:100%!important;
+    height:auto!important;
+    aspect-ratio:4/3!important;
+    border-radius:15px!important;
+  }
+  html body .app-shell:not(.admin-shell) .ref-categories .livestock-type-card .category-photo img{
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
+    border-radius:15px!important;
+  }
+  html body .app-shell:not(.admin-shell) .ref-categories .livestock-type-card .category-name-button{
+    width:92%!important;
+    min-height:40px!important;
+    padding:7px 9px!important;
+    font-size:14px!important;
+    white-space:normal!important;
+    pointer-events:auto!important;
+  }
+
+  /* Product grid */
+  .app-shell:not(.admin-shell) .ref-collection{
+    width:100%!important;
+    padding:0 10px!important;
+    margin:0!important;
+  }
+  .app-shell:not(.admin-shell) .ref-collection .section-row h2{
+    font-size:17px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-products{
+    width:100%!important;
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:10px!important;
+    overflow:visible!important;
+  }
+  .app-shell:not(.admin-shell) .ref-products>*{
+    min-width:0!important;
+    max-width:100%!important;
+  }
+  .app-shell:not(.admin-shell) .ref-products .premium-product-card,
+  .app-shell:not(.admin-shell) .ref-products .product-card{
+    width:100%!important;
+    min-width:0!important;
+    border-radius:15px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-products .product-image,
+  .app-shell:not(.admin-shell) .ref-products .harri-final-visual,
+  .app-shell:not(.admin-shell) .ref-products .hashi-final-visual{
+    width:100%!important;
+    min-width:0!important;
+  }
+  .app-shell:not(.admin-shell) .ref-products .product-content{
+    padding:10px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-products .product-main{
+    gap:7px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-products .product-main h3{
+    font-size:13px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-products .product-main p{
+    font-size:8px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-products .premium-card-actions button,
+  .app-shell:not(.admin-shell) .ref-products [data-product],
+  .app-shell:not(.admin-shell) .ref-products [data-product-options],
+  .app-shell:not(.admin-shell) .ref-products [data-product-detail-button]{
+    min-height:42px!important;
+    pointer-events:auto!important;
+  }
+
+  /* Standards */
+  .app-shell:not(.admin-shell) .ref-standards{
+    width:auto!important;
+    margin:0 10px 8px!important;
+    padding:13px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-standards .standards-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:7px!important;
+  }
+
+  /* Livestock hubs and product detail pages */
+  .app-shell:not(.admin-shell) .livestock-hub-page,
+  .app-shell:not(.admin-shell) [data-ref-pdp],
+  .app-shell:not(.admin-shell) [data-hashi-ref-pdp]{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    overflow-x:hidden!important;
+  }
+  .app-shell:not(.admin-shell) .livestock-hub-hero,
+  .app-shell:not(.admin-shell) .ref-product-layout,
+  .app-shell:not(.admin-shell) .product-detail-layout,
+  .app-shell:not(.admin-shell) .pdp-layout,
+  .app-shell:not(.admin-shell) .hashi-kabsh-main{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  .app-shell:not(.admin-shell) .livestock-hub-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:10px!important;
+  }
+  .app-shell:not(.admin-shell) .livestock-hub-card,
+  .app-shell:not(.admin-shell) .livestock-hub-photo,
+  .app-shell:not(.admin-shell) .ref-product-image-stage{
+    min-width:0!important;
+    max-width:100%!important;
+  }
+
+  /* Account, orders and dialogs */
+  .app-shell:not(.admin-shell) .account-card,
+  .app-shell:not(.admin-shell) .lookup-card,
+  .app-shell:not(.admin-shell) .orders-list{
+    max-width:100%!important;
+  }
+  dialog{
+    max-width:calc(100vw - 12px)!important;
+  }
+
+  /* Bottom navigation is the single mobile primary nav. */
+  .app-shell:not(.admin-shell) .bottom-nav{
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    top:auto!important;
+    z-index:120!important;
+    transform:none!important;
+    width:100%!important;
+    max-width:none!important;
+    height:calc(68px + env(safe-area-inset-bottom))!important;
+    padding:4px 3px env(safe-area-inset-bottom)!important;
+    display:grid!important;
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    background:rgba(255,255,255,.98)!important;
+    border-top:1px solid #e5ebe7!important;
+    border-radius:0!important;
+    pointer-events:auto!important;
+  }
+  .app-shell:not(.admin-shell) .bottom-nav button{
+    min-width:0!important;
+    min-height:58px!important;
+    padding:4px 2px!important;
+    pointer-events:auto!important;
+  }
+  .app-shell:not(.admin-shell) .bottom-nav small{
+    font-size:8px!important;
+  }
+
+  /* Floating WhatsApp never covers the nav or full page on mobile. */
+  .floating-whatsapp{
+    inset-inline-end:10px!important;
+    bottom:calc(78px + env(safe-area-inset-bottom))!important;
+    max-width:calc(100vw - 20px)!important;
+  }
+  .floating-whatsapp-card{
+    width:min(330px,calc(100vw - 20px))!important;
+  }
+}
+
+@media (max-width:560px){
+  .app-shell:not(.admin-shell) .ref-top-actions>button{
+    width:33px!important;
+    height:33px!important;
+    min-width:33px!important;
+    min-height:33px!important;
+  }
+  .app-shell:not(.admin-shell) .customer-logo img{
+    width:34px!important;
+    height:34px!important;
+    flex-basis:34px!important;
+  }
+  .app-shell:not(.admin-shell) .customer-logo b{font-size:12.5px!important}
+  .app-shell:not(.admin-shell) .customer-logo small{font-size:7px!important}
+
+  .app-shell:not(.admin-shell) .v94-hero-slider h1{font-size:24px!important}
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media{
+    height:180px!important;
+    min-height:180px!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-products{
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:12px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-products .product-main h3{font-size:15px!important}
+  .app-shell:not(.admin-shell) .ref-products .product-main p{font-size:9px!important}
+
+  .app-shell:not(.admin-shell) .livestock-hub-grid{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-standards .standards-grid{
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+}
+
