@@ -1,0 +1,22 @@
+{
+  "name": "kabsh-najd",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Kabsh Najd customer ordering and admin management application",
+  "type": "module",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "dev": "node scripts/serve.mjs",
+    "check": "node --check www/app.js && node --check www/shop.js && node --check scripts/serve.mjs && node --test scripts/shop.test.mjs",
+    "health": "node -e \"fetch('http://127.0.0.1:5173/api/health').then(r=>r.json()).then(console.log).catch(e=>{console.error(e.message);process.exit(1)})\"",
+    "native:install": "npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/ios",
+    "android:add": "npx cap add android",
+    "ios:add": "npx cap add ios",
+    "sync": "npx cap sync",
+    "android": "npx cap open android",
+    "ios": "npx cap open ios"
+  }
+}

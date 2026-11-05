@@ -1,0 +1,29 @@
+node_modules/
+android/
+ios/
+.DS_Store
+*.log
+
+# Security & Environment Files
+.env
+.env.*
+!.env.example
+
+# Database files
+data/*.sqlite3
+data/*.sqlite3-shm
+data/*.sqlite3-wal
+
+# Build & Output directories
+dist/
+build/
+www/dist/
+
+# OS / Editor / temp files
+Thumbs.db
+.vscode/
+.idea/
+*.tmp
+*.swp
+
+data/

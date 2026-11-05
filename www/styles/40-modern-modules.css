@@ -1,0 +1,3746 @@
+/* =========================================================
+   v191 — Lock desktop admin sidebar
+   Main page scrolls; left/right admin menu stays fixed.
+   ========================================================= */
+
+@media (min-width:1101px){
+
+  .stitch-shell-v186 .reference-sidebar{
+    position:fixed!important;
+    top:0!important;
+    bottom:0!important;
+    height:100vh!important;
+    min-height:100vh!important;
+    max-height:100vh!important;
+    overflow:hidden!important;
+    z-index:100!important;
+    display:flex!important;
+    flex-direction:column!important;
+  }
+
+  html[dir="ltr"] .stitch-shell-v186 .reference-sidebar{
+    left:0!important;
+    right:auto!important;
+  }
+
+  html[dir="rtl"] .stitch-shell-v186 .reference-sidebar{
+    right:0!important;
+    left:auto!important;
+  }
+
+  /* Menu itself stays locked too — no independent sidebar scrolling */
+  .stitch-shell-v186 .reference-nav{
+    flex:1 1 auto!important;
+    min-height:0!important;
+    overflow:hidden!important;
+    overscroll-behavior:none!important;
+  }
+
+  /* Keep footer controls pinned to the bottom of the sidebar */
+  .stitch-shell-v186 .reference-sidebar-foot{
+    flex:0 0 auto!important;
+    margin-top:auto!important;
+  }
+
+  /* Preserve the 288px sidebar reservation in the desktop grid */
+  html[dir="ltr"] .stitch-shell-v186{
+    grid-template-columns:288px minmax(0,1fr)!important;
+  }
+
+  html[dir="rtl"] .stitch-shell-v186{
+    grid-template-columns:minmax(0,1fr) 288px!important;
+  }
+}
+
+
+/* =========================================================
+   v192 — DIGITAL AI COMMAND CENTER
+   Unique digital operations-lab styling for AI Center only.
+   Existing AI functionality is preserved.
+   ========================================================= */
+
+.ai-digital-center{
+  --ai-night:#061d18;
+  --ai-deep:#083c31;
+  --ai-core:#0b4f3e;
+  --ai-green:#35d69a;
+  --ai-green-soft:#bdf3dc;
+  --ai-gold:#d9ad4b;
+  --ai-gold-soft:#ffe4a7;
+  --ai-cyan:#67d8ca;
+  --ai-grid:rgba(30,105,82,.07);
+  position:relative!important;
+  isolation:isolate!important;
+  width:100%!important;
+  min-width:0!important;
+  padding:2px!important;
+  background:
+    linear-gradient(rgba(11,79,62,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(11,79,62,.025) 1px,transparent 1px),
+    radial-gradient(circle at 12% 4%,rgba(53,214,154,.055),transparent 24%),
+    radial-gradient(circle at 90% 24%,rgba(217,173,75,.05),transparent 22%)!important;
+  background-size:26px 26px,26px 26px,auto,auto!important;
+  border-radius:20px!important;
+}
+
+/* ---------------- HERO / DIGITAL HUD ---------------- */
+
+.ai-digital-center .ai-hero{
+  position:relative!important;
+  min-height:184px!important;
+  margin-bottom:16px!important;
+  padding:26px 28px!important;
+  overflow:hidden!important;
+  border-radius:18px!important;
+  border:1px solid rgba(106,225,190,.20)!important;
+  background:
+    linear-gradient(90deg,rgba(53,214,154,.045) 1px,transparent 1px),
+    linear-gradient(rgba(53,214,154,.035) 1px,transparent 1px),
+    radial-gradient(circle at 88% 22%,rgba(217,173,75,.18),transparent 22%),
+    radial-gradient(circle at 72% 110%,rgba(53,214,154,.13),transparent 31%),
+    linear-gradient(120deg,#041d18 0%,#07372c 54%,#0a4939 100%)!important;
+  background-size:34px 34px,34px 34px,auto,auto,auto!important;
+  box-shadow:
+    0 18px 42px rgba(5,43,34,.18),
+    inset 0 1px 0 rgba(255,255,255,.04)!important;
+}
+
+.ai-digital-center .ai-hero::before{
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  pointer-events:none!important;
+  background:
+    linear-gradient(90deg,transparent 0%,rgba(83,237,186,.14) 48%,transparent 100%)!important;
+  width:34%!important;
+  transform:translateX(-140%)!important;
+  animation:aiDigitalScan 7s linear infinite!important;
+  opacity:.42!important;
+}
+
+.ai-digital-center .ai-hero::after{
+  content:""!important;
+  position:absolute!important;
+  width:260px!important;
+  height:260px!important;
+  inset-inline-end:-55px!important;
+  top:-66px!important;
+  border-radius:50%!important;
+  border:1px solid rgba(255,228,167,.20)!important;
+  box-shadow:
+    0 0 0 24px rgba(255,228,167,.032),
+    0 0 0 52px rgba(53,214,154,.025),
+    0 0 70px rgba(217,173,75,.08)!important;
+  pointer-events:none!important;
+}
+
+@keyframes aiDigitalScan{
+  0%{transform:translateX(-150%)}
+  100%{transform:translateX(430%)}
+}
+
+.ai-digital-center .ai-hero-copy{
+  max-width:780px!important;
+  position:relative!important;
+  z-index:2!important;
+}
+
+.ai-digital-center .ai-live-chip{
+  min-height:30px!important;
+  padding:5px 10px!important;
+  border-radius:8px!important;
+  border:1px solid rgba(83,237,186,.22)!important;
+  background:rgba(8,78,60,.50)!important;
+  box-shadow:inset 0 0 20px rgba(53,214,154,.035)!important;
+  color:#d6f9ea!important;
+  font-size:10px!important;
+  line-height:16px!important;
+  font-weight:650!important;
+  letter-spacing:.15px!important;
+}
+
+.ai-digital-center .ai-live-chip i{
+  width:7px!important;height:7px!important;flex:0 0 7px!important;
+  background:#41f2aa!important;
+  box-shadow:0 0 0 4px rgba(65,242,170,.10),0 0 15px rgba(65,242,170,.65)!important;
+}
+
+.ai-digital-center .ai-hero h1{
+  margin:10px 0 8px!important;
+  font-size:34px!important;
+  line-height:1.08!important;
+  letter-spacing:-.6px!important;
+  font-weight:780!important;
+  color:#fff!important;
+  text-shadow:0 0 24px rgba(83,237,186,.08)!important;
+}
+
+.ai-digital-center .ai-hero p{
+  max-width:760px!important;
+  color:#c8dfd7!important;
+  font-size:12px!important;
+  line-height:1.65!important;
+}
+
+.ai-digital-center .ai-hero-actions{
+  min-width:280px!important;
+  gap:11px!important;
+  z-index:3!important;
+}
+
+.ai-digital-center .ai-clock{
+  min-width:244px!important;
+  padding:11px 13px!important;
+  border-radius:12px!important;
+  border:1px solid rgba(102,230,194,.20)!important;
+  background:rgba(0,36,25,.42)!important;
+  box-shadow:inset 0 0 24px rgba(53,214,154,.03)!important;
+}
+
+.ai-digital-center .ai-clock .admin-svg-icon{
+  width:35px!important;height:35px!important;min-width:35px!important;max-width:35px!important;
+  background:rgba(53,214,154,.10)!important;
+  color:#8af0c9!important;
+  border:1px solid rgba(53,214,154,.15)!important;
+}
+
+.ai-digital-center .ai-clock small{
+  color:#91b8aa!important;
+  font-size:9px!important;
+  line-height:14px!important;
+}
+
+.ai-digital-center .ai-clock b{
+  color:#fff!important;
+  font-size:17px!important;
+  line-height:20px!important;
+  font-variant-numeric:tabular-nums!important;
+}
+
+.ai-digital-center .ai-luxury-btn{
+  min-height:43px!important;
+  padding:0 15px!important;
+  border-radius:10px!important;
+  border:1px solid #f2cf78!important;
+  background:linear-gradient(180deg,#f0ca6c,#d9ad4b)!important;
+  color:#17372d!important;
+  font-size:10.5px!important;
+  font-weight:800!important;
+  box-shadow:0 8px 22px rgba(217,173,75,.18)!important;
+}
+
+/* ---------------- KPI SIGNAL TILES ---------------- */
+
+.ai-digital-center .ai-kpis{
+  gap:11px!important;
+  margin-bottom:16px!important;
+}
+
+.ai-digital-center .ai-kpis article{
+  position:relative!important;
+  min-height:142px!important;
+  overflow:hidden!important;
+  padding:15px 15px 14px!important;
+  border-radius:14px!important;
+  border:1px solid #dbe6e1!important;
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.98),rgba(248,252,250,.96))!important;
+  box-shadow:0 7px 22px rgba(7,58,45,.055)!important;
+}
+
+.ai-digital-center .ai-kpis article::before{
+  content:""!important;
+  position:absolute!important;
+  top:0!important;
+  left:0!important;
+  right:0!important;
+  height:3px!important;
+  background:linear-gradient(90deg,#0b4f3e,#35d69a 58%,rgba(53,214,154,0))!important;
+}
+
+.ai-digital-center .ai-kpis article:nth-child(2)::before,
+.ai-digital-center .ai-kpis article:nth-child(5)::before{
+  background:linear-gradient(90deg,#b98a22,#e6c46e 58%,rgba(230,196,110,0))!important;
+}
+
+.ai-digital-center .ai-kpis article>div:first-child small{
+  color:#5e736a!important;
+  font-size:9px!important;
+  line-height:14px!important;
+  font-weight:700!important;
+}
+
+.ai-digital-center .ai-kpis article>div:first-child .admin-svg-icon{
+  width:30px!important;height:30px!important;min-width:30px!important;max-width:30px!important;
+  border-radius:9px!important;
+  background:#e7f5ef!important;
+  color:#0b684e!important;
+}
+
+.ai-digital-center .ai-kpis article:nth-child(2)>div:first-child .admin-svg-icon,
+.ai-digital-center .ai-kpis article:nth-child(5)>div:first-child .admin-svg-icon{
+  background:#fff3d4!important;
+  color:#9b7118!important;
+}
+
+.ai-digital-center .ai-kpis strong{
+  margin:10px 0 5px!important;
+  color:#0b4738!important;
+  font-size:27px!important;
+  line-height:31px!important;
+  font-weight:780!important;
+}
+
+.ai-digital-center .ai-kpis strong em{
+  font-size:12px!important;
+}
+
+.ai-digital-center .ai-kpis span{
+  min-height:23px!important;
+  padding:4px 7px!important;
+  font-size:8px!important;
+  line-height:14px!important;
+}
+
+.ai-digital-center .ai-kpis p{
+  margin-top:auto!important;
+  color:#76877f!important;
+  font-size:8px!important;
+  line-height:1.45!important;
+}
+
+/* ---------------- SHARED DIGITAL PANELS ---------------- */
+
+.ai-digital-center .ai-card{
+  position:relative!important;
+  border-radius:14px!important;
+  border:1px solid #dce7e2!important;
+  background:rgba(255,255,255,.97)!important;
+  box-shadow:0 8px 26px rgba(7,58,45,.055)!important;
+  overflow:hidden!important;
+}
+
+.ai-digital-center .ai-card::before{
+  content:""!important;
+  position:absolute!important;
+  left:0!important;
+  top:0!important;
+  width:3px!important;
+  height:64px!important;
+  background:linear-gradient(180deg,#35d69a,rgba(53,214,154,0))!important;
+  z-index:2!important;
+}
+html[dir="rtl"] .ai-digital-center .ai-card::before{
+  left:auto!important;
+  right:0!important;
+}
+
+.ai-digital-center .ai-card>header{
+  min-height:72px!important;
+  padding:15px 16px!important;
+  border-bottom:1px solid #e7eeea!important;
+  background:
+    linear-gradient(90deg,rgba(11,79,62,.018),rgba(255,255,255,0))!important;
+}
+
+.ai-digital-center .ai-card>header>.admin-svg-icon{
+  width:38px!important;height:38px!important;min-width:38px!important;max-width:38px!important;
+  border-radius:10px!important;
+  background:#e8f5ef!important;
+  color:#0b614a!important;
+  border:1px solid #d8eae2!important;
+}
+
+.ai-digital-center .ai-card>header h2{
+  color:#103f32!important;
+  font-size:17px!important;
+  line-height:22px!important;
+  font-weight:760!important;
+}
+
+.ai-digital-center .ai-card>header h3{
+  color:#103f32!important;
+  font-size:14px!important;
+  line-height:20px!important;
+  font-weight:740!important;
+}
+
+.ai-digital-center .ai-card>header p{
+  color:#71837a!important;
+  font-size:9px!important;
+  line-height:15px!important;
+}
+
+.ai-digital-center .ai-card>header>span:not(.admin-svg-icon){
+  min-width:56px!important;
+  min-height:28px!important;
+  padding:0 8px!important;
+  background:#e7f5ef!important;
+  color:#176b4c!important;
+  font-size:9px!important;
+}
+
+/* ---------------- INTENT ENGINE / WORKBENCH ---------------- */
+
+.ai-digital-center .ai-main-grid{
+  grid-template-columns:minmax(0,1.72fr) minmax(330px,.78fr)!important;
+  gap:14px!important;
+  margin-bottom:16px!important;
+}
+
+.ai-digital-center .ai-intent-card{
+  background:
+    linear-gradient(90deg,rgba(11,79,62,.022) 1px,transparent 1px),
+    linear-gradient(rgba(11,79,62,.018) 1px,transparent 1px),
+    #fff!important;
+  background-size:26px 26px!important;
+}
+
+.ai-digital-center .ai-intent-cases{
+  padding:14px!important;
+  gap:10px!important;
+}
+
+.ai-digital-center .ai-intent-cases>section{
+  position:relative!important;
+  overflow:hidden!important;
+  padding:13px!important;
+  border-radius:11px!important;
+  border:1px solid #dce7e2!important;
+  background:rgba(252,254,253,.96)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9)!important;
+}
+
+.ai-digital-center .ai-intent-cases>section::after{
+  content:""!important;
+  position:absolute!important;
+  width:46px!important;
+  height:2px!important;
+  top:0!important;
+  inset-inline-start:14px!important;
+  background:linear-gradient(90deg,#35d69a,#d9ad4b)!important;
+}
+
+.ai-digital-center .ai-case-top b{
+  color:#183f33!important;
+  font-size:11px!important;
+  line-height:16px!important;
+}
+
+.ai-digital-center .ai-case-top span{
+  padding:4px 8px!important;
+  font-size:8px!important;
+  line-height:13px!important;
+}
+
+.ai-digital-center .ai-intent-cases blockquote{
+  margin:10px 0!important;
+  padding:9px 11px!important;
+  border-inline-start:3px solid #d9ad4b!important;
+  border-radius:8px!important;
+  background:linear-gradient(90deg,#fbf5e6,#f8fbf9)!important;
+  color:#435b52!important;
+  font-size:10px!important;
+  line-height:1.55!important;
+}
+
+.ai-digital-center .ai-case-grid{
+  gap:8px!important;
+}
+
+.ai-digital-center .ai-case-grid>div{
+  min-height:61px!important;
+  padding:9px 10px!important;
+  border-radius:9px!important;
+  border:1px solid #e0e8e4!important;
+  background:#fff!important;
+}
+
+.ai-digital-center .ai-case-grid small{
+  color:#819088!important;
+  font-size:8px!important;
+  line-height:13px!important;
+  margin-bottom:4px!important;
+}
+
+.ai-digital-center .ai-case-grid b{
+  color:#153d31!important;
+  font-size:9.5px!important;
+  line-height:15px!important;
+}
+
+/* ---------------- DARK SECURE GUARDRAILS ---------------- */
+
+.ai-digital-center .ai-guardrails{
+  position:sticky!important;
+  top:96px!important;
+  color:#fff!important;
+  border-color:rgba(94,211,174,.15)!important;
+  background:
+    linear-gradient(rgba(53,214,154,.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(53,214,154,.03) 1px,transparent 1px),
+    linear-gradient(160deg,#061f19,#09382d)!important;
+  background-size:24px 24px,24px 24px,auto!important;
+}
+
+.ai-digital-center .ai-guardrails::before{
+  background:linear-gradient(180deg,#d9ad4b,rgba(217,173,75,0))!important;
+}
+
+.ai-digital-center .ai-guardrails>header{
+  background:rgba(255,255,255,.025)!important;
+  border-bottom-color:rgba(255,255,255,.08)!important;
+}
+
+.ai-digital-center .ai-guardrails>header>.admin-svg-icon{
+  background:rgba(217,173,75,.13)!important;
+  border-color:rgba(217,173,75,.18)!important;
+  color:#f4d98f!important;
+}
+
+.ai-digital-center .ai-guardrails>header h2,
+.ai-digital-center .ai-guardrails>header h3{
+  color:#fff!important;
+}
+
+.ai-digital-center .ai-guardrails>header p{
+  color:#9fc0b4!important;
+}
+
+.ai-digital-center .ai-guard-list{
+  padding:12px!important;
+  gap:8px!important;
+}
+
+.ai-digital-center .ai-guard-list>div{
+  padding:10px!important;
+  border-radius:10px!important;
+  border:1px solid rgba(91,210,174,.12)!important;
+  background:rgba(255,255,255,.035)!important;
+}
+
+.ai-digital-center .ai-guard-list .admin-svg-icon{
+  width:31px!important;height:31px!important;min-width:31px!important;max-width:31px!important;
+  background:rgba(53,214,154,.10)!important;
+  color:#82e8c2!important;
+}
+
+.ai-digital-center .ai-guard-list b{
+  color:#edf9f5!important;
+  font-size:9.5px!important;
+  line-height:15px!important;
+}
+
+.ai-digital-center .ai-guard-list p{
+  color:#9cb9af!important;
+  font-size:8px!important;
+  line-height:14px!important;
+}
+
+.ai-digital-center .ai-guard-list>div>span:not(.admin-svg-icon){
+  padding:4px 7px!important;
+  background:rgba(53,214,154,.12)!important;
+  color:#8df0ca!important;
+  border:1px solid rgba(53,214,154,.10)!important;
+  font-size:7.5px!important;
+}
+
+.ai-digital-center .ai-guardrails>footer{
+  padding:12px!important;
+  border-top-color:rgba(255,255,255,.07)!important;
+  background:rgba(255,255,255,.025)!important;
+}
+
+.ai-digital-center .ai-guardrails>footer span{
+  color:#afc9c0!important;
+  font-size:9px!important;
+}
+
+.ai-digital-center .ai-guardrails>footer strong{
+  color:#70e4b7!important;
+  font-size:17px!important;
+}
+
+/* ---------------- TELEMETRY / SENSOR TILES ---------------- */
+
+.ai-digital-center .ai-telemetry-grid{
+  gap:14px!important;
+  margin-bottom:16px!important;
+}
+
+.ai-digital-center .ai-bars{
+  padding:15px!important;
+  gap:12px!important;
+}
+
+.ai-digital-center .ai-bars span{
+  color:#455f55!important;
+  font-size:9px!important;
+}
+
+.ai-digital-center .ai-bars b{
+  color:#0c563f!important;
+  font-size:10px!important;
+}
+
+.ai-digital-center .ai-bars i{
+  height:8px!important;
+  background:#edf2ef!important;
+}
+
+.ai-digital-center .ai-bars u{
+  background:linear-gradient(90deg,#0b4f3e,#35d69a 60%,#d9ad4b)!important;
+  box-shadow:0 0 10px rgba(53,214,154,.12)!important;
+}
+
+.ai-digital-center .ai-verification{
+  min-height:110px!important;
+  padding:18px!important;
+}
+
+.ai-digital-center .ai-verification>.admin-svg-icon{
+  width:48px!important;height:48px!important;min-width:48px!important;max-width:48px!important;
+  background:#e7f6ef!important;color:#0b694e!important;
+  box-shadow:0 0 0 6px rgba(53,214,154,.055)!important;
+}
+
+.ai-digital-center .ai-verification b{
+  color:#163e32!important;
+  font-size:11px!important;
+}
+
+.ai-digital-center .ai-verification p{
+  color:#77887f!important;
+  font-size:9px!important;
+  line-height:15px!important;
+}
+
+.ai-digital-center .ai-sensor-grid{
+  padding:14px!important;
+  gap:8px!important;
+}
+
+.ai-digital-center .ai-sensor-grid>div{
+  min-height:75px!important;
+  padding:11px 8px!important;
+  border-radius:9px!important;
+  background:
+    linear-gradient(180deg,#fbfdfc,#f5faf7)!important;
+}
+
+.ai-digital-center .ai-sensor-grid small{
+  color:#76867e!important;
+  font-size:8px!important;
+  line-height:13px!important;
+}
+
+.ai-digital-center .ai-sensor-grid b{
+  color:#0b4f3e!important;
+  font-size:12px!important;
+  line-height:16px!important;
+}
+
+/* ---------------- LIVE INFERENCE STREAM / TERMINAL ---------------- */
+
+.ai-digital-center .ai-stream-card{
+  margin-bottom:16px!important;
+  border-color:rgba(78,222,163,.14)!important;
+  background:linear-gradient(180deg,#071f19,#0a3027)!important;
+}
+
+.ai-digital-center .ai-stream-card::before{
+  background:linear-gradient(180deg,#35d69a,rgba(53,214,154,0))!important;
+}
+
+.ai-digital-center .ai-stream-card>header{
+  background:rgba(255,255,255,.025)!important;
+  border-bottom-color:rgba(255,255,255,.07)!important;
+}
+
+.ai-digital-center .ai-stream-card>header>.admin-svg-icon{
+  background:rgba(53,214,154,.10)!important;
+  border-color:rgba(53,214,154,.13)!important;
+  color:#7de7bd!important;
+}
+
+.ai-digital-center .ai-stream-card>header h2{
+  color:#fff!important;
+}
+
+.ai-digital-center .ai-stream-card>header p{
+  color:#9cbcb1!important;
+}
+
+.ai-digital-center .ai-table-wrap{
+  overflow:auto!important;
+}
+
+.ai-digital-center .ai-table-wrap th,
+.ai-digital-center .ai-table-wrap td{
+  padding:11px 13px!important;
+  border-bottom:1px solid rgba(255,255,255,.055)!important;
+  color:#b7cec5!important;
+  font-size:9px!important;
+  line-height:14px!important;
+}
+
+.ai-digital-center .ai-table-wrap th{
+  position:sticky!important;
+  top:0!important;
+  background:#0a2d24!important;
+  color:#70dcb3!important;
+  font-size:8.5px!important;
+  letter-spacing:.3px!important;
+}
+
+.ai-digital-center .ai-table-status{
+  padding:4px 8px!important;
+  background:rgba(53,214,154,.12)!important;
+  color:#82e9c2!important;
+  border:1px solid rgba(53,214,154,.10)!important;
+  font-size:8px!important;
+}
+
+/* ---------------- QUERY SIMULATOR / CONSOLE ---------------- */
+
+.ai-digital-center .ai-simulator{
+  margin-bottom:18px!important;
+  border-color:rgba(217,173,75,.22)!important;
+  background:
+    radial-gradient(circle at 92% 0%,rgba(217,173,75,.10),transparent 25%),
+    linear-gradient(180deg,#fff,#fbfcfb)!important;
+}
+
+.ai-digital-center .ai-simulator::before{
+  background:linear-gradient(180deg,#d9ad4b,rgba(217,173,75,0))!important;
+}
+
+.ai-digital-center .ai-simulator form{
+  padding:15px!important;
+  gap:10px!important;
+}
+
+.ai-digital-center .ai-simulator textarea{
+  min-height:105px!important;
+  border-radius:10px!important;
+  border:1px solid #cfded7!important;
+  background:
+    linear-gradient(rgba(11,79,62,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(11,79,62,.025) 1px,transparent 1px),
+    #fbfdfc!important;
+  background-size:22px 22px!important;
+  color:#153d31!important;
+  font-size:10px!important;
+  line-height:1.6!important;
+}
+
+.ai-digital-center .ai-primary-btn{
+  min-width:165px!important;
+  min-height:44px!important;
+  border-radius:10px!important;
+  background:linear-gradient(180deg,#0c5d47,#083c31)!important;
+  color:#fff!important;
+  border:1px solid #0c5d47!important;
+  font-size:10px!important;
+  box-shadow:0 8px 20px rgba(8,60,49,.13)!important;
+}
+
+.ai-digital-center .ai-sim-result{
+  margin:0 15px 15px!important;
+  padding:11px!important;
+  gap:8px!important;
+  border-radius:11px!important;
+  background:#f5f8f6!important;
+  border:1px solid #dce6e1!important;
+}
+
+.ai-digital-center .ai-sim-result>div{
+  min-height:60px!important;
+  padding:9px 10px!important;
+  border-radius:8px!important;
+}
+
+.ai-digital-center .ai-sim-result small{
+  font-size:8px!important;
+  line-height:13px!important;
+}
+
+.ai-digital-center .ai-sim-result b{
+  font-size:10px!important;
+  line-height:15px!important;
+}
+
+.ai-digital-center .ai-sim-result p{
+  font-size:9px!important;
+  line-height:1.55!important;
+}
+
+/* ---------------- RESPONSIVE ---------------- */
+
+@media(max-width:1180px){
+  .ai-digital-center .ai-main-grid{
+    grid-template-columns:1fr!important;
+  }
+  .ai-digital-center .ai-guardrails{
+    position:static!important;
+  }
+}
+
+@media(max-width:900px){
+  .ai-digital-center .ai-hero{
+    min-height:auto!important;
+    padding:20px!important;
+  }
+  .ai-digital-center .ai-hero h1{
+    font-size:28px!important;
+  }
+  .ai-digital-center .ai-hero-actions{
+    width:100%!important;
+  }
+  .ai-digital-center .ai-clock,
+  .ai-digital-center .ai-luxury-btn{
+    width:100%!important;
+  }
+}
+
+@media(max-width:760px){
+  .ai-digital-center .ai-hero{
+    border-radius:14px!important;
+    padding:17px!important;
+  }
+  .ai-digital-center .ai-hero h1{
+    font-size:24px!important;
+  }
+  .ai-digital-center .ai-hero p{
+    font-size:10px!important;
+  }
+  .ai-digital-center .ai-kpis article{
+    min-height:126px!important;
+  }
+  .ai-digital-center .ai-card>header h2{
+    font-size:15px!important;
+  }
+  .ai-digital-center .ai-card>header h3{
+    font-size:13px!important;
+  }
+}
+
+
+/* =========================================================
+   v193 — AI Center Font Readability Upgrade
+   Larger, clearer typography without changing layout/theme.
+   ========================================================= */
+
+/* Hero */
+.ai-digital-center .ai-live-chip{
+  font-size:11px!important;
+  line-height:17px!important;
+}
+.ai-digital-center .ai-hero h1{
+  font-size:36px!important;
+  line-height:1.1!important;
+}
+.ai-digital-center .ai-hero p{
+  font-size:13px!important;
+  line-height:1.7!important;
+}
+.ai-digital-center .ai-clock small{
+  font-size:10px!important;
+}
+.ai-digital-center .ai-clock b{
+  font-size:18px!important;
+}
+.ai-digital-center .ai-luxury-btn{
+  font-size:11.5px!important;
+}
+
+/* KPI cards */
+.ai-digital-center .ai-kpis article>div:first-child small{
+  font-size:10.5px!important;
+  line-height:15px!important;
+}
+.ai-digital-center .ai-kpis strong{
+  font-size:29px!important;
+  line-height:33px!important;
+}
+.ai-digital-center .ai-kpis strong em{
+  font-size:13px!important;
+}
+.ai-digital-center .ai-kpis span{
+  font-size:9.5px!important;
+  line-height:15px!important;
+}
+.ai-digital-center .ai-kpis p{
+  font-size:9.5px!important;
+  line-height:1.55!important;
+}
+
+/* Card headers */
+.ai-digital-center .ai-card>header h2{
+  font-size:18px!important;
+  line-height:24px!important;
+}
+.ai-digital-center .ai-card>header h3{
+  font-size:15px!important;
+  line-height:21px!important;
+}
+.ai-digital-center .ai-card>header p{
+  font-size:10.5px!important;
+  line-height:16px!important;
+}
+.ai-digital-center .ai-card>header>span:not(.admin-svg-icon){
+  font-size:10px!important;
+}
+
+/* Intent Engine */
+.ai-digital-center .ai-case-top b{
+  font-size:12px!important;
+  line-height:17px!important;
+}
+.ai-digital-center .ai-case-top span{
+  font-size:9px!important;
+}
+.ai-digital-center .ai-intent-cases blockquote{
+  font-size:11px!important;
+  line-height:1.6!important;
+}
+.ai-digital-center .ai-case-grid small{
+  font-size:9px!important;
+  line-height:14px!important;
+}
+.ai-digital-center .ai-case-grid b{
+  font-size:10.5px!important;
+  line-height:16px!important;
+}
+
+/* Guardrails */
+.ai-digital-center .ai-guard-list b{
+  font-size:11px!important;
+  line-height:16px!important;
+}
+.ai-digital-center .ai-guard-list p{
+  font-size:9.5px!important;
+  line-height:15px!important;
+}
+.ai-digital-center .ai-guard-list>div>span:not(.admin-svg-icon){
+  font-size:8.5px!important;
+}
+.ai-digital-center .ai-guardrails>footer span{
+  font-size:10px!important;
+}
+.ai-digital-center .ai-guardrails>footer strong{
+  font-size:18px!important;
+}
+
+/* Telemetry */
+.ai-digital-center .ai-bars span{
+  font-size:10.5px!important;
+}
+.ai-digital-center .ai-bars b{
+  font-size:11px!important;
+}
+.ai-digital-center .ai-verification b{
+  font-size:12px!important;
+}
+.ai-digital-center .ai-verification p{
+  font-size:10px!important;
+  line-height:16px!important;
+}
+.ai-digital-center .ai-sensor-grid small{
+  font-size:9.5px!important;
+  line-height:14px!important;
+}
+.ai-digital-center .ai-sensor-grid b{
+  font-size:13px!important;
+  line-height:17px!important;
+}
+
+/* Live Inference Stream — priority readability */
+.ai-digital-center .ai-table-wrap th,
+.ai-digital-center .ai-table-wrap td{
+  font-size:10.5px!important;
+  line-height:16px!important;
+  padding:12px 14px!important;
+}
+.ai-digital-center .ai-table-wrap th{
+  font-size:10px!important;
+  line-height:15px!important;
+  font-weight:750!important;
+}
+.ai-digital-center .ai-table-wrap td{
+  font-weight:520!important;
+}
+.ai-digital-center .ai-table-status{
+  font-size:9px!important;
+  line-height:14px!important;
+  font-weight:700!important;
+}
+
+/* Simulator */
+.ai-digital-center .ai-simulator textarea{
+  font-size:11.5px!important;
+  line-height:1.65!important;
+}
+.ai-digital-center .ai-primary-btn{
+  font-size:11px!important;
+}
+.ai-digital-center .ai-sim-result small{
+  font-size:9.5px!important;
+  line-height:14px!important;
+}
+.ai-digital-center .ai-sim-result b{
+  font-size:11px!important;
+  line-height:16px!important;
+}
+.ai-digital-center .ai-sim-result p{
+  font-size:10px!important;
+  line-height:1.6!important;
+}
+
+/* General small text inside AI Center */
+.ai-digital-center small{
+  letter-spacing:0!important;
+}
+
+/* Mobile balance */
+@media(max-width:760px){
+  .ai-digital-center .ai-hero h1{
+    font-size:27px!important;
+  }
+  .ai-digital-center .ai-hero p{
+    font-size:11px!important;
+  }
+  .ai-digital-center .ai-card>header h2{
+    font-size:16px!important;
+  }
+  .ai-digital-center .ai-card>header h3{
+    font-size:14px!important;
+  }
+  .ai-digital-center .ai-table-wrap th,
+  .ai-digital-center .ai-table-wrap td{
+    font-size:10px!important;
+  }
+}
+
+
+/* =========================================================
+   v194 — FULL APPLICATION TYPOGRAPHY NORMALIZATION
+   Goal: clear, prominent, readable text across Admin + Customer.
+   Layout/functionality are intentionally unchanged.
+   ========================================================= */
+
+:root{
+  --app-type-micro:10px;
+  --app-type-xs:11px;
+  --app-type-sm:12px;
+  --app-type-base:13px;
+  --app-type-md:14px;
+  --app-type-lg:16px;
+  --app-type-xl:20px;
+  --app-type-2xl:26px;
+  --app-line-tight:1.25;
+  --app-line-normal:1.5;
+}
+
+/* ---------------------------------------------------------
+   Shared font rendering
+   --------------------------------------------------------- */
+body,
+button,
+input,
+select,
+textarea{
+  -webkit-font-smoothing:antialiased!important;
+  -moz-osx-font-smoothing:grayscale!important;
+  text-rendering:optimizeLegibility!important;
+}
+
+button,
+input,
+select,
+textarea{
+  font-family:inherit!important;
+}
+
+/* =========================================================
+   ADMIN PORTAL — GLOBAL READABILITY BASELINE
+   ========================================================= */
+
+.reference-admin{
+  font-size:var(--app-type-base)!important;
+  line-height:var(--app-line-normal)!important;
+}
+
+.reference-admin-content{
+  font-size:var(--app-type-base)!important;
+  line-height:var(--app-line-normal)!important;
+}
+
+/* No tiny generic helper text inside admin */
+.reference-admin-content small{
+  font-size:10.5px!important;
+  line-height:1.45!important;
+}
+
+.reference-admin-content p{
+  font-size:11.5px!important;
+  line-height:1.55!important;
+}
+
+.reference-admin-content label{
+  font-size:11.5px!important;
+  line-height:1.45!important;
+  font-weight:600!important;
+}
+
+.reference-admin-content button{
+  font-size:11.5px!important;
+  line-height:1.35!important;
+  font-weight:650!important;
+}
+
+.reference-admin-content input,
+.reference-admin-content select,
+.reference-admin-content textarea{
+  font-size:12.5px!important;
+  line-height:1.45!important;
+}
+
+/* Admin title hierarchy */
+.reference-admin-content h1{
+  font-size:clamp(28px,2.2vw,36px)!important;
+  line-height:1.12!important;
+  font-weight:760!important;
+}
+
+.reference-admin-content h2{
+  font-size:18px!important;
+  line-height:1.3!important;
+  font-weight:740!important;
+}
+
+.reference-admin-content h3{
+  font-size:15px!important;
+  line-height:1.35!important;
+  font-weight:700!important;
+}
+
+/* Sidebar */
+.stitch-shell-v186 .reference-brand b{
+  font-size:17px!important;
+  line-height:22px!important;
+  font-weight:760!important;
+}
+
+.stitch-shell-v186 .reference-brand small{
+  font-size:10.5px!important;
+  line-height:14px!important;
+  font-weight:650!important;
+}
+
+.stitch-shell-v186 .reference-market-card b{
+  font-size:12.5px!important;
+  line-height:17px!important;
+}
+
+.stitch-shell-v186 .reference-market-card small{
+  font-size:10px!important;
+  line-height:14px!important;
+}
+
+.stitch-shell-v186 .reference-nav button{
+  font-size:14px!important;
+  line-height:20px!important;
+  font-weight:520!important;
+}
+
+.stitch-shell-v186 .reference-nav button.active{
+  font-weight:700!important;
+}
+
+.stitch-shell-v186 .reference-nav button>b{
+  font-size:10.5px!important;
+}
+
+.stitch-shell-v186 .reference-sidebar-foot>button{
+  font-size:11.5px!important;
+  font-weight:650!important;
+}
+
+.stitch-shell-v186 .reference-secure b{
+  font-size:11.5px!important;
+}
+
+.stitch-shell-v186 .reference-secure small{
+  font-size:9.5px!important;
+}
+
+/* Top command bar */
+.executive-global-search input{
+  font-size:12.5px!important;
+}
+
+.stitch-shell-v186 .executive-language-btn{
+  font-size:11.5px!important;
+  font-weight:700!important;
+}
+
+.stitch-shell-v186 .executive-profile-pill b{
+  font-size:11.5px!important;
+  line-height:16px!important;
+}
+
+.stitch-shell-v186 .executive-profile-pill small{
+  font-size:9.5px!important;
+  line-height:13px!important;
+}
+
+.stitch-market-sync,
+.stitch-approved-count{
+  font-size:11.5px!important;
+}
+
+/* Generic admin tables */
+.reference-admin-content table{
+  font-size:11.5px!important;
+}
+
+.reference-admin-content table th{
+  font-size:10.5px!important;
+  line-height:15px!important;
+  font-weight:750!important;
+  letter-spacing:.05px!important;
+}
+
+.reference-admin-content table td{
+  font-size:11.5px!important;
+  line-height:16px!important;
+}
+
+/* Generic badges/status */
+.reference-admin-content .admin-status-pill,
+.reference-admin-content [class*="status"],
+.reference-admin-content [class*="badge"],
+.reference-admin-content [class*="chip"]{
+  font-size:9.5px!important;
+  line-height:14px!important;
+}
+
+/* Keep key numerical values prominent */
+.reference-admin-content strong,
+.reference-admin-content .metric-value,
+.reference-admin-content .kpi-value{
+  font-variant-numeric:tabular-nums!important;
+}
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+
+.stitch-live-badge{
+  font-size:11px!important;
+}
+
+.stitch-hero-v186 h1{
+  font-size:31px!important;
+  line-height:1.15!important;
+}
+
+.stitch-hero-v186 p{
+  font-size:12.5px!important;
+  line-height:1.6!important;
+}
+
+.stitch-time-card small{
+  font-size:10px!important;
+}
+
+.stitch-time-card b{
+  font-size:13.5px!important;
+}
+
+.stitch-gold-btn{
+  font-size:11.5px!important;
+}
+
+.stitch-kpi-head>span{
+  font-size:11.5px!important;
+}
+
+.stitch-kpi-grid article>strong{
+  font-size:30px!important;
+  line-height:36px!important;
+}
+
+.stitch-kpi-meta{
+  font-size:10.5px!important;
+}
+
+.stitch-kpi-meta b{
+  font-size:10.5px!important;
+}
+
+.stitch-title-cluster h2{
+  font-size:17px!important;
+}
+
+.stitch-title-cluster p{
+  font-size:10.5px!important;
+}
+
+.stitch-score{
+  font-size:10px!important;
+}
+
+.stitch-stage-grid button>b{
+  font-size:10.5px!important;
+}
+
+.stitch-stage-grid button>strong{
+  font-size:17px!important;
+}
+
+.stitch-chart-head h3{
+  font-size:13.5px!important;
+}
+
+.stitch-chart-head p{
+  font-size:10.5px!important;
+}
+
+.stitch-bars>div>span{
+  font-size:9.5px!important;
+}
+
+.stitch-guard-list p b{
+  font-size:11px!important;
+}
+
+.stitch-guard-list p small{
+  font-size:9.5px!important;
+}
+
+.stitch-route-row b{
+  font-size:11px!important;
+}
+
+.stitch-route-row small{
+  font-size:9.5px!important;
+}
+
+.stitch-mini-metrics span{
+  font-size:9.5px!important;
+}
+
+.stitch-mini-metrics b{
+  font-size:20px!important;
+}
+
+.stitch-stream-table th{
+  font-size:10px!important;
+}
+
+.stitch-stream-table td{
+  font-size:11px!important;
+}
+
+.stitch-customer b{
+  font-size:10.5px!important;
+}
+
+.stitch-customer small{
+  font-size:9px!important;
+}
+
+/* =========================================================
+   SUPPLIERS
+   ========================================================= */
+
+.supplier-kicker{
+  font-size:10.5px!important;
+}
+
+.supplier-hero h1{
+  font-size:29px!important;
+  line-height:1.15!important;
+}
+
+.supplier-hero p{
+  font-size:11.5px!important;
+}
+
+.supplier-kpis article small{
+  font-size:10px!important;
+}
+
+.supplier-kpis article strong{
+  font-size:25px!important;
+}
+
+.supplier-kpis article p{
+  font-size:9.5px!important;
+}
+
+.supplier-controls input,
+.supplier-controls select{
+  font-size:11.5px!important;
+}
+
+.supplier-registry h2{
+  font-size:16px!important;
+}
+
+.supplier-table-wrap table th{
+  font-size:10px!important;
+}
+
+.supplier-table-wrap table td{
+  font-size:11px!important;
+}
+
+.supplier-name b{
+  font-size:11px!important;
+}
+
+.supplier-name small,
+.supplier-type-cell small,
+.supplier-performance small,
+.supplier-supply small{
+  font-size:9.5px!important;
+}
+
+.supplier-type-cell b,
+.supplier-quality b,
+.supplier-performance b,
+.supplier-supply b{
+  font-size:10.5px!important;
+}
+
+.supplier-approval,
+.supplier-status{
+  font-size:9px!important;
+}
+
+/* =========================================================
+   ORDERS & SLAUGHTERHOUSES
+   ========================================================= */
+
+.orders-control-center{
+  font-size:12px!important;
+}
+
+.orders-control-center .reference-page-heading h1,
+.orders-page-heading .orders-page-title{
+  font-size:30px!important;
+  line-height:1.12!important;
+}
+
+.orders-control-center .reference-page-heading p{
+  font-size:11.5px!important;
+}
+
+.orders-control-center .reference-stats small,
+.orders-control-center .ops-summary small,
+.orders-control-center .delivery-summary small{
+  font-size:10px!important;
+}
+
+.orders-control-center .reference-stats b,
+.orders-control-center .ops-summary b,
+.orders-control-center .delivery-summary b{
+  font-size:18px!important;
+}
+
+.orders-zone-head h2{
+  font-size:17px!important;
+}
+
+.orders-zone-head p{
+  font-size:10.5px!important;
+}
+
+.orders-control-center .ops-houses b,
+.orders-control-center .delivery-courier-head b{
+  font-size:11.5px!important;
+}
+
+.orders-control-center .ops-houses small,
+.orders-control-center .delivery-courier-head small,
+.orders-control-center .delivery-courier-meta,
+.orders-control-center .ops-house-stats span,
+.orders-control-center .delivery-courier-stats span{
+  font-size:9.5px!important;
+}
+
+.orders-control-center .reference-order-panel h2{
+  font-size:17px!important;
+}
+
+.orders-control-center .admin-order,
+.orders-control-center .admin-order p,
+.orders-control-center .admin-order small{
+  font-size:10.5px!important;
+}
+
+.orders-control-center .admin-order b{
+  font-size:11.5px!important;
+}
+
+/* =========================================================
+   FINANCE
+   ========================================================= */
+
+.finance-kicker{
+  font-size:10.5px!important;
+}
+
+.finance-hero h1{
+  font-size:29px!important;
+  line-height:1.15!important;
+}
+
+.finance-hero p{
+  font-size:11.5px!important;
+}
+
+.finance-kpis article small{
+  font-size:10px!important;
+}
+
+.finance-kpis article strong{
+  font-size:25px!important;
+}
+
+.finance-kpis article p{
+  font-size:9.5px!important;
+}
+
+.finance-tabs button{
+  font-size:11px!important;
+}
+
+.finance-controls input,
+.finance-controls select{
+  font-size:11.5px!important;
+}
+
+.finance-overview-grid h2,
+.finance-ledger h2,
+.finance-settlements h2,
+.finance-recent h2{
+  font-size:16px!important;
+}
+
+.finance-table-wrap table th{
+  font-size:10px!important;
+}
+
+.finance-table-wrap table td{
+  font-size:11px!important;
+}
+
+.finance-customer b,
+.finance-id,
+.finance-paid,
+.finance-outstanding{
+  font-size:10.5px!important;
+}
+
+.finance-customer small,
+.finance-mini-list small,
+.finance-settlement-list small{
+  font-size:9.5px!important;
+}
+
+.finance-status,
+.finance-settlement-status{
+  font-size:9px!important;
+}
+
+/* =========================================================
+   AI CENTER
+   ========================================================= */
+
+/* Keep v193 sizes, but enforce a readable floor */
+.ai-digital-center{
+  font-size:12px!important;
+}
+
+.ai-digital-center small{
+  font-size:9.5px!important;
+  line-height:1.45!important;
+}
+
+.ai-digital-center button{
+  font-size:11px!important;
+}
+
+.ai-digital-center input,
+.ai-digital-center select,
+.ai-digital-center textarea{
+  font-size:11.5px!important;
+}
+
+.ai-digital-center .ai-table-wrap th{
+  font-size:10px!important;
+}
+
+.ai-digital-center .ai-table-wrap td{
+  font-size:10.5px!important;
+}
+
+/* =========================================================
+   WHATSAPP INBOX
+   ========================================================= */
+
+.wa-topbar h1,
+.wa-heading-line h1{
+  font-size:27px!important;
+  line-height:1.15!important;
+}
+
+.wa-topbar p,
+.wa-heading-line p{
+  font-size:11.5px!important;
+}
+
+.wa-filter-row button,
+.wa-mode-toggle button,
+.wa-quick-replies button,
+.wa-mode-actions button{
+  font-size:10.5px!important;
+}
+
+.wa-chat-name b,
+.wa-ops-title,
+.wa-context-title{
+  font-size:12px!important;
+}
+
+.wa-chat-name small,
+.wa-customer-id,
+.wa-tags,
+.wa-product-meta{
+  font-size:9.5px!important;
+}
+
+.wa-bubble{
+  font-size:11.5px!important;
+  line-height:1.55!important;
+}
+
+.wa-day-label{
+  font-size:9.5px!important;
+}
+
+.wa-composer textarea,
+.wa-composer input{
+  font-size:12px!important;
+}
+
+.wa-context-card b,
+.wa-product-card b{
+  font-size:11px!important;
+}
+
+.wa-context-card p,
+.wa-product-card p{
+  font-size:10px!important;
+}
+
+/* =========================================================
+   MARKETING
+   ========================================================= */
+
+.mkt-kicker{
+  font-size:10.5px!important;
+}
+
+.mkt-hero h1{
+  font-size:29px!important;
+  line-height:1.15!important;
+}
+
+.mkt-hero p{
+  font-size:11.5px!important;
+}
+
+.mkt-kpis article small{
+  font-size:10px!important;
+}
+
+.mkt-kpis article strong{
+  font-size:24px!important;
+}
+
+.mkt-section h2,
+.mkt-ai-title h2{
+  font-size:17px!important;
+}
+
+.mkt-section p,
+.mkt-ai-title p{
+  font-size:10.5px!important;
+}
+
+.mkt-campaign-card h3,
+.mkt-copy-card h3{
+  font-size:14px!important;
+}
+
+.mkt-campaign-card small,
+.mkt-copy-card small,
+.mkt-campaign-stats small,
+.mkt-budget small{
+  font-size:9.5px!important;
+}
+
+.mkt-campaign-card p,
+.mkt-copy-card p{
+  font-size:10.5px!important;
+}
+
+.mkt-card-actions button,
+.mkt-ai-controls button{
+  font-size:10.5px!important;
+}
+
+.mkt-coupon-table th{
+  font-size:10px!important;
+}
+
+.mkt-coupon-table td{
+  font-size:11px!important;
+}
+
+/* =========================================================
+   USERS & GOVERNANCE
+   ========================================================= */
+
+.gov-kicker{
+  font-size:10.5px!important;
+}
+
+.gov-hero h1{
+  font-size:29px!important;
+  line-height:1.15!important;
+}
+
+.gov-hero p{
+  font-size:11.5px!important;
+}
+
+.gov-kpis article small{
+  font-size:10px!important;
+}
+
+.gov-kpis article strong{
+  font-size:24px!important;
+}
+
+.gov-tabs button{
+  font-size:11px!important;
+}
+
+.gov-toolbar input,
+.gov-toolbar select,
+.gov-filters input,
+.gov-filters select{
+  font-size:11.5px!important;
+}
+
+.gov-table-wrap table th,
+.gov-rbac-table-wrap table th{
+  font-size:10px!important;
+}
+
+.gov-table-wrap table td,
+.gov-rbac-table-wrap table td{
+  font-size:11px!important;
+}
+
+.gov-user b,
+.matrix-user-head b{
+  font-size:11px!important;
+}
+
+.gov-user small,
+.matrix-user-head small,
+.gov-role,
+.gov-account-status,
+.gov-mfa,
+.matrix-perm{
+  font-size:9.5px!important;
+}
+
+.gov-security-bar b,
+.gov-session b{
+  font-size:11px!important;
+}
+
+.gov-security-bar small,
+.gov-session small{
+  font-size:9.5px!important;
+}
+
+/* =========================================================
+   AUDIT LOG
+   ========================================================= */
+
+.audit-kicker{
+  font-size:10.5px!important;
+}
+
+.audit-hero h1{
+  font-size:29px!important;
+  line-height:1.15!important;
+}
+
+.audit-hero p{
+  font-size:11.5px!important;
+}
+
+.audit-kpis article small{
+  font-size:10px!important;
+}
+
+.audit-kpis article strong{
+  font-size:24px!important;
+}
+
+.audit-controls input,
+.audit-controls select{
+  font-size:11.5px!important;
+}
+
+.audit-table-wrap table th{
+  font-size:10px!important;
+}
+
+.audit-table-wrap table td{
+  font-size:11px!important;
+}
+
+.audit-event-type{
+  font-size:10.5px!important;
+}
+
+.audit-severity{
+  font-size:9px!important;
+}
+
+.audit-stream small,
+.audit-detail-grid small{
+  font-size:9.5px!important;
+}
+
+.audit-stream b,
+.audit-detail-grid b{
+  font-size:11px!important;
+}
+
+/* =========================================================
+   ADMIN LOGIN / AUTH
+   ========================================================= */
+
+.admin-login,
+.unified-admin-gate{
+  font-size:13px!important;
+}
+
+.admin-login h1,
+.unified-admin-gate h1{
+  font-size:30px!important;
+}
+
+.admin-login p,
+.unified-admin-gate p{
+  font-size:12px!important;
+  line-height:1.6!important;
+}
+
+.admin-login label,
+.unified-admin-gate label{
+  font-size:12px!important;
+}
+
+.admin-login input,
+.unified-admin-gate input{
+  font-size:13px!important;
+}
+
+.admin-login button,
+.unified-admin-gate button{
+  font-size:12px!important;
+}
+
+/* =========================================================
+   CUSTOMER / PUBLIC APP — READABILITY BASELINE
+   ========================================================= */
+
+.app-shell:not(.admin-shell){
+  font-size:14px!important;
+  line-height:1.5!important;
+}
+
+.app-shell:not(.admin-shell) p{
+  font-size:12.5px!important;
+  line-height:1.6!important;
+}
+
+.app-shell:not(.admin-shell) small{
+  font-size:10.5px!important;
+  line-height:1.45!important;
+}
+
+.app-shell:not(.admin-shell) label{
+  font-size:12px!important;
+  line-height:1.45!important;
+  font-weight:600!important;
+}
+
+.app-shell:not(.admin-shell) button,
+.app-shell:not(.admin-shell) input,
+.app-shell:not(.admin-shell) select,
+.app-shell:not(.admin-shell) textarea{
+  font-size:12.5px!important;
+}
+
+/* Public/customer main headings */
+.customer-page-head h1,
+.page-head h1,
+.district-title h1,
+.signed-customer-hero h1,
+.customer-auth-card h1,
+.premium-account-card h1{
+  font-size:clamp(25px,4vw,34px)!important;
+  line-height:1.15!important;
+}
+
+/* Header */
+.ref-customer-header .customer-logo b{
+  font-size:14px!important;
+}
+
+.ref-customer-header .customer-logo small{
+  font-size:10px!important;
+}
+
+.ref-location-copy small{
+  font-size:9.5px!important;
+}
+
+.ref-location-copy b{
+  font-size:11px!important;
+}
+
+/* Announcement/trust strip */
+.announcement p{
+  font-size:10.5px!important;
+}
+
+.announcement b{
+  font-size:10px!important;
+}
+
+/* Product cards */
+.product-card .product-title,
+.premium-product-card .product-title,
+.clean-retail-card .product-title,
+.product-card h3{
+  font-size:14px!important;
+  line-height:1.35!important;
+  font-weight:700!important;
+}
+
+.product-card p,
+.premium-product-card p,
+.clean-retail-card p{
+  font-size:11px!important;
+}
+
+.product-card small,
+.premium-product-card small,
+.clean-retail-card small{
+  font-size:10px!important;
+}
+
+.product-card .price,
+.premium-product-card .price,
+.ref-product-price{
+  font-size:17px!important;
+  font-weight:750!important;
+}
+
+/* Product detail */
+.ref-product-breadcrumbs,
+.ref-product-subtitle,
+.ref-product-description,
+.ref-product-specs,
+.ref-service-note{
+  font-size:11.5px!important;
+  line-height:1.6!important;
+}
+
+.ref-product-summary h1,
+.ref-product-main h1{
+  font-size:clamp(25px,3.4vw,34px)!important;
+}
+
+.ref-config-row label,
+.ref-part-title,
+.ref-part-copy{
+  font-size:11.5px!important;
+}
+
+/* Cart / checkout */
+.advanced-cart-head h2,
+.cart-sheet h2,
+.cart-summary h2{
+  font-size:20px!important;
+}
+
+.advanced-cart-item,
+.cart-item-title{
+  font-size:12px!important;
+}
+
+.advanced-cart-item small,
+.cart-summary small,
+.cart-trust-row{
+  font-size:10.5px!important;
+}
+
+.cart-summary b,
+.advanced-cart-checkout b{
+  font-size:13px!important;
+}
+
+/* Customer account / tracking */
+.account-card h2,
+.customer-track-hero h2,
+.customer-support-head h2{
+  font-size:20px!important;
+}
+
+.customer-track-facts,
+.customer-track-items,
+.customer-track-timeline,
+.customer-profile-form,
+.customer-invoice-lines,
+.customer-invoice-meta,
+.customer-invoice-totals{
+  font-size:11.5px!important;
+}
+
+.customer-track-step small,
+.customer-invoice-note,
+.customer-support-copy{
+  font-size:10.5px!important;
+}
+
+/* Login / signup */
+.simple-auth-form h1,
+.simple-auth-login h1,
+.customer-auth-card h1{
+  font-size:28px!important;
+}
+
+.simple-auth-form p,
+.simple-auth-login p,
+.customer-auth-card p{
+  font-size:12px!important;
+}
+
+.simple-auth-form label,
+.simple-auth-login label,
+.customer-auth-card label{
+  font-size:12px!important;
+}
+
+.simple-auth-form input,
+.simple-auth-login input,
+.customer-auth-card input{
+  font-size:13px!important;
+}
+
+/* Standards / informational modal */
+.standard-detail-heading h2,
+.standard-copy h3{
+  font-size:20px!important;
+}
+
+.standard-article-lead,
+.standard-mini-articles,
+.standard-confidence-note,
+.standard-verified{
+  font-size:11.5px!important;
+  line-height:1.6!important;
+}
+
+.standard-kicker,
+.standards-eyebrow,
+.standards-certified-pill{
+  font-size:10px!important;
+}
+
+/* Footer */
+.customer-mega-footer{
+  font-size:12px!important;
+}
+
+.customer-mega-footer h3,
+.mega-footer-brand b{
+  font-size:14px!important;
+}
+
+.customer-mega-footer p,
+.customer-mega-footer a,
+.mega-footer-contact,
+.mega-footer-registration{
+  font-size:11px!important;
+  line-height:1.55!important;
+}
+
+.customer-mega-footer small{
+  font-size:10px!important;
+}
+
+/* =========================================================
+   MOBILE TYPOGRAPHY BALANCE
+   ========================================================= */
+
+@media(max-width:900px){
+  .reference-admin-content{
+    font-size:12.5px!important;
+  }
+
+  .reference-admin-content h1{
+    font-size:27px!important;
+  }
+
+  .reference-admin-content h2{
+    font-size:17px!important;
+  }
+
+  .reference-admin-content table th{
+    font-size:10px!important;
+  }
+
+  .reference-admin-content table td{
+    font-size:11px!important;
+  }
+
+  .app-shell:not(.admin-shell){
+    font-size:13px!important;
+  }
+
+  .app-shell:not(.admin-shell) p{
+    font-size:12px!important;
+  }
+
+  .app-shell:not(.admin-shell) small{
+    font-size:10px!important;
+  }
+
+  .app-shell:not(.admin-shell) button,
+  .app-shell:not(.admin-shell) input,
+  .app-shell:not(.admin-shell) select,
+  .app-shell:not(.admin-shell) textarea{
+    font-size:12px!important;
+  }
+}
+
+@media(max-width:520px){
+  .reference-admin-content h1{
+    font-size:24px!important;
+  }
+
+  .reference-admin-content h2{
+    font-size:16px!important;
+  }
+
+  .reference-admin-content p{
+    font-size:11px!important;
+  }
+
+  .app-shell:not(.admin-shell) p{
+    font-size:11.5px!important;
+  }
+
+  .app-shell:not(.admin-shell) label{
+    font-size:11.5px!important;
+  }
+}
+
+
+/* =========================================================
+   v196 — ADMIN RTL / ARABIC DESKTOP LAYOUT FIX
+   Removes legacy double sidebar offset.
+   The Stitch grid alone reserves the 288px sidebar space.
+   ========================================================= */
+
+@media (min-width:1101px){
+
+  /* Critical: old v166 rules added 300px physical padding.
+     v186+ already reserves a 288px grid column, so the old
+     padding created a second empty sidebar-sized strip. */
+  html[dir="ltr"] .reference-admin.stitch-shell-v186,
+  html[dir="rtl"] .reference-admin.stitch-shell-v186{
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:0!important;
+    box-sizing:border-box!important;
+  }
+
+  /* LTR: fixed sidebar on left, workspace in grid column 2 */
+  html[dir="ltr"] .reference-admin.stitch-shell-v186{
+    grid-template-columns:288px minmax(0,1fr)!important;
+  }
+
+  /* RTL: fixed sidebar on right, workspace in grid column 1 */
+  html[dir="rtl"] .reference-admin.stitch-shell-v186{
+    grid-template-columns:minmax(0,1fr) 288px!important;
+  }
+
+  html[dir="rtl"] .stitch-shell-v186 .reference-sidebar{
+    right:0!important;
+    left:auto!important;
+    width:288px!important;
+    min-width:288px!important;
+    max-width:288px!important;
+  }
+
+  html[dir="ltr"] .stitch-shell-v186 .reference-sidebar{
+    left:0!important;
+    right:auto!important;
+    width:288px!important;
+    min-width:288px!important;
+    max-width:288px!important;
+  }
+
+  /* Header always fills only the workspace column */
+  html[dir="rtl"] .stitch-shell-v186 .reference-admin-header.executive-command-bar{
+    grid-column:1!important;
+    grid-row:1!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    margin:0!important;
+    inset-inline:0!important;
+  }
+
+  html[dir="ltr"] .stitch-shell-v186 .reference-admin-header.executive-command-bar{
+    grid-column:2!important;
+    grid-row:1!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    margin:0!important;
+    inset-inline:0!important;
+  }
+
+  /* Main content uses the complete remaining viewport width */
+  html[dir="rtl"] .stitch-shell-v186 .reference-admin-content{
+    grid-column:1!important;
+    grid-row:2!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    margin:0!important;
+    padding-inline:32px!important;
+    box-sizing:border-box!important;
+  }
+
+  html[dir="ltr"] .stitch-shell-v186 .reference-admin-content{
+    grid-column:2!important;
+    grid-row:2!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    margin:0!important;
+    padding-inline:32px!important;
+    box-sizing:border-box!important;
+  }
+
+  /* Prevent module roots from retaining an old physical margin/offset */
+  html[dir="rtl"] .stitch-shell-v186 .reference-admin-content > *,
+  html[dir="ltr"] .stitch-shell-v186 .reference-admin-content > *{
+    max-width:100%!important;
+    min-width:0!important;
+    margin-left:0!important;
+    margin-right:0!important;
+    box-sizing:border-box!important;
+  }
+
+  /* WhatsApp workspace: fluid within the corrected RTL/LTR canvas */
+  .stitch-shell-v186 .wa-topbar,
+  .stitch-shell-v186 .wa-grid{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    margin-inline:0!important;
+    box-sizing:border-box!important;
+  }
+
+  html[dir="rtl"] .stitch-shell-v186 .wa-grid{
+    direction:rtl!important;
+  }
+
+  /* Ensure the 3 WhatsApp columns fit the available workspace */
+  .stitch-shell-v186 .wa-grid{
+    grid-template-columns:minmax(220px,280px) minmax(420px,1fr) minmax(220px,285px)!important;
+  }
+}
+
+/* Medium desktop / laptop: keep RTL fluid without horizontal spill */
+@media (min-width:1101px) and (max-width:1399px){
+  html[dir="rtl"] .stitch-shell-v186 .reference-admin-content,
+  html[dir="ltr"] .stitch-shell-v186 .reference-admin-content{
+    padding-inline:20px!important;
+  }
+
+  .stitch-shell-v186 .wa-grid{
+    grid-template-columns:230px minmax(0,1fr) 230px!important;
+  }
+}
+
+/* Absolute horizontal-overflow safety for admin in both directions */
+body:has(.app-shell.admin-shell),
+#app:has(.app-shell.admin-shell),
+.app-shell.admin-shell,
+.app-shell.admin-shell>.screen,
+.reference-admin.stitch-shell-v186{
+  max-width:100vw!important;
+  overflow-x:hidden!important;
+}
+
+
+/* =========================================================
+   v197 — FINAL RTL GRID GEOMETRY FIX
+   Keep desktop grid geometry LTR; apply RTL only to content.
+   This prevents the 288px sidebar track from being reserved
+   on the physical LEFT side in Arabic mode.
+   ========================================================= */
+
+@media (min-width:1101px){
+
+  /* IMPORTANT:
+     CSS Grid line numbering follows direction.
+     The old Arabic rule direction:rtl caused the sidebar track
+     to be physically reserved on the left while the fixed
+     sidebar itself was on the right.
+     Geometry is therefore locked to LTR. */
+  html[dir="rtl"] .reference-admin.stitch-shell-v186{
+    direction:ltr!important;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 288px!important;
+    grid-template-rows:80px minmax(calc(100vh - 80px),auto)!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:0!important;
+    overflow-x:hidden!important;
+  }
+
+  /* Physical right sidebar */
+  html[dir="rtl"] .reference-admin.stitch-shell-v186 .reference-sidebar{
+    position:fixed!important;
+    top:0!important;
+    right:0!important;
+    left:auto!important;
+    bottom:0!important;
+    width:288px!important;
+    min-width:288px!important;
+    max-width:288px!important;
+    height:100vh!important;
+    max-height:100vh!important;
+    direction:rtl!important;
+    text-align:right!important;
+    grid-column:2!important;
+    grid-row:1 / span 2!important;
+  }
+
+  /* Workspace physically occupies everything LEFT of sidebar */
+  html[dir="rtl"] .reference-admin.stitch-shell-v186 .reference-admin-header.executive-command-bar{
+    grid-column:1!important;
+    grid-row:1!important;
+    direction:rtl!important;
+    text-align:right!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    margin:0!important;
+    padding-inline:32px!important;
+    box-sizing:border-box!important;
+  }
+
+  html[dir="rtl"] .reference-admin.stitch-shell-v186 .reference-admin-content{
+    grid-column:1!important;
+    grid-row:2!important;
+    direction:rtl!important;
+    text-align:right!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    margin:0!important;
+    padding-inline:32px!important;
+    box-sizing:border-box!important;
+    overflow-x:hidden!important;
+  }
+
+  /* Every module root must stay inside the workspace track */
+  html[dir="rtl"] .reference-admin.stitch-shell-v186 .reference-admin-content > *{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    margin-left:0!important;
+    margin-right:0!important;
+    box-sizing:border-box!important;
+    direction:rtl!important;
+  }
+
+  /* Dashboard grids: RTL text, stable physical track geometry */
+  html[dir="rtl"] .stitch-dashboard-v186,
+  html[dir="rtl"] .stitch-kpi-grid,
+  html[dir="rtl"] .stitch-middle-grid,
+  html[dir="rtl"] .stitch-three-grid,
+  html[dir="rtl"] .stitch-stream-panel{
+    direction:rtl!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+  }
+
+  /* Orders / Suppliers / Finance / AI / WhatsApp / Marketing /
+     Governance / Audit all use the same corrected canvas. */
+  html[dir="rtl"] .orders-control-center,
+  html[dir="rtl"] .supplier-control-center,
+  html[dir="rtl"] .finance-control-center,
+  html[dir="rtl"] .ai-digital-center,
+  html[dir="rtl"] .wa-topbar,
+  html[dir="rtl"] .wa-grid,
+  html[dir="rtl"] .marketing-control-center,
+  html[dir="rtl"] .governance-control-center,
+  html[dir="rtl"] .audit-control-center{
+    direction:rtl!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    margin-inline:0!important;
+    box-sizing:border-box!important;
+  }
+
+  /* WhatsApp needs explicit physical columns but RTL content */
+  html[dir="rtl"] .wa-grid{
+    grid-template-columns:minmax(220px,285px) minmax(0,1fr) minmax(220px,280px)!important;
+  }
+
+  /* Header actions remain correctly aligned in Arabic */
+  html[dir="rtl"] .reference-admin-header .reference-header-actions,
+  html[dir="rtl"] .reference-admin-header .executive-header-actions{
+    margin-right:0!important;
+    margin-left:auto!important;
+    direction:rtl!important;
+  }
+}
+
+/* Laptop width */
+@media (min-width:1101px) and (max-width:1399px){
+  html[dir="rtl"] .reference-admin.stitch-shell-v186 .reference-admin-header.executive-command-bar,
+  html[dir="rtl"] .reference-admin.stitch-shell-v186 .reference-admin-content{
+    padding-inline:20px!important;
+  }
+
+  html[dir="rtl"] .wa-grid{
+    grid-template-columns:230px minmax(0,1fr) 230px!important;
+  }
+}
+
+
+/* =========================================================
+   v198 — PREMIUM WHATSAPP OPERATIONS WORKSPACE
+   WhatsApp-brand icon + unique digital/premium inbox styling.
+   ========================================================= */
+
+:root{
+  --wa-brand:#25D366;
+  --wa-brand-dark:#075E54;
+  --wa-brand-mid:#128C7E;
+  --wa-brand-soft:#e8fbf1;
+  --wa-ink:#153c31;
+  --wa-muted:#708078;
+  --wa-line:#dbe6e1;
+  --wa-canvas:#f5f8f6;
+  --wa-chat:#f3f0e7;
+  --wa-gold:#d6a83d;
+}
+
+/* ---------- Correct WhatsApp brand mark ---------- */
+
+.whatsapp-brand-icon{
+  color:var(--wa-brand)!important;
+}
+
+.whatsapp-brand-icon svg{
+  width:100%!important;
+  height:100%!important;
+  display:block!important;
+  overflow:visible!important;
+}
+
+.reference-nav button[data-admin-module="whatsapp"] .whatsapp-brand-icon{
+  width:22px!important;
+  height:22px!important;
+  min-width:22px!important;
+  max-width:22px!important;
+}
+
+.reference-nav button[data-admin-module="whatsapp"].active .whatsapp-brand-icon{
+  color:#35e17d!important;
+  filter:drop-shadow(0 0 6px rgba(53,225,125,.24))!important;
+}
+
+/* ---------- Header / command deck ---------- */
+
+.wa-topbar{
+  position:relative!important;
+  overflow:hidden!important;
+  min-height:92px!important;
+  padding:18px 20px!important;
+  border:1px solid rgba(24,140,126,.24)!important;
+  border-radius:18px 18px 0 0!important;
+  color:#fff!important;
+  background:
+    radial-gradient(circle at 84% 0%,rgba(37,211,102,.18),transparent 28%),
+    linear-gradient(115deg,#053a32 0%,#075e54 57%,#0b7064 100%)!important;
+  box-shadow:0 14px 34px rgba(7,94,84,.13)!important;
+}
+
+.wa-topbar::after{
+  content:""!important;
+  position:absolute!important;
+  width:270px!important;
+  height:270px!important;
+  inset-inline-end:-115px!important;
+  top:-165px!important;
+  border-radius:50%!important;
+  border:1px solid rgba(255,255,255,.09)!important;
+  box-shadow:
+    0 0 0 34px rgba(255,255,255,.028),
+    0 0 0 70px rgba(37,211,102,.018)!important;
+  pointer-events:none!important;
+}
+
+.wa-title-group,
+.wa-mode-actions{
+  position:relative!important;
+  z-index:2!important;
+}
+
+.wa-title-group{
+  align-items:center!important;
+  gap:13px!important;
+}
+
+.wa-title-icon{
+  width:48px!important;
+  height:48px!important;
+  flex:0 0 48px!important;
+  border-radius:15px!important;
+  background:rgba(255,255,255,.10)!important;
+  color:var(--wa-brand)!important;
+  border:1px solid rgba(255,255,255,.14)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.11),
+    0 8px 18px rgba(0,0,0,.10)!important;
+}
+
+.wa-title-icon .whatsapp-brand-icon{
+  width:29px!important;
+  height:29px!important;
+  min-width:29px!important;
+  max-width:29px!important;
+  color:#35e17d!important;
+}
+
+.wa-heading-line h1{
+  color:#fff!important;
+  font-size:25px!important;
+  line-height:1.15!important;
+  font-weight:780!important;
+  letter-spacing:-.3px!important;
+}
+
+.wa-title-group p{
+  max-width:760px!important;
+  margin-top:6px!important;
+  color:rgba(235,255,247,.76)!important;
+  font-size:11px!important;
+  line-height:1.55!important;
+}
+
+.wa-api-chip{
+  min-height:27px!important;
+  padding:5px 9px!important;
+  border:1px solid rgba(255,255,255,.14)!important;
+  background:rgba(255,255,255,.10)!important;
+  color:#e9fff4!important;
+  font-size:9px!important;
+  font-weight:750!important;
+  backdrop-filter:blur(8px)!important;
+}
+
+.wa-api-chip i{
+  background:#ffcc6c!important;
+  box-shadow:0 0 0 4px rgba(255,204,108,.10)!important;
+}
+
+.wa-api-chip.connected i{
+  background:#4af59a!important;
+}
+
+.wa-mode-toggle{
+  padding:4px!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+  background:rgba(255,255,255,.08)!important;
+  backdrop-filter:blur(8px)!important;
+}
+
+.wa-mode-toggle button{
+  min-height:36px!important;
+  color:rgba(255,255,255,.78)!important;
+  font-size:10.5px!important;
+}
+
+.wa-mode-toggle button.active{
+  background:#fff!important;
+  color:#075e54!important;
+  box-shadow:0 6px 16px rgba(0,0,0,.12)!important;
+}
+
+.wa-icon-button{
+  width:38px!important;
+  height:38px!important;
+  border-radius:11px!important;
+  border:1px solid rgba(255,255,255,.14)!important;
+  background:rgba(255,255,255,.09)!important;
+  color:#fff!important;
+}
+
+.wa-icon-button:hover{
+  background:rgba(255,255,255,.16)!important;
+}
+
+.wa-new-chat{
+  min-height:38px!important;
+  padding:0 14px!important;
+  border:1px solid rgba(255,255,255,.18)!important;
+  border-radius:11px!important;
+  background:#25d366!important;
+  color:#073a2d!important;
+  font-size:10.5px!important;
+  font-weight:800!important;
+  box-shadow:0 8px 20px rgba(37,211,102,.18)!important;
+}
+
+/* ---------- 3-column workspace ---------- */
+
+.wa-grid{
+  min-height:720px!important;
+  border:1px solid #dbe5e0!important;
+  border-top:0!important;
+  border-radius:0 0 18px 18px!important;
+  background:#fff!important;
+  box-shadow:0 18px 42px rgba(10,65,52,.07)!important;
+}
+
+/* Conversations rail */
+.wa-conversations{
+  background:
+    linear-gradient(180deg,#fbfdfc,#f5f9f7)!important;
+  border-inline-end:1px solid #dfe8e3!important;
+}
+
+.wa-list-tools{
+  padding:13px!important;
+  background:rgba(255,255,255,.96)!important;
+  border-bottom:1px solid #e5ece8!important;
+}
+
+.wa-list-tools>label{
+  height:42px!important;
+  border:1px solid #d8e4de!important;
+  border-radius:12px!important;
+  background:#f9fbfa!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.85)!important;
+}
+
+.wa-list-tools>label:focus-within{
+  border-color:rgba(18,140,126,.55)!important;
+  box-shadow:0 0 0 3px rgba(37,211,102,.08)!important;
+}
+
+.wa-list-tools>label input{
+  font-size:11px!important;
+}
+
+.wa-filter-row{
+  gap:6px!important;
+  margin-top:9px!important;
+}
+
+.wa-filter-row button{
+  min-height:31px!important;
+  padding:0 9px!important;
+  border-radius:9px!important;
+  background:#fff!important;
+  border:1px solid #dfe7e3!important;
+  color:#63766d!important;
+  font-size:9.5px!important;
+  font-weight:650!important;
+}
+
+.wa-filter-row button b{
+  min-width:19px!important;
+  height:19px!important;
+  font-size:8.5px!important;
+}
+
+.wa-filter-row button.active{
+  background:#075e54!important;
+  border-color:#075e54!important;
+  color:#fff!important;
+  box-shadow:0 5px 12px rgba(7,94,84,.12)!important;
+}
+
+.wa-filter-row button.active b{
+  background:#35df82!important;
+  color:#064b3c!important;
+}
+
+.wa-chat-list{
+  padding:9px!important;
+}
+
+.wa-chat-item{
+  position:relative!important;
+  min-height:76px!important;
+  margin-bottom:6px!important;
+  padding:10px!important;
+  grid-template-columns:43px minmax(0,1fr)!important;
+  gap:10px!important;
+  border:1px solid transparent!important;
+  border-radius:13px!important;
+  transition:background .16s ease,border-color .16s ease,transform .16s ease,box-shadow .16s ease!important;
+}
+
+.wa-chat-item:hover{
+  background:#fff!important;
+  border-color:#e0e8e4!important;
+  transform:translateY(-1px)!important;
+}
+
+.wa-chat-item.active{
+  background:linear-gradient(115deg,#fff,#f2fbf6)!important;
+  border-color:rgba(37,211,102,.30)!important;
+  box-shadow:0 8px 18px rgba(10,87,65,.07)!important;
+}
+
+.wa-chat-item.active::before{
+  content:""!important;
+  position:absolute!important;
+  inset-block:10px!important;
+  inset-inline-start:0!important;
+  width:3px!important;
+  border-radius:0 4px 4px 0!important;
+  background:#25d366!important;
+}
+
+html[dir="rtl"] .wa-chat-item.active::before{
+  border-radius:4px 0 0 4px!important;
+}
+
+.wa-avatar{
+  width:41px!important;
+  height:41px!important;
+  min-width:41px!important;
+  border:1px solid #d9e7e0!important;
+  background:linear-gradient(145deg,#e9f8f1,#fff)!important;
+  color:#075e54!important;
+  font-size:13px!important;
+  box-shadow:0 4px 10px rgba(11,85,66,.05)!important;
+}
+
+.wa-avatar i{
+  width:9px!important;
+  height:9px!important;
+  background:#25d366!important;
+  box-shadow:0 0 0 3px rgba(37,211,102,.10)!important;
+}
+
+.wa-chat-name b{
+  color:#173e32!important;
+  font-size:11px!important;
+  font-weight:760!important;
+}
+
+.wa-chat-name small{
+  color:#8a9690!important;
+  font-size:9px!important;
+}
+
+.wa-preview{
+  color:#72827a!important;
+  font-size:9.5px!important;
+  line-height:1.5!important;
+}
+
+.wa-tags{
+  gap:5px!important;
+}
+
+.wa-tags em{
+  min-height:21px!important;
+  padding:0 7px!important;
+  background:#edf4f0!important;
+  color:#5e7469!important;
+  font-size:8px!important;
+}
+
+.wa-tags em.ai{
+  background:#e5f8ef!important;
+  color:#0a6b4e!important;
+}
+
+/* ---------- Active chat / WhatsApp-like canvas ---------- */
+
+.wa-active-chat{
+  position:relative!important;
+  background:#efece4!important;
+}
+
+.wa-chat-header{
+  min-height:72px!important;
+  padding:11px 15px!important;
+  border-bottom:1px solid #dfe7e3!important;
+  background:rgba(255,255,255,.97)!important;
+  box-shadow:0 4px 12px rgba(12,66,53,.035)!important;
+}
+
+.wa-profile h2{
+  color:#153e31!important;
+  font-size:15px!important;
+  font-weight:760!important;
+}
+
+.wa-profile p{
+  color:#788880!important;
+  font-size:9.5px!important;
+}
+
+.wa-chat-header-actions button,
+.wa-chat-header-actions a{
+  width:35px!important;
+  height:35px!important;
+  border-radius:10px!important;
+  border:1px solid #dbe5e0!important;
+  background:#f8faf9!important;
+  color:#31594a!important;
+}
+
+.wa-chat-header-actions button:hover,
+.wa-chat-header-actions a:hover{
+  border-color:#b9d9cb!important;
+  background:#eef9f3!important;
+  color:#075e54!important;
+}
+
+.wa-message-history{
+  position:relative!important;
+  isolation:isolate!important;
+  padding:18px 20px 16px!important;
+  background:
+    radial-gradient(circle at 18% 18%,rgba(255,255,255,.52),transparent 23%),
+    linear-gradient(45deg,rgba(7,94,84,.025) 25%,transparent 25%,transparent 75%,rgba(7,94,84,.025) 75%),
+    linear-gradient(45deg,rgba(7,94,84,.025) 25%,transparent 25%,transparent 75%,rgba(7,94,84,.025) 75%),
+    linear-gradient(180deg,#f5f2eb,#efebe2)!important;
+  background-size:auto,34px 34px,34px 34px,auto!important;
+  background-position:0 0,0 0,17px 17px,0 0!important;
+}
+
+.wa-message-history::after{
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  z-index:-1!important;
+  pointer-events:none!important;
+  background:
+    radial-gradient(circle at 82% 18%,rgba(37,211,102,.035),transparent 20%),
+    radial-gradient(circle at 16% 80%,rgba(214,168,61,.035),transparent 18%)!important;
+}
+
+.wa-day-label{
+  padding:5px 9px!important;
+  border:1px solid rgba(108,126,117,.10)!important;
+  background:rgba(234,239,236,.92)!important;
+  color:#62766c!important;
+  font-size:9px!important;
+  font-weight:700!important;
+  box-shadow:0 2px 6px rgba(0,0,0,.03)!important;
+}
+
+.wa-message-row{
+  margin:9px 0!important;
+}
+
+.wa-bubble{
+  max-width:74%!important;
+  padding:10px 12px 8px!important;
+  border-radius:14px!important;
+  border:1px solid rgba(113,133,123,.14)!important;
+  background:#fff!important;
+  color:#29483c!important;
+  font-size:11px!important;
+  line-height:1.55!important;
+  box-shadow:0 5px 14px rgba(20,56,45,.055)!important;
+}
+
+.wa-message-row.out .wa-bubble,
+.wa-bubble.bot{
+  background:linear-gradient(145deg,#dff7e9,#d4f2e1)!important;
+  border-color:#bee8d1!important;
+}
+
+.wa-bubble.bot::before{
+  color:#0b6c50!important;
+  font-weight:800!important;
+}
+
+.wa-product-card{
+  width:min(440px,86%)!important;
+  border-radius:15px!important;
+  border:1px solid #d8e5df!important;
+  box-shadow:0 12px 28px rgba(10,74,57,.09)!important;
+}
+
+.wa-product-media{
+  height:160px!important;
+}
+
+.wa-product-media span{
+  top:9px!important;
+  inset-inline-start:9px!important;
+  padding:5px 8px!important;
+  background:rgba(255,255,255,.94)!important;
+  color:#075e54!important;
+  font-size:8px!important;
+  box-shadow:0 3px 9px rgba(0,0,0,.06)!important;
+}
+
+.wa-product-body{
+  padding:12px!important;
+}
+
+.wa-product-body h3,
+.wa-product-body b{
+  font-size:12px!important;
+}
+
+.wa-product-body p{
+  font-size:9.5px!important;
+}
+
+.wa-product-meta span{
+  font-size:8px!important;
+  background:#eff5f2!important;
+}
+
+.wa-quick-replies{
+  gap:7px!important;
+  margin-top:12px!important;
+}
+
+.wa-quick-replies button{
+  min-height:32px!important;
+  padding:0 11px!important;
+  border-radius:10px!important;
+  border:1px solid #ccdcd4!important;
+  background:rgba(255,255,255,.92)!important;
+  color:#31564a!important;
+  font-size:9.5px!important;
+  font-weight:700!important;
+  box-shadow:0 3px 8px rgba(0,0,0,.025)!important;
+}
+
+.wa-quick-replies button:hover{
+  background:#e8f8f0!important;
+  border-color:#a8d8c2!important;
+  color:#075e54!important;
+}
+
+/* Composer */
+.wa-composer{
+  min-height:68px!important;
+  padding:10px 12px!important;
+  grid-template-columns:38px minmax(0,1fr) 40px!important;
+  gap:8px!important;
+  background:rgba(255,255,255,.98)!important;
+  box-shadow:0 -5px 16px rgba(11,70,56,.04)!important;
+}
+
+.wa-composer>button:not(.wa-send){
+  width:38px!important;
+  height:38px!important;
+  border-radius:11px!important;
+  background:#f7faf8!important;
+}
+
+.wa-composer textarea{
+  min-height:42px!important;
+  padding:10px 12px!important;
+  border-radius:12px!important;
+  border:1px solid #d6e3dc!important;
+  background:#f9fbfa!important;
+  color:#29483c!important;
+  font-size:11px!important;
+}
+
+.wa-composer textarea:focus{
+  border-color:#a8d9c1!important;
+  box-shadow:0 0 0 3px rgba(37,211,102,.07)!important;
+}
+
+.wa-send{
+  width:40px!important;
+  height:40px!important;
+  border-radius:12px!important;
+  background:linear-gradient(145deg,#128c7e,#075e54)!important;
+  box-shadow:0 7px 16px rgba(7,94,84,.18)!important;
+}
+
+/* ---------- Customer 360 / context rail ---------- */
+
+.wa-context{
+  padding:12px!important;
+  border-inline-start:1px solid #dfe8e3!important;
+  background:linear-gradient(180deg,#f8fbf9,#f4f8f6)!important;
+}
+
+.wa-context-card{
+  position:relative!important;
+  overflow:hidden!important;
+  padding:12px!important;
+  margin-bottom:10px!important;
+  border-radius:14px!important;
+  border:1px solid #dce7e2!important;
+  background:#fff!important;
+  box-shadow:0 5px 15px rgba(10,72,55,.04)!important;
+}
+
+.wa-context-card::before{
+  content:""!important;
+  position:absolute!important;
+  top:0!important;
+  inset-inline-start:0!important;
+  width:46px!important;
+  height:2px!important;
+  background:linear-gradient(90deg,#25d366,#d6a83d)!important;
+}
+
+.wa-context-title{
+  padding-bottom:9px!important;
+}
+
+.wa-context-title>span{
+  color:#1e493a!important;
+  font-size:10px!important;
+  font-weight:800!important;
+}
+
+.wa-context-title>b,
+.wa-context-title>small{
+  padding:5px 8px!important;
+  background:#e9f8f0!important;
+  color:#126a4d!important;
+  font-size:8px!important;
+}
+
+.wa-customer-id{
+  margin:11px 0!important;
+}
+
+.wa-customer-id h3{
+  font-size:13px!important;
+  font-weight:760!important;
+}
+
+.wa-customer-id p{
+  font-size:9px!important;
+}
+
+.wa-mini-stats{
+  gap:8px!important;
+}
+
+.wa-mini-stats>div{
+  min-height:58px!important;
+  padding:9px!important;
+  border-radius:10px!important;
+  background:linear-gradient(145deg,#f6faf8,#eef6f2)!important;
+}
+
+.wa-mini-stats small{
+  font-size:8.5px!important;
+}
+
+.wa-mini-stats b{
+  font-size:11.5px!important;
+}
+
+.wa-context dt,
+.wa-context dd{
+  font-size:9px!important;
+  line-height:1.45!important;
+}
+
+.wa-linked-order h3{
+  font-size:11px!important;
+}
+
+.wa-linked-order p,
+.wa-linked-order small{
+  font-size:9px!important;
+}
+
+.wa-progress{
+  height:7px!important;
+  background:#e8efeb!important;
+}
+
+.wa-progress i{
+  background:linear-gradient(90deg,#128c7e,#25d366 65%,#d6a83d)!important;
+}
+
+/* Quick operations as a clean control stack */
+.wa-ops-title{
+  margin:2px 0 9px!important;
+  color:#153e31!important;
+  font-size:13px!important;
+  font-weight:780!important;
+}
+
+.wa-context-card button[data-wa-op]{
+  min-height:37px!important;
+  margin-top:6px!important;
+  padding:0 10px!important;
+  border-radius:10px!important;
+  border:1px solid #d9e5df!important;
+  background:#fbfdfc!important;
+  color:#294d40!important;
+  font-size:9.5px!important;
+  font-weight:700!important;
+  transition:.15s ease!important;
+}
+
+.wa-context-card button[data-wa-op]:hover{
+  border-color:#b7dac9!important;
+  background:#edf9f3!important;
+  color:#075e54!important;
+  transform:translateX(2px)!important;
+}
+
+html[dir="rtl"] .wa-context-card button[data-wa-op]:hover{
+  transform:translateX(-2px)!important;
+}
+
+.wa-open-real{
+  min-height:38px!important;
+  margin-top:8px!important;
+  border-radius:10px!important;
+  background:linear-gradient(145deg,#25d366,#18b957)!important;
+  color:#073a2d!important;
+  font-size:9.5px!important;
+  font-weight:800!important;
+  box-shadow:0 6px 14px rgba(37,211,102,.14)!important;
+}
+
+.wa-open-real .whatsapp-brand-icon{
+  color:#fff!important;
+  width:18px!important;
+  height:18px!important;
+}
+
+/* ---------- Responsive balance ---------- */
+
+@media(max-width:1399px) and (min-width:1101px){
+  .wa-grid{
+    grid-template-columns:240px minmax(0,1fr) 245px!important;
+  }
+
+  .wa-heading-line h1{
+    font-size:22px!important;
+  }
+}
+
+@media(max-width:1100px){
+  .wa-topbar{
+    border-radius:15px!important;
+  }
+
+  .wa-title-icon{
+    width:44px!important;
+    height:44px!important;
+    flex-basis:44px!important;
+  }
+
+  .wa-heading-line h1{
+    font-size:21px!important;
+  }
+}
+
+@media(max-width:760px){
+  .wa-title-group{
+    align-items:flex-start!important;
+  }
+
+  .wa-heading-line h1{
+    font-size:19px!important;
+  }
+
+  .wa-title-group p{
+    font-size:10px!important;
+  }
+
+  .wa-mode-actions{
+    width:100%!important;
+    justify-content:flex-start!important;
+  }
+
+  .wa-new-chat{
+    flex:1 1 auto!important;
+  }
+
+  .wa-product-card{
+    width:min(100%,420px)!important;
+  }
+}
+
+
+/* =========================================================
+   v199 — WhatsApp conversation filter slider
+   Keeps filter labels readable while allowing full access.
+   ========================================================= */
+
+.wa-filter-slider{
+  width:100%!important;
+  min-width:0!important;
+  margin-top:9px!important;
+  display:grid!important;
+  grid-template-columns:28px minmax(0,1fr) 28px!important;
+  align-items:center!important;
+  gap:5px!important;
+  direction:ltr!important;
+}
+
+.wa-filter-slider .wa-filter-row{
+  min-width:0!important;
+  width:100%!important;
+  margin-top:0!important;
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  gap:6px!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  scroll-behavior:smooth!important;
+  scroll-snap-type:x proximity!important;
+  overscroll-behavior-inline:contain!important;
+  scrollbar-width:none!important;
+  -webkit-overflow-scrolling:touch!important;
+  touch-action:pan-x!important;
+  padding:2px 1px!important;
+}
+
+html[dir="rtl"] .wa-filter-slider .wa-filter-row{
+  direction:rtl!important;
+}
+
+html[dir="ltr"] .wa-filter-slider .wa-filter-row{
+  direction:ltr!important;
+}
+
+.wa-filter-slider .wa-filter-row::-webkit-scrollbar{
+  display:none!important;
+}
+
+.wa-filter-slider .wa-filter-row button{
+  flex:0 0 auto!important;
+  min-width:max-content!important;
+  scroll-snap-align:start!important;
+}
+
+.wa-filter-nav{
+  width:28px!important;
+  height:31px!important;
+  min-width:28px!important;
+  max-width:28px!important;
+  padding:0!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:9px!important;
+  border:1px solid #d7e3dd!important;
+  background:linear-gradient(180deg,#ffffff,#f2f8f5)!important;
+  color:#075e54!important;
+  font-family:Arial,sans-serif!important;
+  font-size:20px!important;
+  line-height:1!important;
+  font-weight:700!important;
+  cursor:pointer!important;
+  user-select:none!important;
+  box-shadow:0 3px 8px rgba(7,94,84,.05)!important;
+  transition:background .15s ease,border-color .15s ease,transform .15s ease!important;
+}
+
+.wa-filter-nav:hover{
+  background:#e8f8f0!important;
+  border-color:#add6c3!important;
+  transform:translateY(-1px)!important;
+}
+
+.wa-filter-nav:active{
+  transform:translateY(0)!important;
+  background:#dff5ea!important;
+}
+
+/* Subtle edge fades make it visually obvious the row can slide. */
+.wa-filter-slider{
+  position:relative!important;
+}
+
+.wa-filter-slider::before,
+.wa-filter-slider::after{
+  content:""!important;
+  position:absolute!important;
+  top:3px!important;
+  bottom:3px!important;
+  width:13px!important;
+  z-index:2!important;
+  pointer-events:none!important;
+}
+
+.wa-filter-slider::before{
+  left:33px!important;
+  background:linear-gradient(90deg,#fbfdfc,rgba(251,253,252,0))!important;
+}
+
+.wa-filter-slider::after{
+  right:33px!important;
+  background:linear-gradient(270deg,#fbfdfc,rgba(251,253,252,0))!important;
+}
+
+/* On touch devices keep arrows but make the strip easy to swipe. */
+@media(max-width:760px){
+  .wa-filter-slider{
+    grid-template-columns:30px minmax(0,1fr) 30px!important;
+  }
+
+  .wa-filter-nav{
+    width:30px!important;
+    min-width:30px!important;
+    max-width:30px!important;
+  }
+}
+
+/* =====================================================================
+   PREMIUM ADMIN 2FA / OTP MODAL — v178
+   Matches the unified login card while preserving the existing OTP logic.
+   ===================================================================== */
+
+dialog.admin-otp-modal{
+  position:relative!important;
+  width:min(92vw,520px)!important;
+  max-width:520px!important;
+  max-height:94dvh!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:30px!important;
+  overflow:visible!important;
+  background:transparent!important;
+  color:#17372d!important;
+}
+
+dialog.admin-otp-modal::backdrop{
+  background:rgba(9,30,24,.62)!important;
+  backdrop-filter:blur(8px)!important;
+  -webkit-backdrop-filter:blur(8px)!important;
+}
+
+dialog.admin-otp-modal>.close{
+  position:absolute!important;
+  z-index:20!important;
+  top:18px!important;
+  right:18px!important;
+  left:auto!important;
+  width:34px!important;
+  height:34px!important;
+  min-width:34px!important;
+  padding:0!important;
+  border:1px solid #e2e8e5!important;
+  border-radius:50%!important;
+  background:#fff!important;
+  color:#31564a!important;
+  display:grid!important;
+  place-items:center!important;
+  font-size:17px!important;
+  line-height:1!important;
+  box-shadow:0 7px 18px rgba(7,60,47,.10)!important;
+  transition:transform .18s ease,background .18s ease,border-color .18s ease!important;
+}
+
+dialog.admin-otp-modal>.close:hover{
+  transform:rotate(8deg) scale(1.04)!important;
+  background:#f7faf8!important;
+  border-color:#cddbd5!important;
+}
+
+.admin-otp-shell{
+  position:relative!important;
+  isolation:isolate!important;
+  overflow:hidden!important;
+  width:100%!important;
+  padding:36px 42px 32px!important;
+  border:1px solid #dfe8e3!important;
+  border-radius:28px!important;
+  background:
+    radial-gradient(circle at 50% 0%,rgba(214,176,88,.12),transparent 31%),
+    linear-gradient(180deg,#fff 0%,#fffefa 100%)!important;
+  box-shadow:0 30px 80px rgba(7,48,38,.24)!important;
+  text-align:center!important;
+}
+
+.admin-otp-shell::before{
+  content:""!important;
+  display:block!important;
+  width:92px!important;
+  height:92px!important;
+  margin:0 auto 16px!important;
+  border:1px solid #dce7e1!important;
+  border-radius:50%!important;
+  background:#fff url("assets/ass-al-halaal-mark-v135.png") center/68px 68px no-repeat!important;
+  box-shadow:0 8px 24px rgba(7,62,48,.10),0 0 0 7px rgba(12,90,67,.035)!important;
+}
+
+.admin-otp-shell::after{
+  content:""!important;
+  position:absolute!important;
+  z-index:-1!important;
+  width:170px!important;
+  height:170px!important;
+  right:-85px!important;
+  bottom:-95px!important;
+  border-radius:50%!important;
+  background:radial-gradient(circle,rgba(10,92,68,.08),rgba(10,92,68,0) 70%)!important;
+  pointer-events:none!important;
+}
+
+.admin-otp-shield{
+  width:30px!important;
+  height:30px!important;
+  margin:-2px auto 9px!important;
+  border-radius:50%!important;
+  display:grid!important;
+  place-items:center!important;
+  background:linear-gradient(145deg,#0d7255,#08513f)!important;
+  color:#fff!important;
+  font-size:14px!important;
+  font-weight:900!important;
+  box-shadow:0 6px 16px rgba(7,81,62,.18)!important;
+}
+
+.admin-otp-shell>small:first-of-type{
+  display:block!important;
+  margin:0 0 8px!important;
+  color:#b8872f!important;
+  font-size:9px!important;
+  line-height:1.3!important;
+  font-weight:900!important;
+  letter-spacing:1.8px!important;
+  text-transform:uppercase!important;
+}
+
+.admin-otp-shell h2{
+  margin:0!important;
+  color:#123f32!important;
+  font-family:Georgia,"Times New Roman",serif!important;
+  font-size:30px!important;
+  line-height:1.18!important;
+  font-weight:700!important;
+}
+
+.admin-otp-shell>p{
+  max-width:380px!important;
+  margin:11px auto 0!important;
+  color:#6a7c74!important;
+  font-size:12px!important;
+  line-height:1.7!important;
+}
+
+.admin-otp-destination{
+  width:100%!important;
+  margin:20px auto 18px!important;
+  padding:11px 14px!important;
+  border:1px solid #dbe7e1!important;
+  border-radius:13px!important;
+  background:#f3f8f5!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:7px!important;
+  color:#315d4e!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.75)!important;
+}
+
+.admin-otp-destination b{
+  color:#0b5f49!important;
+  font-size:10.5px!important;
+  font-weight:900!important;
+  text-transform:uppercase!important;
+  letter-spacing:.45px!important;
+}
+
+.admin-otp-destination b::after{
+  content:"•"!important;
+  margin-inline-start:7px!important;
+  color:#c79a43!important;
+}
+
+.admin-otp-destination span{
+  color:#536c63!important;
+  font-size:11px!important;
+  font-weight:700!important;
+  letter-spacing:.2px!important;
+}
+
+.admin-otp-form{
+  display:grid!important;
+  gap:11px!important;
+  margin:0!important;
+}
+
+.admin-otp-form label{
+  display:grid!important;
+  gap:8px!important;
+  color:#38584d!important;
+  font-size:11px!important;
+  font-weight:800!important;
+  text-align:start!important;
+}
+
+.admin-otp-form input[name="otp"]{
+  width:100%!important;
+  height:64px!important;
+  margin:0!important;
+  padding:0 10px 0 20px!important;
+  border:1.5px solid #d7e2dd!important;
+  border-radius:15px!important;
+  outline:0!important;
+  background:#fbfdfc!important;
+  color:#0d4737!important;
+  text-align:center!important;
+  font-family:"Courier New",monospace!important;
+  font-size:26px!important;
+  line-height:1!important;
+  font-weight:900!important;
+  letter-spacing:12px!important;
+  caret-color:#0b654d!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9)!important;
+  transition:border-color .18s ease,box-shadow .18s ease,background .18s ease!important;
+}
+
+.admin-otp-form input[name="otp"]::placeholder{
+  color:#b6c1bc!important;
+  opacity:.9!important;
+}
+
+.admin-otp-form input[name="otp"]:focus{
+  border-color:#c79a43!important;
+  background:#fff!important;
+  box-shadow:0 0 0 4px rgba(199,154,67,.13),0 8px 20px rgba(7,70,53,.06)!important;
+}
+
+.admin-otp-form .simple-auth-primary,
+.admin-otp-form .customer-auth-primary{
+  width:100%!important;
+  min-height:52px!important;
+  margin:2px 0 0!important;
+  border:0!important;
+  border-radius:13px!important;
+  background:linear-gradient(180deg,#0d7256 0%,#07533f 100%)!important;
+  color:#fff!important;
+  font-size:11px!important;
+  font-weight:900!important;
+  letter-spacing:.1px!important;
+  box-shadow:0 10px 24px rgba(7,82,62,.18)!important;
+  transition:transform .16s ease,box-shadow .16s ease,filter .16s ease!important;
+}
+
+.admin-otp-form .simple-auth-primary:hover,
+.admin-otp-form .customer-auth-primary:hover{
+  transform:translateY(-1px)!important;
+  filter:brightness(1.025)!important;
+  box-shadow:0 13px 28px rgba(7,82,62,.22)!important;
+}
+
+.admin-otp-form .simple-auth-primary:active,
+.admin-otp-form .customer-auth-primary:active{
+  transform:translateY(0)!important;
+}
+
+.admin-otp-form .simple-auth-primary:disabled,
+.admin-otp-form .customer-auth-primary:disabled{
+  opacity:.62!important;
+  cursor:wait!important;
+  transform:none!important;
+  box-shadow:none!important;
+}
+
+.admin-otp-form .form-error{
+  min-height:16px!important;
+  margin:-1px 0 0!important;
+  color:#b43b42!important;
+  font-size:9.5px!important;
+  line-height:1.45!important;
+  text-align:start!important;
+}
+
+.admin-otp-actions{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:9px!important;
+  margin-top:3px!important;
+}
+
+.admin-otp-actions .simple-auth-switch{
+  width:100%!important;
+  min-height:44px!important;
+  margin:0!important;
+  padding:0 12px!important;
+  border:1px solid #d8e3de!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  color:#174d3d!important;
+  font-size:10px!important;
+  font-weight:850!important;
+  box-shadow:none!important;
+  transition:background .16s ease,border-color .16s ease,color .16s ease!important;
+}
+
+.admin-otp-actions .simple-auth-switch:hover:not(:disabled){
+  border-color:#b9d2c7!important;
+  background:#f5f9f7!important;
+  color:#0b654d!important;
+}
+
+.admin-otp-actions .simple-auth-switch:disabled{
+  border-color:#e5e9e7!important;
+  background:#f6f8f7!important;
+  color:#8c9993!important;
+  cursor:not-allowed!important;
+  opacity:1!important;
+}
+
+.admin-otp-expiry{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:7px!important;
+  margin-top:15px!important;
+  color:#7b8983!important;
+  font-size:9.5px!important;
+  line-height:1.5!important;
+}
+
+.admin-otp-expiry::before{
+  content:"◷"!important;
+  color:#c28f32!important;
+  font-size:12px!important;
+}
+
+html[dir="rtl"] dialog.admin-otp-modal>.close{
+  left:18px!important;
+  right:auto!important;
+}
+
+html[dir="rtl"] .admin-otp-form label,
+html[dir="rtl"] .admin-otp-form .form-error{
+  text-align:right!important;
+}
+
+@media(max-width:600px){
+  dialog.admin-otp-modal{
+    width:min(94vw,470px)!important;
+  }
+
+  .admin-otp-shell{
+    padding:30px 20px 24px!important;
+    border-radius:24px!important;
+  }
+
+  dialog.admin-otp-modal>.close{
+    top:14px!important;
+    right:14px!important;
+  }
+
+  html[dir="rtl"] dialog.admin-otp-modal>.close{
+    left:14px!important;
+    right:auto!important;
+  }
+
+  .admin-otp-shell::before{
+    width:82px!important;
+    height:82px!important;
+    background-size:60px 60px!important;
+    margin-bottom:14px!important;
+  }
+
+  .admin-otp-shell h2{
+    font-size:25px!important;
+  }
+
+  .admin-otp-shell>p{
+    font-size:11px!important;
+  }
+
+  .admin-otp-destination{
+    flex-wrap:wrap!important;
+    margin:17px auto 15px!important;
+    padding:10px 11px!important;
+  }
+
+  .admin-otp-form input[name="otp"]{
+    height:58px!important;
+    font-size:23px!important;
+    letter-spacing:9px!important;
+    padding-left:15px!important;
+  }
+
+  .admin-otp-actions{
+    grid-template-columns:1fr!important;
+  }
+}
+
+@media(max-width:380px){
+  .admin-otp-shell{
+    padding-inline:16px!important;
+  }
+
+  .admin-otp-form input[name="otp"]{
+    font-size:21px!important;
+    letter-spacing:7px!important;
+  }
+}
+
+
