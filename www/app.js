@@ -7390,6 +7390,7 @@ function render(){
   let content=v==='home'?homePage():v==='orders'?ordersPage():v==='account'?accountPage():v==='admin'?adminPage():v.startsWith('livestock/')?livestockCategoryPage(decodeURIComponent(v.slice(10))):v.startsWith('hashi/')?hashiVariantPage(productById('hashi-camel')||products.find(isHashiCamelProduct),decodeURIComponent(v.slice(6))):v.startsWith('product/')?productDetailPage(decodeURIComponent(v.slice(8))):homePage();
   document.querySelector('#app').innerHTML=shell(content,{admin:v==='admin'});
   bind();
+  applyV469MobileExperience();
   requestAnimationFrame(()=>{ if(typeof applyV443LockedTopNav==='function') applyV443LockedTopNav(); });
 }
 
@@ -14245,5 +14246,766 @@ html[dir="ltr"] .v449-search-panel{direction:ltr!important}
     document.addEventListener('DOMContentLoaded',installV468DedicatedMobileHeroImage,{once:true});
   }else{
     installV468DedicatedMobileHeroImage();
+  }
+})();
+
+
+/* =========================================================
+   Ass Al Halaal v469
+   MOBILE PREMIUM + OPERATIONAL FIX
+   - compact professional mobile layout
+   - hero image always visible first
+   - no giant blank hero area
+   - touch-safe cards / menu / buttons
+   - desktop remains untouched
+   ========================================================= */
+
+function applyV469MobileExperience(){
+  const mobile = !!window.matchMedia?.('(max-width:900px)').matches;
+  if(!mobile) return;
+
+  const root = document.querySelector('#app');
+  if(!root) return;
+
+  // Keep the active hero physically ordered: image -> copy.
+  root.querySelectorAll('.v94-hero-slider .hero-slide').forEach(slide=>{
+    const mobileImage = slide.querySelector('.mobile-hero-image-v468');
+    const copy = slide.querySelector('.hero-copy');
+    if(mobileImage && slide.firstElementChild !== mobileImage){
+      slide.insertBefore(mobileImage, slide.firstElementChild);
+    }
+    if(copy && mobileImage && mobileImage.nextElementSibling !== copy){
+      slide.insertBefore(copy, mobileImage.nextSibling);
+    }
+  });
+
+  // Explicit mobile touch bridge for important customer interactions.
+  const selectors = [
+    '[data-nav]',
+    '#nav-products',
+    '#nav-cart',
+    '#header-cart',
+    '#top-search',
+    '#language',
+    '#location-top',
+    '#view-all',
+    '.js-products',
+    '.js-cart',
+    '[data-district]',
+    '[data-livestock-category]',
+    '[data-livestock-open]',
+    '[data-livestock-quick-add]',
+    '[data-category-query]',
+    '[data-product]',
+    '[data-product-options]',
+    '[data-product-detail-button]',
+    '[data-product-detail]',
+    '[data-scroll-products]',
+    '[data-standard-detail]',
+    '[data-hero-browse]',
+    '[data-hero-prev]',
+    '[data-hero-next]',
+    '[data-hero-dot]'
+  ].join(',');
+
+  root.querySelectorAll(selectors).forEach(el=>{
+    if(el.dataset.v469TouchReady === '1') return;
+    el.dataset.v469TouchReady = '1';
+
+    let sx = 0, sy = 0, moved = false;
+
+    el.addEventListener('touchstart', e=>{
+      const t=e.touches?.[0];
+      if(!t) return;
+      sx=t.clientX; sy=t.clientY; moved=false;
+    }, {passive:true});
+
+    el.addEventListener('touchmove', e=>{
+      const t=e.touches?.[0];
+      if(!t) return;
+      if(Math.abs(t.clientX-sx)>12 || Math.abs(t.clientY-sy)>12) moved=true;
+    }, {passive:true});
+
+    el.addEventListener('touchend', e=>{
+      if(moved) return;
+      // Prevent Android/WebView ghost-click delays and fire the existing click handler once.
+      e.preventDefault();
+      e.stopPropagation();
+      try{ el.click(); }catch{}
+    }, {passive:false});
+  });
+}
+
+// Re-apply if the viewport changes between desktop/mobile emulation.
+if(!window.__v469ResizeBound){
+  window.__v469ResizeBound = true;
+  window.addEventListener('resize', ()=>{
+    clearTimeout(window.__v469ResizeTimer);
+    window.__v469ResizeTimer = setTimeout(()=>applyV469MobileExperience(),120);
+  }, {passive:true});
+}
+
+;(()=>{
+  const installV469MobilePremiumCSS=()=>{
+    if(document.getElementById('v469-mobile-premium-operational')) return;
+    const style=document.createElement('style');
+    style.id='v469-mobile-premium-operational';
+    style.textContent=`
+@media (max-width:900px){
+
+  html,body{
+    width:100%!important;
+    max-width:100%!important;
+    overflow-x:hidden!important;
+    background:#f7f4ec!important;
+    -webkit-text-size-adjust:100%!important;
+  }
+
+  body{
+    padding:0!important;
+    margin:0!important;
+  }
+
+  .app-shell:not(.admin-shell){
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    overflow-x:hidden!important;
+    background:#f7f4ec!important;
+    padding-bottom:78px!important;
+  }
+
+  .app-shell:not(.admin-shell) .screen{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    box-sizing:border-box!important;
+    padding:10px 12px 22px!important;
+    overflow:visible!important;
+  }
+
+  /* ---------- Tap reliability ---------- */
+  .app-shell:not(.admin-shell) button,
+  .app-shell:not(.admin-shell) [role="button"],
+  .app-shell:not(.admin-shell) [data-nav],
+  .app-shell:not(.admin-shell) [data-livestock-category],
+  .app-shell:not(.admin-shell) [data-livestock-open],
+  .app-shell:not(.admin-shell) [data-product],
+  .app-shell:not(.admin-shell) [data-product-detail],
+  .app-shell:not(.admin-shell) [data-product-detail-button],
+  .app-shell:not(.admin-shell) [data-standard-detail]{
+    pointer-events:auto!important;
+    touch-action:manipulation!important;
+    -webkit-tap-highlight-color:transparent!important;
+  }
+
+  .app-shell:not(.admin-shell) button{
+    min-height:42px;
+  }
+
+  /* ---------- Header ---------- */
+  .app-shell:not(.admin-shell) .ref-customer-header{
+    position:sticky!important;
+    top:0!important;
+    z-index:5000!important;
+    box-shadow:0 8px 24px rgba(3,54,41,.16)!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header,
+  .app-shell:not(.admin-shell) .premium-action-dock,
+  .app-shell:not(.admin-shell) .customer-logo,
+  .app-shell:not(.admin-shell) .mobile-brand-wordmark{
+    pointer-events:auto!important;
+  }
+
+  /* ---------- Announcement ---------- */
+  .app-shell:not(.admin-shell) .ref-announcement{
+    min-height:48px!important;
+    height:auto!important;
+    padding:8px 10px!important;
+    gap:8px!important;
+    border-radius:0!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-announcement>p{
+    min-width:0!important;
+    overflow:hidden!important;
+    white-space:nowrap!important;
+    text-overflow:ellipsis!important;
+    font-size:10px!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-announcement .announcement-features{
+    display:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-announcement>b{
+    flex:0 0 auto!important;
+    font-size:9px!important;
+  }
+
+  /* ---------- Delivery card ---------- */
+  .app-shell:not(.admin-shell) .ref-district-card{
+    width:100%!important;
+    min-height:0!important;
+    height:auto!important;
+    margin:0 0 14px!important;
+    padding:14px!important;
+    border-radius:18px!important;
+    box-sizing:border-box!important;
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:12px!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-title{
+    display:flex!important;
+    align-items:center!important;
+    gap:10px!important;
+    margin:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-title .near{
+    width:42px!important;
+    height:42px!important;
+    min-width:42px!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-title h2{
+    font-size:20px!important;
+    line-height:1.08!important;
+    margin:0 0 4px!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-title p{
+    font-size:11px!important;
+    line-height:1.35!important;
+    margin:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-prep-stamp{
+    position:relative!important;
+    inset:auto!important;
+    width:118px!important;
+    height:118px!important;
+    margin:0 auto!important;
+    transform:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-prep-stamp-image{
+    width:100%!important;
+    height:100%!important;
+    object-fit:contain!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-chips{
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    gap:7px!important;
+    max-width:100%!important;
+    overflow-x:auto!important;
+    padding:2px 0 4px!important;
+    scrollbar-width:none!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-chips::-webkit-scrollbar{display:none!important}
+
+  .app-shell:not(.admin-shell) .district-chips button{
+    flex:0 0 auto!important;
+    min-height:38px!important;
+    padding:8px 12px!important;
+    font-size:10px!important;
+  }
+
+  /* ---------- HERO: true mobile card ---------- */
+  .app-shell:not(.admin-shell) .v94-hero-slider{
+    position:relative!important;
+    width:100%!important;
+    min-height:0!important;
+    height:auto!important;
+    margin:0 0 18px!important;
+    border:1px solid rgba(217,182,74,.75)!important;
+    border-radius:20px!important;
+    overflow:hidden!important;
+    background:#064a39!important;
+    box-shadow:0 12px 28px rgba(6,67,51,.13)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slides{
+    position:relative!important;
+    width:100%!important;
+    min-height:0!important;
+    height:auto!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide,
+  .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero{
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    min-height:0!important;
+    height:auto!important;
+    display:none!important;
+    opacity:0!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active,
+  .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero.is-active{
+    position:relative!important;
+    inset:auto!important;
+    display:flex!important;
+    flex-direction:column!important;
+    opacity:1!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+    min-height:0!important;
+    height:auto!important;
+    z-index:2!important;
+  }
+
+  /* Dedicated image is always the first visible mobile element */
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468{
+    order:1!important;
+    position:relative!important;
+    display:block!important;
+    width:100%!important;
+    height:220px!important;
+    min-height:220px!important;
+    max-height:220px!important;
+    flex:0 0 220px!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+    opacity:1!important;
+    visibility:visible!important;
+    pointer-events:none!important;
+    background-size:cover!important;
+    background-repeat:no-repeat!important;
+    background-position:center!important;
+    z-index:1!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468 img{
+    position:absolute!important;
+    inset:0!important;
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
+    object-position:center!important;
+    opacity:1!important;
+    visibility:visible!important;
+  }
+
+  /* Completely remove the old desktop image column on phones */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media,
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-media{
+    display:none!important;
+    width:0!important;
+    height:0!important;
+    min-height:0!important;
+    max-height:0!important;
+    overflow:hidden!important;
+    pointer-events:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    order:2!important;
+    position:relative!important;
+    display:flex!important;
+    flex-direction:column!important;
+    width:100%!important;
+    min-height:0!important;
+    height:auto!important;
+    margin:0!important;
+    padding:18px 16px 52px!important;
+    box-sizing:border-box!important;
+    background:
+      radial-gradient(circle at 100% 0,rgba(255,255,255,.05),transparent 34%),
+      linear-gradient(180deg,#07513f 0%,#043f33 100%)!important;
+    color:#fff!important;
+    overflow:hidden!important;
+    opacity:1!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .hero-badges{
+    display:flex!important;
+    align-items:center!important;
+    gap:6px!important;
+    margin:0 0 10px!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .hero-badges>span{
+    display:inline-flex!important;
+    max-width:100%!important;
+    min-height:30px!important;
+    padding:6px 10px!important;
+    font-size:9px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  .app-shell:not(.admin-shell) .hero-badges>small{
+    display:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .luxury-hero-title{
+    margin:0 0 10px!important;
+    font-size:30px!important;
+    line-height:1.02!important;
+    letter-spacing:-.4px!important;
+  }
+
+  .app-shell:not(.admin-shell) .luxury-hero-title span{
+    display:block!important;
+  }
+
+  .app-shell:not(.admin-shell) .hero-copy>p{
+    margin:0 0 14px!important;
+    font-size:12px!important;
+    line-height:1.55!important;
+    display:-webkit-box!important;
+    -webkit-line-clamp:3!important;
+    -webkit-box-orient:vertical!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .luxury-feature-row{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+    margin:0 0 14px!important;
+  }
+
+  .app-shell:not(.admin-shell) .luxury-feature-row>div{
+    min-width:0!important;
+    min-height:54px!important;
+    padding:8px!important;
+    border-radius:13px!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:7px!important;
+  }
+
+  .app-shell:not(.admin-shell) .luxury-feature-row>div>span{
+    width:30px!important;
+    height:30px!important;
+    min-width:30px!important;
+  }
+
+  .app-shell:not(.admin-shell) .luxury-feature-row b{
+    font-size:10px!important;
+    line-height:1.15!important;
+  }
+
+  .app-shell:not(.admin-shell) .luxury-hero-actions{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:8px!important;
+    margin:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .unified-login-hero{
+    width:100%!important;
+    min-height:50px!important;
+    height:50px!important;
+    border-radius:15px!important;
+    font-size:13px!important;
+    pointer-events:auto!important;
+    touch-action:manipulation!important;
+  }
+
+  .app-shell:not(.admin-shell) .luxury-hero-actions>small{
+    display:flex!important;
+    min-height:36px!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:6px!important;
+    padding:7px 10px!important;
+    font-size:8px!important;
+    line-height:1.2!important;
+    border-radius:12px!important;
+  }
+
+  .app-shell:not(.admin-shell) .hero-slider-arrow{
+    top:110px!important;
+    width:38px!important;
+    height:38px!important;
+    min-height:38px!important;
+    margin-top:-19px!important;
+    z-index:30!important;
+    pointer-events:auto!important;
+    touch-action:manipulation!important;
+  }
+
+  .app-shell:not(.admin-shell) .hero-slider-prev{left:10px!important;right:auto!important}
+  .app-shell:not(.admin-shell) .hero-slider-next{right:10px!important;left:auto!important}
+
+  .app-shell:not(.admin-shell) .hero-slider-dots{
+    left:50%!important;
+    right:auto!important;
+    bottom:12px!important;
+    transform:translateX(-50%)!important;
+    z-index:30!important;
+    pointer-events:auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .hero-slider-progress{
+    bottom:0!important;
+    z-index:25!important;
+  }
+
+  /* ---------- Category cards ---------- */
+  .app-shell:not(.admin-shell) .ref-categories{
+    margin:0 0 18px!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-categories .section-row{
+    align-items:flex-end!important;
+    gap:8px!important;
+    margin:0 0 10px!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-categories .section-row h2{
+    font-size:22px!important;
+    line-height:1.1!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-categories .section-row p{
+    font-size:10px!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-categories .category-row{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:10px!important;
+    overflow:visible!important;
+    padding:0!important;
+    scroll-snap-type:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-categories .livestock-type-card{
+    width:100%!important;
+    min-width:0!important;
+    gap:7px!important;
+    pointer-events:auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-categories .category-image-button{
+    width:100%!important;
+    min-height:0!important;
+    border-radius:16px!important;
+    overflow:hidden!important;
+    pointer-events:auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-categories .category-photo{
+    width:100%!important;
+    aspect-ratio:4/3!important;
+    border-radius:16px!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-categories .category-photo img{
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
+    border-radius:16px!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-categories .category-name-button{
+    width:94%!important;
+    min-height:40px!important;
+    padding:7px 8px!important;
+    font-size:14px!important;
+    border-width:1.5px!important;
+    pointer-events:auto!important;
+  }
+
+  /* ---------- Product cards ---------- */
+  .app-shell:not(.admin-shell) .ref-collection{
+    margin:0 0 18px!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-collection .most-requested-heading{
+    margin:6px 0 16px!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-collection .most-requested-heading h2{
+    font-size:25px!important;
+    line-height:1!important;
+  }
+
+  .app-shell:not(.admin-shell) #products,
+  .app-shell:not(.admin-shell) .ref-products{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:14px!important;
+    overflow:visible!important;
+  }
+
+  .app-shell:not(.admin-shell) [data-product-detail],
+  .app-shell:not(.admin-shell) .product-card,
+  .app-shell:not(.admin-shell) .premium-product-card,
+  .app-shell:not(.admin-shell) .harri-product-card,
+  .app-shell:not(.admin-shell) .hashi-product-card{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    border-radius:18px!important;
+    overflow:hidden!important;
+    pointer-events:auto!important;
+    touch-action:manipulation!important;
+  }
+
+  /* ---------- Standards/cards ---------- */
+  .app-shell:not(.admin-shell) .standards-grid{
+    grid-template-columns:1fr!important;
+    gap:10px!important;
+  }
+
+  .app-shell:not(.admin-shell) .standard-card{
+    min-height:76px!important;
+    pointer-events:auto!important;
+    touch-action:manipulation!important;
+  }
+
+  /* ---------- Fixed bottom navigation ---------- */
+  .app-shell:not(.admin-shell) .bottom-nav{
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    width:100%!important;
+    height:70px!important;
+    min-height:70px!important;
+    margin:0!important;
+    padding:7px max(8px,env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))!important;
+    display:grid!important;
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    align-items:center!important;
+    gap:2px!important;
+    background:rgba(255,255,255,.98)!important;
+    border-top:1px solid #e4ebe7!important;
+    box-shadow:0 -10px 28px rgba(10,59,45,.10)!important;
+    z-index:10000!important;
+    pointer-events:auto!important;
+    direction:ltr!important;
+  }
+
+  .app-shell:not(.admin-shell) .bottom-nav button{
+    position:relative!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:4px!important;
+    width:100%!important;
+    min-width:0!important;
+    height:54px!important;
+    min-height:54px!important;
+    margin:0!important;
+    padding:4px 2px!important;
+    border:0!important;
+    background:transparent!important;
+    color:#294b41!important;
+    border-radius:12px!important;
+    pointer-events:auto!important;
+    touch-action:manipulation!important;
+    z-index:2!important;
+  }
+
+  .app-shell:not(.admin-shell) .bottom-nav button.active{
+    color:#006a50!important;
+    background:#f1f8f5!important;
+  }
+
+  .app-shell:not(.admin-shell) .bottom-nav .nav-icon{
+    width:22px!important;
+    height:22px!important;
+    min-width:22px!important;
+    min-height:22px!important;
+  }
+
+  .app-shell:not(.admin-shell) .bottom-nav small{
+    display:block!important;
+    max-width:100%!important;
+    font-size:9px!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  /* ---------- Floating contact ---------- */
+  .app-shell:not(.admin-shell) .contact-float,
+  .app-shell:not(.admin-shell) .whatsapp-float{
+    position:fixed!important;
+    right:12px!important;
+    left:auto!important;
+    bottom:82px!important;
+    z-index:9000!important;
+    max-width:154px!important;
+    transform:none!important;
+  }
+
+  /* Kill decorative overlays as touch blockers */
+  .app-shell:not(.admin-shell) .hero-copy:before,
+  .app-shell:not(.admin-shell) .hero-copy:after,
+  .app-shell:not(.admin-shell) .mobile-hero-image-v468:before,
+  .app-shell:not(.admin-shell) .mobile-hero-image-v468:after,
+  .app-shell:not(.admin-shell) .district-visual{
+    pointer-events:none!important;
+  }
+}
+
+@media (max-width:430px){
+  .app-shell:not(.admin-shell) .screen{
+    padding-inline:10px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468{
+    height:205px!important;
+    min-height:205px!important;
+    max-height:205px!important;
+    flex-basis:205px!important;
+  }
+
+  .app-shell:not(.admin-shell) .hero-slider-arrow{
+    top:102px!important;
+  }
+
+  .app-shell:not(.admin-shell) .luxury-hero-title{
+    font-size:27px!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-categories .category-row{
+    gap:8px!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-categories .category-name-button{
+    font-size:13px!important;
+    min-height:38px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV469MobilePremiumCSS,{once:true});
+  }else{
+    installV469MobilePremiumCSS();
   }
 })();
