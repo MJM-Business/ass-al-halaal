@@ -29147,4 +29147,425 @@ html[dir="rtl"] .app-shell:not(.admin-shell) .signed-customer-hero:after{
   }
 })();
 
+/* =========================================================
+   Ass Al Halaal v527 — MOBILE PRODUCT CAROUSEL CENTER + SWIPE
+   Fixes:
+   1) active product card always centers in the mobile viewport
+   2) real finger swipe/drag works reliably on Android/iOS
+   3) arrow buttons also move to a centered card
+   ========================================================= */
+
+function setupV527MobileProductCarousel(){
+  if(!window.matchMedia('(max-width: 900px)').matches)return;
+
+  const shell=document.querySelector('#collection.ref-collection .v485-product-carousel-shell');
+  const track=shell?.querySelector('#products.ref-products.v487-stable-track, #products.ref-products.v485-product-carousel-track');
+  if(!shell || !track)return;
+
+  track.classList.add('v527-mobile-centered-track');
+
+  const cards=()=>[...track.querySelectorAll(':scope > .product-card')];
+
+  const maxScroll=()=>Math.max(0,track.scrollWidth-track.clientWidth);
+
+  const centerLeftFor=(card)=>{
+    if(!card)return 0;
+    const raw=card.offsetLeft+(card.offsetWidth/2)-(track.clientWidth/2);
+    return Math.max(0,Math.min(maxScroll(),raw));
+  };
+
+  const nearestIndex=()=>{
+    const list=cards();
+    if(!list.length)return 0;
+
+    const viewportCenter=track.scrollLeft+(track.clientWidth/2);
+    let best=0;
+    let distance=Infinity;
+
+    list.forEach((card,index)=>{
+      const center=card.offsetLeft+(card.offsetWidth/2);
+      const d=Math.abs(center-viewportCenter);
+      if(d<distance){
+        distance=d;
+        best=index;
+      }
+    });
+    return best;
+  };
+
+  const centerIndex=(index,behavior='smooth')=>{
+    const list=cards();
+    if(!list.length)return;
+
+    const count=list.length;
+    const wrapped=((index%count)+count)%count;
+    const target=list[wrapped];
+
+    track.scrollTo({
+      left:centerLeftFor(target),
+      behavior
+    });
+  };
+
+  /* Rebind carousel arrows to centered movement. */
+  if(!shell.dataset.v527Arrows){
+    shell.dataset.v527Arrows='1';
+
+    const replaceArrow=(selector)=>{
+      const old=shell.querySelector(selector);
+      if(!old)return null;
+
+      const clean=old.cloneNode(true);
+      old.replaceWith(clean);
+      clean.removeAttribute('disabled');
+      clean.setAttribute('aria-disabled','false');
+      return clean;
+    };
+
+    const prev=replaceArrow('.v487-carousel-prev, .v485-carousel-prev');
+    const next=replaceArrow('.v487-carousel-next, .v485-carousel-next');
+
+    if(prev){
+      prev.dataset.v527Bound='1';
+      prev.addEventListener('click',e=>{
+        e.preventDefault();
+        e.stopPropagation();
+        centerIndex(nearestIndex()-1,'smooth');
+      });
+    }
+
+    if(next){
+      next.dataset.v527Bound='1';
+      next.addEventListener('click',e=>{
+        e.preventDefault();
+        e.stopPropagation();
+        centerIndex(nearestIndex()+1,'smooth');
+      });
+    }
+  }
+
+  /* Finger swipe: own horizontal movement, preserve normal vertical page scroll. */
+  if(track.dataset.v527TouchBound!=='1'){
+    track.dataset.v527TouchBound='1';
+
+    let active=false;
+    let axis=null;
+    let startX=0;
+    let startY=0;
+    let startScroll=0;
+    let lastX=0;
+    let startTime=0;
+    let suppressUntil=0;
+
+    const interactive='button,a,input,select,textarea,label,[role="button"]';
+
+    track.addEventListener('touchstart',e=>{
+      if(e.touches.length!==1)return;
+      if(e.target.closest(interactive))return;
+
+      const touch=e.touches[0];
+      active=true;
+      axis=null;
+      startX=lastX=touch.clientX;
+      startY=touch.clientY;
+      startScroll=track.scrollLeft;
+      startTime=performance.now();
+
+      track.classList.add('is-v527-touching');
+    },{passive:true});
+
+    track.addEventListener('touchmove',e=>{
+      if(!active || e.touches.length!==1)return;
+
+      const touch=e.touches[0];
+      const dx=touch.clientX-startX;
+      const dy=touch.clientY-startY;
+      lastX=touch.clientX;
+
+      if(!axis && (Math.abs(dx)>5 || Math.abs(dy)>5)){
+        axis=Math.abs(dx)>Math.abs(dy)*1.08 ? 'x' : 'y';
+      }
+
+      if(axis==='y'){
+        active=false;
+        track.classList.remove('is-v527-touching');
+        return;
+      }
+
+      if(axis==='x'){
+        e.preventDefault();
+        track.scrollLeft=Math.max(0,Math.min(maxScroll(),startScroll-dx));
+      }
+    },{passive:false});
+
+    const finishTouch=()=>{
+      if(!active){
+        axis=null;
+        track.classList.remove('is-v527-touching');
+        return;
+      }
+
+      const dx=lastX-startX;
+      const elapsed=Math.max(1,performance.now()-startTime);
+      const velocity=Math.abs(dx)/elapsed;
+      const current=nearestIndex();
+      const threshold=Math.max(34,(cards()[current]?.offsetWidth||280)*0.12);
+
+      active=false;
+      track.classList.remove('is-v527-touching');
+
+      if(axis==='x'){
+        suppressUntil=Date.now()+320;
+
+        if(dx<=-threshold || (dx<0 && velocity>.35)){
+          centerIndex(current+1,'smooth');
+        }else if(dx>=threshold || (dx>0 && velocity>.35)){
+          centerIndex(current-1,'smooth');
+        }else{
+          centerIndex(current,'smooth');
+        }
+      }
+
+      axis=null;
+    };
+
+    track.addEventListener('touchend',finishTouch,{passive:true});
+    track.addEventListener('touchcancel',finishTouch,{passive:true});
+
+    track.addEventListener('click',e=>{
+      if(Date.now()<suppressUntil){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    },true);
+  }
+
+  /* Snap to exact center after momentum / arrow movement settles. */
+  if(track.dataset.v527ScrollBound!=='1'){
+    track.dataset.v527ScrollBound='1';
+
+    let timer=0;
+    track.addEventListener('scroll',()=>{
+      clearTimeout(timer);
+      timer=setTimeout(()=>{
+        if(track.classList.contains('is-v527-touching'))return;
+        centerIndex(nearestIndex(),'smooth');
+      },120);
+    },{passive:true});
+  }
+
+  /* First render: center the currently nearest/first product. */
+  if(track.dataset.v527InitialCentered!=='1'){
+    track.dataset.v527InitialCentered='1';
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        centerIndex(nearestIndex(),'auto');
+      });
+    });
+  }
+}
+
+;(()=>{
+  const installV527MobileProductCarouselCSS=()=>{
+    if(document.getElementById('v527-mobile-product-center-swipe'))return;
+
+    const style=document.createElement('style');
+    style.id='v527-mobile-product-center-swipe';
+    style.textContent=`
+/* =========================================================
+   v527 — mobile card center + reliable finger swipe
+   ========================================================= */
+
+@media(max-width:900px){
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell{
+    width:100%!important;
+    max-width:100%!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+    padding-left:0!important;
+    padding-right:0!important;
+    overflow:hidden!important;
+    box-sizing:border-box!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  #products.ref-products.v527-mobile-centered-track{
+    --v527-card-width:min(84vw,320px);
+
+    direction:ltr!important;
+    display:flex!important;
+    align-items:stretch!important;
+    flex-wrap:nowrap!important;
+
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+
+    gap:12px!important;
+    margin:0!important;
+    padding-top:8px!important;
+    padding-bottom:16px!important;
+    padding-left:0!important;
+    padding-right:0!important;
+
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+
+    scroll-snap-type:x mandatory!important;
+    scroll-padding-inline:0!important;
+    scroll-behavior:smooth!important;
+
+    /* Vertical page scrolling stays native; horizontal swipe is handled by v527. */
+    touch-action:pan-y!important;
+    overscroll-behavior-x:contain!important;
+    -webkit-overflow-scrolling:touch!important;
+
+    scrollbar-width:none!important;
+    box-sizing:border-box!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  #products.ref-products.v527-mobile-centered-track::-webkit-scrollbar{
+    display:none!important;
+  }
+
+  /* Flexible spacer at each end lets the first and last cards center too. */
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  #products.ref-products.v527-mobile-centered-track::before,
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  #products.ref-products.v527-mobile-centered-track::after{
+    content:""!important;
+    display:block!important;
+    flex:0 0 max(0px,calc((100% - var(--v527-card-width))/2))!important;
+    width:max(0px,calc((100% - var(--v527-card-width))/2))!important;
+    min-width:max(0px,calc((100% - var(--v527-card-width))/2))!important;
+    pointer-events:none!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  #products.ref-products.v527-mobile-centered-track
+  > .product-card{
+    flex:0 0 var(--v527-card-width)!important;
+    width:var(--v527-card-width)!important;
+    min-width:var(--v527-card-width)!important;
+    max-width:320px!important;
+
+    margin:0!important;
+    transform:none!important;
+
+    scroll-snap-align:center!important;
+    scroll-snap-stop:always!important;
+
+    box-sizing:border-box!important;
+  }
+
+  html[dir="rtl"] .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  #products.ref-products.v527-mobile-centered-track
+  > .product-card{
+    direction:rtl!important;
+  }
+
+  html[dir="ltr"] .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  #products.ref-products.v527-mobile-centered-track
+  > .product-card{
+    direction:ltr!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  #products.ref-products.v527-mobile-centered-track.is-v527-touching{
+    scroll-snap-type:none!important;
+    scroll-behavior:auto!important;
+  }
+
+  /* Keep arrow buttons inside the viewport without taking card width away. */
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  .v487-carousel-arrow,
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  .v485-carousel-arrow{
+    z-index:520!important;
+    pointer-events:auto!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  .v487-carousel-prev,
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  .v485-carousel-prev{
+    left:8px!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  .v487-carousel-next,
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  .v485-carousel-next{
+    right:8px!important;
+  }
+}
+
+@media(max-width:430px){
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  #products.ref-products.v527-mobile-centered-track{
+    --v527-card-width:min(86vw,320px);
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  const boot=()=>{
+    installV527MobileProductCarouselCSS();
+    setupV527MobileProductCarousel();
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',boot,{once:true});
+  }else{
+    boot();
+  }
+
+  /* Product/language rerenders can replace the carousel DOM. */
+  if(!window.__v527MobileCarouselObserver){
+    let queued=false;
+    window.__v527MobileCarouselObserver=new MutationObserver(()=>{
+      if(queued)return;
+      queued=true;
+      requestAnimationFrame(()=>{
+        queued=false;
+        setupV527MobileProductCarousel();
+      });
+    });
+    window.__v527MobileCarouselObserver.observe(document.body,{
+      subtree:true,
+      childList:true
+    });
+  }
+
+  window.addEventListener('resize',()=>{
+    requestAnimationFrame(setupV527MobileProductCarousel);
+  },{passive:true});
+})();
+
 
