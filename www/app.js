@@ -995,6 +995,7 @@ let cart=read('kn-cart',[]).filter(i=>!isRemovedProductId(i?.id));
 let cartCouponCode=read('kn-cart-coupon','');
 let district=read('kn-district','حي الروضة');
 let myPhone=read('kn-phone','');
+let customerProfilePhoto=read('kn-customer-profile-photo','');
 let customerSession=null,customerConfig={google_enabled:false,google_client_id:''},customerAuthNext='';
 let googleIdentityPromise=null;
 let favourites=new Set(read('kn-favourites',[]).filter(id=>!isRemovedProductId(id)));
@@ -1515,15 +1516,15 @@ function customerAuthMarkup(){
 
     <form id="customer-login-form" class="simple-auth-form simple-auth-login">
       <label>${t('رقم الجوال أو البريد أو معرف الإدارة','Mobile, email or Admin ID')}
-        <input name="identifier" type="text" autocomplete="username" dir="ltr" placeholder="05XXXXXXXX / name@email.com / ADM-JED-001" required>
+        <input name="identifier" type="text" autocomplete="username" dir="ltr" placeholder="" required>
       </label>
       <label>${t('كلمة المرور','Password')}
         <input name="password" type="password" autocomplete="current-password" minlength="4" placeholder="••••••••" required>
       </label>
       <button class="customer-auth-primary simple-auth-primary" type="submit">${t('تسجيل الدخول','Login')}</button>
-      <p class="unified-login-hint">${t('للإدارة: استخدم معرف ADM وكلمة المرور، ثم أكمل التحقق برمز OTP. للعملاء: استخدم الجوال أو البريد وكلمة المرور.','Admin: use your ADM ID and password, then complete OTP verification. Customers: use mobile/email and password.')}</p>
-      <button class="simple-auth-switch" type="button" data-auth-show="register">${t('إنشاء حساب عميل جديد','Create a customer account')}</button>
     </form>
+
+    <button class="simple-auth-switch" type="button" data-auth-show="register">${t('إنشاء حساب','CREATE AN ACCOUNT')}</button>
 
     <form id="customer-register-form" class="simple-auth-form simple-auth-register" hidden>
       <label>${t('الاسم الكامل','Full name')}<input name="name" autocomplete="name" maxlength="80" required></label>
@@ -1800,7 +1801,86 @@ function bindCustomerAuth(){
   };
 
   document.querySelector('#customer-logout')?.addEventListener('click',async()=>{try{await api('/api/customer/logout',{method:'POST',body:'{}'})}catch{}customerSession=null;myOrders=[];render();toast(t('تم تسجيل الخروج','Signed out'))});
-  const profile=document.querySelector('#customer-profile-form');if(profile)profile.onsubmit=async e=>{e.preventDefault();const d=Object.fromEntries(new FormData(profile));if(d.phone&&!validPhone(d.phone)){toast(t('أدخل رقم جوال سعودي صحيح','Enter a valid Saudi mobile number'));return}try{const data=await api('/api/customer/profile',{method:'PATCH',body:JSON.stringify(d)});customerSession=data.user;if(customerSession.phone){myPhone=customerSession.phone;persist()}render();toast(t('تم تحديث الحساب','Account updated'))}catch(err){toast(err.message)}};
+  const profile=document.querySelector('#customer-profile-form');
+  const summary=document.querySelector('#customer-profile-summary');
+  const editProfileBtn=document.querySelector('#customer-edit-profile');
+  const cancelProfileEdit=document.querySelector('#customer-cancel-profile-edit');
+  const cancelProfileEditBottom=document.querySelector('#customer-cancel-profile-edit-bottom');
+  const photoInput=document.querySelector('#customer-profile-photo-input');
+  const changePhotoBtn=document.querySelector('#customer-change-photo');
+  const removePhotoBtn=document.querySelector('#customer-remove-photo');
+  let pendingProfilePhoto=customerProfilePhoto;
+
+  const showProfileEdit=()=>{
+    if(summary)summary.hidden=true;
+    if(profile)profile.hidden=false;
+    profile?.querySelector('input[name="name"]')?.focus();
+  };
+  const hideProfileEdit=()=>{
+    if(profile)profile.hidden=true;
+    if(summary)summary.hidden=false;
+    pendingProfilePhoto=customerProfilePhoto;
+  };
+
+  editProfileBtn?.addEventListener('click',showProfileEdit);
+  cancelProfileEdit?.addEventListener('click',hideProfileEdit);
+  cancelProfileEditBottom?.addEventListener('click',hideProfileEdit);
+  changePhotoBtn?.addEventListener('click',()=>photoInput?.click());
+  removePhotoBtn?.addEventListener('click',()=>{
+    pendingProfilePhoto='';
+    const preview=document.querySelector('#customer-edit-photo-preview');
+    if(preview)preview.src='assets/ass-al-halaal-logo-white.png';
+  });
+
+  photoInput?.addEventListener('change',e=>{
+    const file=e.target.files?.[0];
+    if(!file)return;
+    if(!String(file.type||'').startsWith('image/')){toast(t('اختر ملف صورة صالح','Choose a valid image file'));return}
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const source=new Image();
+      source.onload=()=>{
+        try{
+          const size=360;
+          const canvas=document.createElement('canvas');
+          canvas.width=size;canvas.height=size;
+          const ctx=canvas.getContext('2d');
+          const scale=Math.max(size/source.width,size/source.height);
+          const sw=size/scale,sh=size/scale;
+          const sx=(source.width-sw)/2,sy=(source.height-sh)/2;
+          ctx.drawImage(source,sx,sy,sw,sh,0,0,size,size);
+          pendingProfilePhoto=canvas.toDataURL('image/jpeg',.86);
+          const preview=document.querySelector('#customer-edit-photo-preview');
+          if(preview)preview.src=pendingProfilePhoto;
+        }catch{
+          pendingProfilePhoto=String(reader.result||'');
+          const preview=document.querySelector('#customer-edit-photo-preview');
+          if(preview)preview.src=pendingProfilePhoto;
+        }
+      };
+      source.src=String(reader.result||'');
+    };
+    reader.readAsDataURL(file);
+  });
+
+  if(profile)profile.onsubmit=async e=>{
+    e.preventDefault();
+    const d=Object.fromEntries(new FormData(profile));
+    if(d.phone&&!validPhone(d.phone)){toast(t('أدخل رقم جوال سعودي صحيح','Enter a valid Saudi mobile number'));return}
+    const nextDistrict=d.district||district;
+    delete d.district;
+    try{
+      const data=await api('/api/customer/profile',{method:'PATCH',body:JSON.stringify(d)});
+      customerSession=data.user;
+      if(customerSession.phone)myPhone=customerSession.phone;
+      district=nextDistrict;
+      customerProfilePhoto=pendingProfilePhoto||'';
+      write('kn-customer-profile-photo',customerProfilePhoto);
+      persist();
+      render();
+      toast(t('تم تحديث الملف الشخصي','Profile updated'));
+    }catch(err){toast(err.message)}
+  };
   setupGoogleSignin();
 }
 
@@ -1861,6 +1941,45 @@ function customerIcon(name){
 }
 
 function header(){const v=view();return `<header class="app-header ref-customer-header">
+  <div class="mobile-reference-header">
+    <div class="mobile-reference-topbar">
+      <a class="mobile-ref-phone" href="tel:+966582231594" aria-label="${t('اتصال بخدمة العملاء','Call customer service')}">
+        <span aria-hidden="true">⌕</span><b dir="ltr">+966 58 223 1594</b>
+      </a>
+      <button class="mobile-ref-location" id="mobile-location-top" type="button" aria-label="${t('اختيار منطقة التوصيل','Choose delivery area')}">
+        <span>${t('جدة · '+district.replace('حي ',''),'Jeddah · '+(districtEn[district]||district))}</span>
+        <i aria-hidden="true">⌖</i>
+      </button>
+    </div>
+
+    <div class="mobile-reference-mainbar">
+      <div class="mobile-ref-actions mobile-ref-actions-left">
+        <button id="mobile-header-cart" type="button" aria-label="${t('السلة','Cart')}">
+          <span>${customerIcon('cart')}</span>${cartCount()?`<b>${cartCount()}</b>`:''}
+        </button>
+        <button id="mobile-top-search" type="button" aria-label="${t('بحث','Search')}">
+          <span>${customerIcon('search')}</span>
+        </button>
+        <button id="mobile-top-bell" type="button" aria-label="${t('التنبيهات','Notifications')}">
+          <span>${customerIcon('bell')}</span><i></i>
+        </button>
+      </div>
+
+      <button class="mobile-ref-brand" type="button" data-nav="home" aria-label="Ass Al Halaal Home">
+        <img src="assets/ass-al-halaal-mobile-logo-v519.png" alt="">
+        <strong>Ass Al Halaal</strong>
+      </button>
+
+      <div class="mobile-ref-actions mobile-ref-actions-right">
+        <button type="button" data-nav="account" aria-label="${t('حسابي','Account')}">
+          <span>${customerIcon('account')}</span>
+        </button>
+        <button id="mobile-language" class="mobile-ref-language" type="button" aria-label="${t('لغة التطبيق','App language')}">
+          <b>${lang==='ar'?'AR':'EN'}</b>
+        </button>
+      </div>
+    </div>
+  </div>
   <div class="customer-brand">
     <button class="customer-logo" type="button" data-nav="home" aria-label="Ass Al Halaal Home">
       <img src="assets/ass-al-halaal-logo-white.png" alt="Ass Al Halaal">
@@ -1873,9 +1992,10 @@ function header(){const v=view();return `<header class="app-header ref-customer-
     </button>
   </div>
 
-  <div class="mobile-brand-wordmark" aria-hidden="true">
+  <button class="mobile-brand-wordmark ${v==='home'?'is-home-brand':'is-light-brand'}" type="button" data-nav="home" aria-label="Ass Al Halaal Home">
+    <span class="mobile-brand-logo"><img src="assets/ass-al-halaal-mobile-logo-v519.png" alt=""></span>
     <strong>Ass Al Halaal</strong>
-  </div>
+  </button>
 
   <nav class="desktop-main-nav" aria-label="Main navigation">
     <button data-nav="home" class="${v==='home'?'active':''}"><span class="nav-icon">${customerIcon('home')}</span><small>${t('الرئيسية','Home')}</small></button>
@@ -1905,28 +2025,28 @@ function shell(content,{admin=false}={}){return `<div class="app-shell ${admin?'
 function homePage(){
   const heroSlides=[
     {
-      theme:'premium',image:'assets/premium-hero-v93.webp',alt:'Premium prepared meat',
+      theme:'premium',
       badge:t('ضمان جودة %100','100% QUALITY GUARANTEE'),
       gold:t('لحم فاخر،','Premium meat,'),title:t('يُجهز بعناية','prepared with care'),
       desc:t('نختار طلبك بعناية، ونجهزه ونغلفه حسب رغبتك، ثم نوصله مبرداً وطازجاً إلى بابك داخل جدة.','We carefully select, prepare and pack your order to your preference, then deliver it chilled and fresh across Jeddah.'),
       features:[['◒',t('طازج ونظيف','Fresh & hygienic')],['✦',t('تجهيز احترافي','Expert preparation')],['❄',t('توصيل مبرد','Chilled delivery')],['♢',t('ثقة العائلات','Trusted by families')]]
     },
     {
-      theme:'livestock',image:'assets/hero-livestock-v94.webp',alt:'Fresh Harri livestock',
+      theme:'livestock',
       badge:t('اختيار موثوق من المصدر','TRUSTED LIVESTOCK SELECTION'),
       gold:t('حري طازج،','Fresh Harri,'),title:t('مختار بعناية','selected with care'),
       desc:t('حلال مختار من موردين موثوقين، مع فحص الجودة والإشراف البيطري قبل التجهيز.','Carefully selected livestock from trusted suppliers, with quality checks and veterinary supervision before preparation.'),
       features:[['✓',t('اختيار سليم','Healthy selection')],['◇',t('مصدر موثق','Verified source')],['✚',t('فحص بيطري','Veterinary check')],['⌖',t('داخل جدة','Jeddah service')]]
     },
     {
-      theme:'naimi',image:'assets/hero-naimi-v94.webp',alt:'Naimi and Ardi livestock',
+      theme:'naimi',
       badge:t('خيارات متعددة للعائلة','FAMILY LIVESTOCK CHOICES'),
       gold:t('نعيمي وعارضي،','Naimi & Ardi,'),title:t('حسب رغبتك','your way'),
       desc:t('اختر النوع والوزن وطريقة التقطيع والتغليف المناسبة لبيتك ومناسبتك من شاشة تخصيص واحدة.','Choose the type, weight, cutting style and packaging that fit your home or occasion from one customisation flow.'),
       features:[['◎',t('خيارات متنوعة','More choices')],['✂',t('تقطيع مخصص','Custom cutting')],['▣',t('تغليف صحي','Safe packaging')],['★',t('جودة مختارة','Selected quality')]]
     },
     {
-      theme:'delivery',image:'assets/hero-preparation-v94.webp',alt:'Professional meat preparation and chilled delivery',
+      theme:'delivery',
       badge:t('تجهيز وتوصيل مبرد','PREPARED & CHILLED DELIVERY'),
       gold:t('تجهيز احترافي،','Expert preparation,'),title:t('وتوصيل مبرد','chilled to your door'),
       desc:t('من المسلخ المعتمد إلى باب البيت: تجهيز موثق، تغليف محكم وسلسلة تبريد مناسبة للتوصيل داخل جدة.','From approved preparation to your door: verified handling, secure packaging and a controlled chilled delivery flow across Jeddah.'),
@@ -1944,25 +2064,9 @@ function homePage(){
   <b>${t('مباشر','LIVE')}</b>
 </section>
 
-<section class="district-card ref-district-card">
-  <div class="district-visual" aria-hidden="true"></div>
-  <div class="district-title">
-    <span class="near">⌖</span>
-    <div><h2>${t('اختر منطقة التوصيل في جدة','Choose your delivery area in Jeddah')}</h2><p>${t('توصيل مبرد 4°C يحافظ على طلبك طازجاً','Chilled 4°C delivery keeps every order fresh')}</p></div>
-  </div>
-  <div class="district-prep-stamp" aria-hidden="true">
-    <img class="district-prep-stamp-image" src="assets/order-now-preparation-sameday-3d-stamp.png" alt="">
-  </div>
-  <div class="district-chips">${districts.map(d=>`<button data-district="${safe(d)}" class="${d===district?'selected':''}">${t(d,districtEn[d])}</button>`).join('')}</div>
-</section>
-
-<!-- v410: visual order only — hero above categories; behavior unchanged -->
 <section class="hero-slider v94-hero-slider hero-progress-run" data-hero-slider aria-label="${t('عروض عاس الحلال','Ass Al Halaal highlights')}">
   <div class="hero-slides">
     ${heroSlides.map((slide,index)=>`<article class="quality-hero ref-quality-hero luxury-quality-hero v93-cover hero-slide hero-theme-${slide.theme} ${index===0?'is-active':''}" data-hero-slide="${index}" aria-hidden="${index===0?'false':'true'}">
-      <div class="mobile-hero-image-v468" style="background-image:url('${slide.image}')">
-        <img src="${slide.image}" alt="${safe(slide.alt)}" loading="${index===0?'eager':'lazy'}">
-      </div>
       <div class="hero-copy">
         <div class="hero-badges luxury-hero-badges">
           <span>♛ ${slide.badge}</span>
@@ -1987,9 +2091,6 @@ function homePage(){
           <small><i>✓</i> ${t('دخول موحد للعملاء والإدارة','One secure login for customers and administration')}</small>
         </div>
       </div>
-      <div class="hero-media luxury-hero-media" style="--hero-mobile-image:url('${slide.image}')">
-        <img src="${slide.image}" alt="${safe(slide.alt)}" loading="${index===0?'eager':'lazy'}">
-      </div>
     </article>`).join('')}
   </div>
   <button class="hero-slider-arrow hero-slider-prev" type="button" data-hero-prev aria-label="${t('الشريحة السابقة','Previous slide')}">‹</button>
@@ -1999,6 +2100,21 @@ function homePage(){
   </div>
   <div class="hero-slider-progress" aria-hidden="true"><i></i></div>
 </section>
+
+<section class="district-card ref-district-card">
+  <div class="district-visual" aria-hidden="true"></div>
+  <div class="district-title">
+    <span class="near">⌖</span>
+    <div><h2>${t('اختر منطقة التوصيل في جدة','Choose your delivery area in Jeddah')}</h2><p>${t('توصيل مبرد 4°C يحافظ على طلبك طازجاً','Chilled 4°C delivery keeps every order fresh')}</p></div>
+  </div>
+  <div class="district-prep-stamp" aria-hidden="true">
+    <img class="district-prep-stamp-image" src="assets/order-now-preparation-sameday-3d-stamp.png" alt="">
+  </div>
+  <div class="district-chips">${districts.map(d=>`<button data-district="${safe(d)}" class="${d===district?'selected':''}">${t(d,districtEn[d])}</button>`).join('')}</div>
+</section>
+
+<!-- v410: visual order only — hero above categories; behavior unchanged -->
+
 
 
 <section class="categories ref-categories">
@@ -2065,7 +2181,7 @@ function homePage(){
   <div class="section-row"><div><h2>${t('أنواع الحلالات والذبائح','Livestock & meat categories')}</h2><p>${t('اختيارات سريعة من الأكثر طلباً','Quick access to our most popular selections')}</p></div><button id="view-all">${t('عرض الكل','View all')} →</button></div>
   <div class="category-row">
     ${[
-      ['kabsh','assets/kabsh-top-v397.png','كبش','Kabsh'],
+      ['kabsh','assets/najdi-sheep-category-v506.png','كبش','Kabsh'],
       ['jamal','assets/jamal-top-v397.png','جمل','Camel'],
       ['baqar','assets/baqar-top-v397.png','بقر','Cattle'],
       ['maaz','assets/maaz-top-v397.png','ماعز','Goat']
@@ -2081,6 +2197,125 @@ function homePage(){
 <section id="collection" class="collection ref-collection">
   <div class="section-row most-requested-heading"><div><h2>${t('الأكثر طلباً','MOST REQUESTED')}</h2></div></div>
   <div id="products" class="product-list ref-products">${productCards()}</div>
+</section>
+
+<section id="request-fit" class="v490-request-section" aria-labelledby="v490-request-title">
+  <div class="v490-request-layout">
+    <div class="v490-request-main">
+      <div class="v490-request-heading">
+        <span>${t('اختيار مناسب لاحتياجك','PERSONALISED CHOICE')}</span>
+        <h2 id="v490-request-title">${t('ما الذي يناسب طلبك؟','What Suits Your Request?')}</h2>
+        <p>${t('اختر طريقة الاستخدام وسنساعدك على الوصول إلى الاختيار الأنسب.','Choose how you plan to use your order and we will guide you to a suitable option.')}</p>
+      </div>
+
+      <div class="v490-request-cards">
+        <article class="v490-request-card" data-v490-request="camping">
+          <div class="v490-request-art v490-art-camping" aria-hidden="true">
+            <svg viewBox="0 0 320 220">
+              <defs>
+                <linearGradient id="campSky" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#fbf1d8"/>
+                  <stop offset="1" stop-color="#f4e5bf"/>
+                </linearGradient>
+              </defs>
+              <rect width="320" height="220" rx="22" fill="url(#campSky)"/>
+              <circle cx="253" cy="49" r="25" fill="#e7bd55" opacity=".45"/>
+              <path d="M40 173 115 90l69 83Z" fill="#0b654f" opacity=".16"/>
+              <path d="M174 173 231 112l52 61Z" fill="#0b654f" opacity=".10"/>
+              <path d="M73 178 144 65l70 113Z" fill="#fff8e9" stroke="#d6ab43" stroke-width="4"/>
+              <path d="M144 65v113" stroke="#0a5946" stroke-width="4"/>
+              <path d="M144 65 95 178h49Z" fill="#0a5946" opacity=".92"/>
+              <rect x="47" y="124" width="28" height="47" rx="8" fill="#f7d878" stroke="#9b731d" stroke-width="3"/>
+              <path d="M51 131h20M51 158h20" stroke="#9b731d" stroke-width="3"/>
+              <path d="M61 112v15M52 118h18" stroke="#9b731d" stroke-width="3"/>
+              <path d="M236 125c15-5 27 8 27 23v27h-54v-27c0-15 12-28 27-23Z" fill="#0a5946" opacity=".92"/>
+              <path d="M229 129c0-15 14-25 14-25s13 10 13 25" fill="none" stroke="#d8ad43" stroke-width="4"/>
+              <path d="M29 182h261" stroke="#ddc99a" stroke-width="3"/>
+            </svg>
+          </div>
+          <div class="v490-card-copy">
+            <h3>${t('الرحلات والتخييم','Camping')}</h3>
+            <p>${t('اختيار عملي للرحلات والطبخ الخارجي','Practical choices for outdoor cooking and trips')}</p>
+          </div>
+          <button type="button" class="v490-card-arrow" aria-label="${safe(t('عرض خيارات التخييم','View camping options'))}">→</button>
+        </article>
+
+        <article class="v490-request-card" data-v490-request="gathering">
+          <div class="v490-request-art v490-art-gathering" aria-hidden="true">
+            <svg viewBox="0 0 320 220">
+              <rect width="320" height="220" rx="22" fill="#fbf3df"/>
+              <path d="M39 172c45-62 88-96 132-103 35-6 69 7 110 53v50Z" fill="#0b654f" opacity=".08"/>
+              <path d="M64 54c18 25 22 48 14 70M91 44c5 28 3 52-7 73M241 51c-18 28-24 52-17 77" fill="none" stroke="#d7b34f" stroke-width="4" stroke-linecap="round" opacity=".65"/>
+              <path d="M78 57c15-3 28 0 39 10M236 56c-15-3-27 1-39 11" fill="none" stroke="#0a5946" stroke-width="5" stroke-linecap="round" opacity=".35"/>
+              <ellipse cx="158" cy="161" rx="91" ry="17" fill="#e8d3a0"/>
+              <path d="M104 152c8-45 31-69 54-69s47 24 55 69Z" fill="#f7df9a" stroke="#b78722" stroke-width="4"/>
+              <path d="M114 142h88" stroke="#b78722" stroke-width="4"/>
+              <path d="M127 115c15 12 48 12 63 0" fill="none" stroke="#0a5946" stroke-width="5" stroke-linecap="round"/>
+              <path d="M140 88c0-11 8-18 18-18s18 7 18 18" fill="none" stroke="#b78722" stroke-width="4"/>
+              <circle cx="99" cy="167" r="15" fill="#0a5946" opacity=".78"/>
+              <circle cx="218" cy="167" r="15" fill="#0a5946" opacity=".78"/>
+              <path d="M88 167h22M207 167h22" stroke="#f8dd84" stroke-width="3"/>
+            </svg>
+          </div>
+          <div class="v490-card-copy">
+            <h3>${t('التجمعات والمناسبات','Gatherings & Celebrations')}</h3>
+            <p>${t('خيارات مناسبة للعائلة والضيوف','Suitable selections for family and guests')}</p>
+          </div>
+          <button type="button" class="v490-card-arrow" aria-label="${safe(t('عرض خيارات المناسبات','View gathering options'))}">→</button>
+        </article>
+
+        <article class="v490-request-card" data-v490-request="household">
+          <div class="v490-request-art v490-art-household" aria-hidden="true">
+            <svg viewBox="0 0 320 220">
+              <rect width="320" height="220" rx="22" fill="#fbf2dc"/>
+              <circle cx="251" cy="48" r="26" fill="#e6bd56" opacity=".28"/>
+              <path d="M53 169h216" stroke="#d6c599" stroke-width="3"/>
+              <path d="M93 106 115 61M214 110l25-48M116 64c-19-18-42-13-47 5 19 9 34 7 47-5ZM236 64c18-17 39-12 45 6-18 8-33 6-45-6Z" fill="#0b654f" opacity=".22"/>
+              <path d="M79 115h165l-17 65H96Z" fill="#f6e2ad" stroke="#b88927" stroke-width="4"/>
+              <path d="M111 115c3-33 21-53 48-53s45 20 49 53" fill="none" stroke="#0a5946" stroke-width="6" stroke-linecap="round"/>
+              <path d="M98 133h128M103 151h118" stroke="#c39631" stroke-width="3"/>
+              <path d="M123 118v62M157 118v62M191 118v62" stroke="#c39631" stroke-width="3" opacity=".75"/>
+              <rect x="181" y="124" width="54" height="33" rx="5" fill="#0a5946" opacity=".86"/>
+              <path d="M190 136h35M190 145h23" stroke="#f5d674" stroke-width="3"/>
+            </svg>
+          </div>
+          <div class="v490-card-copy">
+            <h3>${t('احتياجات المنزل','Household Supplies')}</h3>
+            <p>${t('لوجباتك اليومية وتخزين أسهل','For everyday meals and easier storage')}</p>
+          </div>
+          <button type="button" class="v490-card-arrow" aria-label="${safe(t('عرض خيارات المنزل','View household options'))}">→</button>
+        </article>
+      </div>
+    </div>
+
+    <aside class="v490-advisor-card">
+      <div class="v490-advisor-head">
+        <span>${t('مساعد الاختيار','SELECTION ADVISOR')}</span>
+        <h3>${t('مستشار عاس الحلال','Ass Al Halaal Advisor')}</h3>
+        <p>${t('اختيارك يصبح أسهل مع توصية سريعة حسب احتياجك.','Your choice becomes easier with a quick recommendation based on your needs.')}</p>
+      </div>
+
+      <div class="v490-advisor-art" aria-hidden="true">
+        <svg viewBox="0 0 320 230">
+          <rect width="320" height="230" rx="24" fill="#f7edd5"/>
+          <path d="M77 174c15-56 49-88 99-95 37-5 67 6 93 34v61Z" fill="#0b654f" opacity=".07"/>
+          <path d="M75 79c15 24 20 46 14 69M244 78c-16 24-21 45-16 68" fill="none" stroke="#d2ae52" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+          <rect x="86" y="55" width="104" height="127" rx="11" transform="rotate(-8 86 55)" fill="#fff9ea" stroke="#d9c797" stroke-width="3"/>
+          <rect x="153" y="68" width="95" height="128" rx="11" transform="rotate(8 153 68)" fill="#fff6e0" stroke="#d9c797" stroke-width="3"/>
+          <circle cx="116" cy="90" r="24" fill="#0a654f"/>
+          <path d="m104 90 9 9 17-24" fill="none" stroke="#f4c956" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="184" cy="109" r="8" fill="#d9c797"/>
+          <circle cx="184" cy="136" r="8" fill="#d9c797"/>
+          <path d="M202 109h28M202 136h22M105 139h53M105 155h43" stroke="#c6ad6b" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <button type="button" class="v490-advisor-button" data-v490-advisor>
+        <span aria-hidden="true">←</span>
+        ${t('ابدأ مع المستشار','Start with the advisor')}
+      </button>
+    </aside>
+  </div>
 </section>
 
 <section class="standards ref-standards premium-safety-standards">
@@ -2164,12 +2399,66 @@ function homePage(){
   </div>
 </section>
 
+
+<section class="v500-proof-section" aria-labelledby="v500-proof-title">
+  <div class="v500-section-heading">
+    <small>${t('تجربة موثوقة','TRUSTED EXPERIENCE')}</small>
+    <h2 id="v500-proof-title">${t('لماذا يختار العملاء عاس الحلال؟','Why customers choose Ass Al Halaal')}</h2>
+    <span class="v500-heading-rule" aria-hidden="true"><i></i><b></b><i></i></span>
+  </div>
+  <div class="v500-proof-grid">
+    <article>
+      <span>✓</span>
+      <div><b>${t('اختيار وتجهيز موثق','Verified selection & preparation')}</b><p>${t('اختيارات واضحة وتجهيز منظم قبل التسليم.','Clear selections and organised preparation before delivery.')}</p></div>
+    </article>
+    <article>
+      <span>❄</span>
+      <div><b>${t('توصيل مبرد داخل جدة','Chilled delivery across Jeddah')}</b><p>${t('الحفاظ على سلسلة التبريد حتى وصول الطلب.','Cold-chain handling maintained until your order arrives.')}</p></div>
+    </article>
+    <article>
+      <span>⌖</span>
+      <div><b>${t('تجربة طلب واحدة','One connected ordering experience')}</b><p>${t('الاختيار والسلة والحساب وتتبع الطلب من نفس المنصة.','Selection, cart, account and order tracking from the same platform.')}</p></div>
+    </article>
+  </div>
+</section>
+
+<section class="v500-guide-section" aria-labelledby="v500-guide-title">
+  <div class="v500-section-heading">
+    <small>${t('دليل الاختيار','BUYING GUIDE')}</small>
+    <h2 id="v500-guide-title">${t('دليلك لاختيار الذبائح واللحوم','Your guide to choosing livestock & meat')}</h2>
+    <p>${t('تعرّف على طريقة الاختيار والتجهيز والتوصيل قبل تأكيد طلبك.','Understand selection, preparation and delivery before confirming your order.')}</p>
+    <span class="v500-heading-rule" aria-hidden="true"><i></i><b></b><i></i></span>
+  </div>
+  <div class="v500-guide-copy">
+    <p>${t(
+      'عاس الحلال منصة سعودية للذبائح واللحوم الطازجة داخل جدة. يمكنك اختيار نوع الحلال، مراجعة تفاصيل المنتج، تحديد الكمية وخيارات التجهيز المتاحة، ثم إضافة اختيارك إلى السلة ومتابعة الطلب من حسابك.',
+      'Ass Al Halaal is a Saudi platform for livestock and fresh meat in Jeddah. Choose your livestock type, review product details, select the available quantity and preparation options, add your choice to cart, and track the order from your account.'
+    )}</p>
+  </div>
+</section>
+
+<section class="v500-faq-section" aria-labelledby="v500-faq-title">
+  <div class="v500-section-heading">
+    <small>${t('معلومات سريعة','HELP & FAQ')}</small>
+    <h2 id="v500-faq-title">${t('أسئلة تساعدك على إكمال طلبك','Questions that help you complete your order')}</h2>
+    <span class="v500-heading-rule" aria-hidden="true"><i></i><b></b><i></i></span>
+  </div>
+  <div class="v500-faq-grid">
+    <details><summary>${t('كيف أختار نوع الحلال؟','How do I choose a livestock type?')}</summary><p>${t('استخدم قسم أنواع الحلال في الصفحة الرئيسية ثم افتح النوع المناسب لمراجعة الخيارات المتاحة.','Use the livestock categories on the home page, then open the type you want to review its available options.')}</p></details>
+    <details><summary>${t('هل يمكنني مراجعة تفاصيل المنتج قبل إضافته للسلة؟','Can I review product details before adding it to cart?')}</summary><p>${t('نعم، افتح بطاقة المنتج لمراجعة التفاصيل والخيارات المتاحة قبل الإضافة للسلة.','Yes. Open the product card to review available details and options before adding it to cart.')}</p></details>
+    <details><summary>${t('كيف أحدد منطقة التوصيل؟','How do I choose my delivery area?')}</summary><p>${t('استخدم محدد منطقة التوصيل الموجود أسفل العرض الرئيسي واختر الحي المناسب داخل جدة.','Use the delivery-area selector below the main banner and choose the relevant Jeddah district.')}</p></details>
+    <details><summary>${t('أين أتابع طلبي؟','Where can I track my order?')}</summary><p>${t('استخدم زر تتبع الطلب في شريط التنقل لمراجعة حالة طلبك.','Use Track order in the navigation to review your order status.')}</p></details>
+    <details><summary>${t('هل يعمل الموقع على الجوال؟','Does the website work on mobile?')}</summary><p>${t('نعم، نفس المنصة مصممة للعمل كموقع على سطح المكتب وكتجربة تطبيق متجاوبة على الجوال والأجهزة اللوحية.','Yes. The same platform is designed to work as a desktop website and as a responsive app-like experience on phones and tablets.')}</p></details>
+    <details><summary>${t('كيف أصل إلى حسابي؟','How do I access my account?')}</summary><p>${t('استخدم زر الحساب أو تسجيل الدخول من شريط التنقل، ثم أكمل خطوات الدخول الحالية.','Use Account or Login in the navigation and continue through the existing sign-in flow.')}</p></details>
+  </div>
+</section>
+
 <footer class="customer-mega-footer" aria-label="${t('معلومات عاس الحلال','Ass Al Halaal information')}">
   <div class="customer-mega-footer-inner">
 
     <section class="mega-footer-brand">
       <div class="mega-footer-brand-head">
-        <img src="assets/ass-al-halaal-logo-white.png" alt="Ass Al Halaal">
+        <img src="assets/ass-al-halaal-logo-colored.png" alt="Ass Al Halaal">
         <div>
           <small>${t('عاس الحلال','ASS AL HALAAL')}</small>
           <h3>${t('مؤسسة عاس الحلال','Ass Al Halaal Establishment')}</h3>
@@ -2348,7 +2637,7 @@ function homePage(){
 <style id="v405-reference-home-ui">
 /* v405 — home-only visual skin. Keeps all existing IDs/data attributes/handlers intact. */
 :root{--v405-emerald:#063f32;--v405-emerald-2:#0a5a45;--v405-gold:#d9a936;--v405-gold-2:#f0cf72;--v405-cream:#f7f2e7;--v405-ink:#143f34}
-.app-shell:has(.v405-home-ui){background:#f1eee6!important;max-width:1500px!important;margin:0 auto!important;box-shadow:0 0 0 1px rgba(117,91,33,.05),0 20px 60px rgba(42,45,35,.08)!important}
+.app-shell:has(.v405-home-ui){background:#f1eee6!important;width:100%!important;max-width:none!important;min-height:100vh!important;margin:0!important;box-sizing:border-box!important;box-shadow:0 0 0 1px rgba(117,91,33,.05),0 20px 60px rgba(42,45,35,.08)!important}
 .app-shell:has(.v405-home-ui) .screen{background:linear-gradient(180deg,#fbf8f1 0%,#f7f2e8 100%)!important;padding:0 26px 54px!important}
 
 /* Header — dark emerald bar like reference, but same controls/functions. */
@@ -2395,7 +2684,7 @@ function homePage(){
 .app-shell:has(.v405-home-ui) .ref-categories .category-image-button{width:100%!important;padding:0!important;border:0!important;background:transparent!important;border-radius:18px!important;overflow:hidden!important;box-shadow:0 9px 20px rgba(24,55,45,.15)!important}
 .app-shell:has(.v405-home-ui) .ref-categories .livestock-type-card .category-photo{aspect-ratio:auto!important;border-radius:18px!important;background:transparent!important;overflow:hidden!important}
 .app-shell:has(.v405-home-ui) .ref-categories .livestock-type-card .category-photo img{width:100%!important;height:auto!important;object-fit:contain!important;object-position:center!important;border-radius:18px!important;display:block!important}
-.app-shell:has(.v405-home-ui) .ref-categories .category-name-button{width:82%!important;min-height:46px!important;margin:8px auto 0!important;background:linear-gradient(180deg,#0d654a 0%,#004632 100%)!important;color:#f4cd64!important;border:2px solid #d9b64a!important;border-radius:999px!important;font-size:18px!important;font-weight:900!important;box-shadow:0 6px 14px rgba(0,50,36,.16)!important}
+.app-shell:has(.v405-home-ui) .ref-categories .category-name-button{width:82%!important;min-height:46px!important;margin:auto auto 0!important;background:linear-gradient(180deg,#0d654a 0%,#004632 100%)!important;color:#f4cd64!important;border:2px solid #d9b64a!important;border-radius:999px!important;font-size:18px!important;font-weight:900!important;box-shadow:0 6px 14px rgba(0,50,36,.16)!important}
 
 /* Hero — wide emerald + gold banner, still uses the existing working slider and controls. */
 .app-shell:has(.v405-home-ui) .v94-hero-slider{margin:4px 0 24px!important;border:1px solid #d5a739!important;border-radius:20px!important;overflow:hidden!important;background:#063f32!important;box-shadow:0 14px 34px rgba(22,54,44,.18)!important;min-height:390px!important}
@@ -2447,10 +2736,126 @@ function homePage(){
 /* Lower quality/safety area gets same premium visual language. */
 .app-shell:has(.v405-home-ui) .premium-safety-standards{background:#f6eddd!important;border:1px solid #e3d6bd!important;border-radius:18px!important;box-shadow:0 8px 20px rgba(59,49,29,.06)!important}.app-shell:has(.v405-home-ui) .standards-title h2{color:#123f34!important}.app-shell:has(.v405-home-ui) .standards-certified-pill{background:#0b604a!important;color:#fff!important}.app-shell:has(.v405-home-ui) .standard-card{background:#fffaf2!important;border:1px solid #e0d7c5!important;box-shadow:none!important}
 
+
+/* v500 — website structure inspired by the supplied reference screenshots.
+   Visual/layout only: existing IDs, data attributes and handlers remain untouched. */
+.app-shell:has(.v405-home-ui) .screen{padding-left:0!important;padding-right:0!important;background:#fff!important}
+.app-shell:has(.v405-home-ui) .screen > .ref-announcement,
+.app-shell:has(.v405-home-ui) .screen > .v94-hero-slider{width:100%!important}
+.app-shell:has(.v405-home-ui) .screen > .ref-categories,
+.app-shell:has(.v405-home-ui) .screen > .ref-district-card,
+.app-shell:has(.v405-home-ui) .screen > .ref-collection,
+.app-shell:has(.v405-home-ui) .screen > .v490-request-section,
+.app-shell:has(.v405-home-ui) .screen > .premium-safety-standards,
+.app-shell:has(.v405-home-ui) .screen > .v500-proof-section,
+.app-shell:has(.v405-home-ui) .screen > .v500-guide-section,
+.app-shell:has(.v405-home-ui) .screen > .v500-faq-section{
+  width:min(1420px,calc(100% - 64px))!important;margin-left:auto!important;margin-right:auto!important
+}
+.app-shell:has(.v405-home-ui) .ref-announcement{margin:0!important;padding-left:max(28px,calc((100vw - 1420px)/2))!important;padding-right:max(28px,calc((100vw - 1420px)/2))!important}
+.app-shell:has(.v405-home-ui) .v94-hero-slider{margin:0!important;border-left:0!important;border-right:0!important;border-radius:0!important;min-height:520px!important}
+.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-slides,
+.app-shell:has(.v405-home-ui) .v94-hero-slider .quality-hero{min-height:520px!important}
+.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-copy{padding-left:max(48px,calc((100vw - 1340px)/2))!important;padding-right:max(48px,calc((100vw - 1340px)/2))!important}
+.app-shell:has(.v405-home-ui) .ref-district-card{margin-top:18px!important;margin-bottom:68px!important;box-shadow:0 8px 24px rgba(31,45,38,.08)!important}
+.app-shell:has(.v405-home-ui) .ref-categories{padding:0 0 70px!important}
+.app-shell:has(.v405-home-ui) .ref-categories .section-row{justify-content:center!important;text-align:center!important;position:relative!important;margin-bottom:30px!important}
+.app-shell:has(.v405-home-ui) .ref-categories .section-row>div{width:100%!important}
+.app-shell:has(.v405-home-ui) .ref-categories .section-row h2{font-size:34px!important;letter-spacing:-.02em!important}
+.app-shell:has(.v405-home-ui) .ref-categories .section-row p{font-size:13px!important;margin-top:7px!important}
+.app-shell:has(.v405-home-ui) .ref-categories #view-all{position:absolute!important;right:0!important;top:10px!important}
+html[dir="rtl"] .app-shell:has(.v405-home-ui) .ref-categories #view-all{right:auto!important;left:0!important}
+.app-shell:has(.v405-home-ui) .ref-categories .category-row{gap:24px!important}
+.app-shell:has(.v405-home-ui) .ref-collection{padding:0 0 90px!important}
+.app-shell:has(.v405-home-ui) .ref-collection>.section-row{justify-content:center!important;text-align:center!important;margin-bottom:32px!important}
+.app-shell:has(.v405-home-ui) .ref-collection>.section-row>div{width:100%!important}
+.app-shell:has(.v405-home-ui) .ref-collection>.section-row h2{font-size:38px!important;letter-spacing:.04em!important}
+.app-shell:has(.v405-home-ui) #products.ref-products{gap:24px!important}
+.app-shell:has(.v405-home-ui) #products.ref-products>.product-card{border-radius:14px!important;background:#fff!important;box-shadow:0 5px 18px rgba(15,38,30,.07)!important}
+.app-shell:has(.v405-home-ui) .v490-request-section{margin-bottom:90px!important;padding-top:24px!important}
+.app-shell:has(.v405-home-ui) .premium-safety-standards{margin-bottom:90px!important}
+
+.v500-proof-section,.v500-guide-section,.v500-faq-section{box-sizing:border-box}
+.v500-section-heading{text-align:center;max-width:900px;margin:0 auto 38px}
+.v500-section-heading>small{display:block;color:#b78922;font-weight:900;font-size:12px;letter-spacing:.16em;margin-bottom:9px}
+.v500-section-heading h2{margin:0;color:#183e34;font-size:clamp(30px,3vw,46px);line-height:1.2;letter-spacing:-.025em}
+.v500-section-heading p{margin:10px auto 0;color:#78837e;font-size:15px;line-height:1.8}
+.v500-heading-rule{display:flex;align-items:center;justify-content:center;gap:12px;margin:18px auto 0}
+.v500-heading-rule i{display:block;width:72px;height:2px;background:#274d42;opacity:.65}.v500-heading-rule b{display:block;width:11px;height:11px;border:2px solid #274d42;border-radius:50%;box-sizing:border-box}
+
+.v500-proof-section{padding:14px 0 96px}
+.v500-proof-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.v500-proof-grid article{min-height:178px;background:#fff;border:1px solid #e5e6e2;border-radius:14px;box-shadow:0 5px 18px rgba(25,44,36,.06);padding:28px;display:flex;gap:18px;align-items:flex-start}
+.v500-proof-grid article>span{width:48px;height:48px;min-width:48px;border-radius:50%;display:grid;place-items:center;background:#f3e6b9;color:#07533f;font-size:22px;font-weight:900}
+.v500-proof-grid b{display:block;color:#163d33;font-size:18px;margin:2px 0 10px}.v500-proof-grid p{margin:0;color:#6e7974;line-height:1.8;font-size:14px}
+
+.v500-guide-section{padding:70px 0 82px;border-top:1px solid #eef0ed}
+.v500-guide-copy{max-width:1060px;margin:0 auto;text-align:center}
+.v500-guide-copy p{font-size:18px;line-height:2;color:#5d6964;margin:0}
+
+.v500-faq-section{padding:70px 0 120px}
+.v500-faq-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px}
+.v500-faq-grid details{background:#fff;border:1px solid #ccd4d0;border-radius:10px;overflow:hidden}
+.v500-faq-grid summary{list-style:none;cursor:pointer;padding:18px 20px;color:#173e34;font-weight:800;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.v500-faq-grid summary::-webkit-details-marker{display:none}
+.v500-faq-grid summary:after{content:"⌄";width:30px;height:30px;min-width:30px;border-radius:50%;display:grid;place-items:center;background:#0b5c47;color:#fff;font-size:15px;transition:transform .18s ease}
+.v500-faq-grid details[open] summary:after{transform:rotate(180deg)}
+.v500-faq-grid details p{margin:0;padding:0 20px 20px;color:#68746f;line-height:1.8;font-size:14px}
+.app-shell:has(.v405-home-ui) .customer-mega-footer{margin-top:0!important;border-radius:0!important}
+
+
+/* v501 — footer width + visible Ass Al Halaal logo only */
+.app-shell:has(.v405-home-ui) .customer-mega-footer-inner,
+.app-shell:has(.v405-home-ui) .customer-mega-footer .mega-footer-bottom{
+  width:min(1760px,calc(100% - 72px))!important;
+  max-width:none!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+.app-shell:has(.v405-home-ui) .customer-mega-footer-inner{
+  column-gap:64px!important;
+}
+.app-shell:has(.v405-home-ui) .customer-mega-footer .mega-footer-brand-head img{
+  width:82px!important;
+  height:82px!important;
+  min-width:82px!important;
+  max-width:82px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  display:block!important;
+  filter:none!important;
+  opacity:1!important;
+}
+@media(max-width:900px){
+  .app-shell:has(.v405-home-ui) .customer-mega-footer-inner,
+  .app-shell:has(.v405-home-ui) .customer-mega-footer .mega-footer-bottom{
+    width:calc(100% - 28px)!important;
+  }
+}
+
 @media(max-width:1180px){
   .app-shell:has(.v405-home-ui) .desktop-main-nav{display:none!important}
   .app-shell:has(.v405-home-ui) .premium-action-dock .top-search{min-width:170px!important}
   .app-shell:has(.v405-home-ui) #products.ref-products{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+
+@media(max-width:900px){
+  .app-shell:has(.v405-home-ui) .screen > .ref-categories,
+  .app-shell:has(.v405-home-ui) .screen > .ref-district-card,
+  .app-shell:has(.v405-home-ui) .screen > .ref-collection,
+  .app-shell:has(.v405-home-ui) .screen > .v490-request-section,
+  .app-shell:has(.v405-home-ui) .screen > .premium-safety-standards,
+  .app-shell:has(.v405-home-ui) .screen > .v500-proof-section,
+  .app-shell:has(.v405-home-ui) .screen > .v500-guide-section,
+  .app-shell:has(.v405-home-ui) .screen > .v500-faq-section{width:calc(100% - 28px)!important}
+  .app-shell:has(.v405-home-ui) .ref-district-card{margin-bottom:44px!important}
+  .app-shell:has(.v405-home-ui) .ref-categories{padding-bottom:52px!important}
+  .app-shell:has(.v405-home-ui) .ref-categories .section-row h2,
+  .app-shell:has(.v405-home-ui) .ref-collection>.section-row h2{font-size:29px!important}
+  .app-shell:has(.v405-home-ui) .ref-categories #view-all{position:static!important;margin-top:10px!important}
+  .v500-proof-grid{grid-template-columns:1fr!important}
+  .v500-faq-grid{grid-template-columns:1fr!important}
+  .v500-guide-copy p{font-size:16px!important}
 }
 @media(max-width:900px){
   .app-shell:has(.v405-home-ui) .screen{padding:0 14px 36px!important}
@@ -3392,8 +3797,7 @@ function productCards(){
       </div>
     </article>`;
   }).join('');
-  const showPromo=filter==='all'&&!String(query||'').trim();
-  return cards+(showPromo?customBoxPromoCard():'');
+  return cards;
 }
 function productById(id){
   if(isRemovedProductId(id))return null;
@@ -5175,9 +5579,113 @@ function orderCard(o){
 function accountPage(){
   const head=`<section class="page-head customer-page-head"><button data-nav="home" aria-label="${t('الرجوع للرئيسية','Back to home')}">${t('→','←')}</button><div><small>ASS AL HALAAL</small><h1>${t('حسابي','My account')}</h1></div></section>`;
   if(!customerSession)return `${head}<section class="account-card premium-account-card customer-auth-card">${customerAuthMarkup()}</section>`;
-  return `${head}<section class="account-card premium-account-card signed-customer-card"><div class="signed-customer-hero"><img src="assets/ass-al-halaal-logo-white.png" alt="Ass Al Halaal"><div><small>${t('حساب عميل موثق','CUSTOMER ACCOUNT')}</small><h2>${safe(customerSession.name)}</h2><p>${safe(customerSession.email)}</p></div><span>${customerSession.provider==='google'?'Google':t('حساب مباشر','Direct')}</span></div>
-  <form id="customer-profile-form" class="customer-profile-form"><label>${t('الاسم الكامل','Full name')}<input name="name" value="${safe(customerSession.name||'')}" required></label><label>${t('رقم الجوال','Mobile number')}<input name="phone" type="tel" dir="ltr" value="${safe(customerSession.phone||myPhone||'')}" placeholder="05XXXXXXXX"></label><button type="submit">${t('حفظ بيانات الحساب','Save account details')}</button></form>
-  <div class="customer-account-actions"><button data-nav="orders" class="primary-block">${t('طلباتي وتتبع الطلب','My orders & tracking')}</button><button id="customer-logout" class="secondary-block" type="button">${t('تسجيل الخروج','Sign out')}</button></div></section>`;
+  const avatar=customerProfilePhoto||'assets/ass-al-halaal-logo-white.png';
+  const locationName=t(district,districtEn[district]||district);
+  const accountType=customerSession.provider==='google'?'Google':t('حساب مباشر','Direct account');
+  return `${head}<section class="account-card premium-account-card signed-customer-card">
+    <div class="signed-customer-hero customer-profile-hero">
+      <div class="customer-avatar-wrap">
+        <img id="customer-profile-avatar" src="${safe(avatar)}" alt="${t('صورة الملف الشخصي','Profile photo')}">
+        <span class="customer-avatar-status" aria-hidden="true">✓</span>
+      </div>
+      <div class="customer-hero-copy">
+        <small>${t('حساب عميل موثق','CUSTOMER ACCOUNT')}</small>
+        <h2>${safe(customerSession.name||t('عميل عاس الحلال','Ass Al Halaal customer'))}</h2>
+        <p>${safe(customerSession.email||'')}</p>
+      </div>
+      <span class="customer-provider-badge">${accountType}</span>
+    </div>
+
+    <section class="customer-profile-summary" id="customer-profile-summary">
+      <div class="customer-profile-summary-head">
+        <div>
+          <small>${t('الملف الشخصي','PROFILE DETAILS')}</small>
+          <h3>${t('بيانات حسابك','Your account details')}</h3>
+          <p>${t('راجع بياناتك الشخصية ومعلومات التوصيل من مكان واحد.','Review your personal and delivery information in one place.')}</p>
+        </div>
+        <button type="button" class="customer-edit-profile-btn" id="customer-edit-profile">
+          <span aria-hidden="true">✎</span>${t('تعديل الملف','Edit Profile')}
+        </button>
+      </div>
+
+      <div class="customer-profile-detail-grid">
+        <article>
+          <span class="customer-detail-icon" aria-hidden="true">A</span>
+          <div><small>${t('الاسم الكامل','Full name')}</small><strong>${safe(customerSession.name||'—')}</strong></div>
+        </article>
+        <article>
+          <span class="customer-detail-icon" aria-hidden="true">@</span>
+          <div><small>${t('البريد الإلكتروني','Email')}</small><strong dir="ltr">${safe(customerSession.email||'—')}</strong></div>
+        </article>
+        <article>
+          <span class="customer-detail-icon" aria-hidden="true">☎</span>
+          <div><small>${t('رقم الجوال','Mobile number')}</small><strong dir="ltr">${safe(customerSession.phone||myPhone||'—')}</strong></div>
+        </article>
+        <article>
+          <span class="customer-detail-icon" aria-hidden="true">⌖</span>
+          <div><small>${t('منطقة التوصيل','Delivery location')}</small><strong>${safe(locationName)}</strong></div>
+        </article>
+        <article>
+          <span class="customer-detail-icon" aria-hidden="true">✓</span>
+          <div><small>${t('نوع الحساب','Account type')}</small><strong>${safe(accountType)}</strong></div>
+        </article>
+        <article>
+          <span class="customer-detail-icon" aria-hidden="true">●</span>
+          <div><small>${t('حالة الحساب','Account status')}</small><strong>${t('نشط وموثق','Active & verified')}</strong></div>
+        </article>
+      </div>
+    </section>
+
+    <form id="customer-profile-form" class="customer-profile-form customer-profile-edit-panel" hidden>
+      <div class="customer-profile-edit-head">
+        <div><small>${t('تعديل الملف','EDIT PROFILE')}</small><h3>${t('تحديث بيانات الحساب','Update account details')}</h3></div>
+        <button type="button" id="customer-cancel-profile-edit" class="customer-edit-close" aria-label="${t('إلغاء التعديل','Cancel editing')}">×</button>
+      </div>
+
+      <div class="customer-photo-editor">
+        <div class="customer-photo-preview">
+          <img id="customer-edit-photo-preview" src="${safe(avatar)}" alt="${t('صورة الملف الشخصي','Profile photo')}">
+        </div>
+        <div class="customer-photo-copy">
+          <strong>${t('صورة الملف الشخصي','Profile photo')}</strong>
+          <span>${t('اختر صورة واضحة لحسابك.','Choose a clear photo for your account.')}</span>
+          <div class="customer-photo-actions">
+            <button type="button" id="customer-change-photo">${t('تغيير الصورة','Change photo')}</button>
+            <button type="button" id="customer-remove-photo">${t('إزالة','Remove')}</button>
+          </div>
+          <input id="customer-profile-photo-input" type="file" accept="image/*" hidden>
+        </div>
+      </div>
+
+      <div class="customer-edit-fields">
+        <label>${t('الاسم الكامل','Full name')}
+          <input name="name" value="${safe(customerSession.name||'')}" required>
+        </label>
+        <label>${t('البريد الإلكتروني','Email')}
+          <input value="${safe(customerSession.email||'')}" type="email" dir="ltr" readonly>
+          <small>${t('البريد مرتبط بتسجيل الدخول ولا يتم تغييره من هنا.','Email is linked to sign-in and is read-only here.')}</small>
+        </label>
+        <label>${t('رقم الجوال','Mobile number')}
+          <input name="phone" type="tel" dir="ltr" value="${safe(customerSession.phone||myPhone||'')}" placeholder="05XXXXXXXX">
+        </label>
+        <label>${t('منطقة التوصيل','Delivery location')}
+          <select name="district">
+            ${districts.map(d=>`<option value="${safe(d)}" ${d===district?'selected':''}>${safe(t(d,districtEn[d]||d))}</option>`).join('')}
+          </select>
+        </label>
+      </div>
+
+      <div class="customer-profile-edit-actions">
+        <button type="button" id="customer-cancel-profile-edit-bottom" class="customer-edit-cancel">${t('إلغاء','Cancel')}</button>
+        <button type="submit" class="customer-edit-save">${t('حفظ التغييرات','Save changes')}</button>
+      </div>
+    </form>
+
+    <div class="customer-account-actions">
+      <button data-nav="orders" class="primary-block">${t('طلباتي وتتبع الطلب','My orders & tracking')}</button>
+      <button id="customer-logout" class="secondary-block" type="button">${t('تسجيل الخروج','Sign out')}</button>
+    </div>
+  </section>`;
 }
 
 function filteredAdminOrders(){
@@ -7391,6 +7899,9 @@ function render(){
   document.querySelector('#app').innerHTML=shell(content,{admin:v==='admin'});
   bind();
   applyV469MobileExperience();
+  setupV485MostRequestedSlider();
+  if(typeof setupV487StableCarousel==='function') setupV487StableCarousel();
+  if(typeof setupV490RequestSection==='function') setupV490RequestSection();
   requestAnimationFrame(()=>{ if(typeof applyV443LockedTopNav==='function') applyV443LockedTopNav(); });
 }
 
@@ -7458,9 +7969,9 @@ function standardDetailData(kind){
         [t('جاهز للتسليم','Delivery ready'),t('ترتيب مناسب للكرتون المبرد','Organised for chilled delivery cartons')]
       ],
       slides:[
-        ['assets/standards/pack-1.webp',t('تغليف كامل ومحكم','Complete sealed packing')],
-        ['assets/standards/pack-2.webp',t('تغليف ريش وضلع','Vacuum-packed ribs')],
-        ['assets/standards/pack-3.webp',t('تغليف قطع مختارة','Selected cuts packed separately')]
+        ['assets/standards/pack-1-v508.webp',t('تغليف كامل ومحكم','Complete sealed packing')],
+        ['assets/standards/pack-2-v508.webp',t('تغليف ريش وضلع','Vacuum-packed ribs')],
+        ['assets/standards/pack-3-v508.webp',t('تغليف قطع مختارة','Selected cuts packed separately')]
       ]
     },
     cut:{
@@ -7482,7 +7993,7 @@ function standardDetailData(kind){
       slides:[
         ['assets/standards/cut-1.webp',t('تجهيز احترافي داخل المسلخ','Professional preparation area')],
         ['assets/standards/cut-2.webp',t('تقطيع حسب الطلب','Custom cutting workflow')],
-        ['assets/standards/cut-3.webp',t('قطع جاهزة للطبخ','Prepared cuts ready for cooking')]
+        ['assets/standards/cut-3-v508.webp',t('قطع جاهزة للطبخ','Prepared cuts ready for cooking')]
       ]
     }
   };
@@ -7705,14 +8216,105 @@ function syncMobileAdminNav(){
   });
 }
 
+
+function openDeliveryLocationPopup(){
+  document.querySelector('.delivery-location-modal')?.remove();
+
+  let pendingDistrict=district;
+  const overlay=document.createElement('div');
+  overlay.className='delivery-location-modal';
+  overlay.setAttribute('role','dialog');
+  overlay.setAttribute('aria-modal','true');
+  overlay.setAttribute('aria-label',t('اختيار منطقة التوصيل','Choose delivery area'));
+
+  const options=districts.map(d=>`
+    <label class="delivery-location-option ${d===pendingDistrict?'selected':''}">
+      <input type="radio" name="delivery-location-choice" value="${safe(d)}" ${d===pendingDistrict?'checked':''}>
+      <span class="delivery-location-radio" aria-hidden="true"></span>
+      <span class="delivery-location-option-copy">
+        <b>${safe(t(d,districtEn[d]||d))}</b>
+        <small>${safe(t('جدة','Jeddah'))}</small>
+      </span>
+    </label>
+  `).join('');
+
+  overlay.innerHTML=`
+    <div class="delivery-location-backdrop" data-location-close></div>
+    <section class="delivery-location-dialog">
+      <button class="delivery-location-close" type="button" data-location-close aria-label="${t('إغلاق','Close')}">×</button>
+
+      <div class="delivery-location-current">
+        <div class="delivery-location-store-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M4 10.5V20h16v-9.5M3 10.5l1.8-6h14.4l1.8 6M7 20v-5h4v5M14 14h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M4 10.5c0 1.1.9 2 2 2s2-.9 2-2c0 1.1.9 2 2 2s2-.9 2-2c0 1.1.9 2 2 2s2-.9 2-2c0 1.1.9 2 2 2s2-.9 2-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <small>${t('أنت تتسوق من','You are shopping from')}</small>
+          <h2>${safe(t('جدة · '+district.replace('حي ',''),'Jeddah · '+(districtEn[district]||district)))}</h2>
+        </div>
+      </div>
+
+      <div class="delivery-location-body">
+        <h3>${t('اختر منطقة توصيل أخرى','Choose another delivery area')}</h3>
+        <p>${t('حدد المنطقة الأقرب لك داخل جدة لتحديث خيارات التوصيل.','Select your preferred Jeddah delivery area to update delivery options.')}</p>
+        <div class="delivery-location-list">${options}</div>
+      </div>
+
+      <button class="delivery-location-confirm" type="button">
+        <span>${t('تأكيد','Confirm')}</span>
+        <span aria-hidden="true">←</span>
+      </button>
+    </section>
+  `;
+
+  const close=()=>{
+    overlay.classList.remove('is-open');
+    document.body.classList.remove('delivery-location-modal-open');
+    setTimeout(()=>overlay.remove(),180);
+  };
+
+  overlay.querySelectorAll('input[name="delivery-location-choice"]').forEach(input=>{
+    input.addEventListener('change',()=>{
+      pendingDistrict=input.value;
+      overlay.querySelectorAll('.delivery-location-option').forEach(label=>{
+        label.classList.toggle('selected',label.contains(input));
+      });
+    });
+  });
+
+  overlay.querySelectorAll('[data-location-close]').forEach(el=>el.addEventListener('click',close));
+  overlay.querySelector('.delivery-location-confirm')?.addEventListener('click',()=>{
+    district=pendingDistrict;
+    persist();
+    close();
+    setTimeout(()=>render(),190);
+  });
+
+  overlay.addEventListener('keydown',e=>{
+    if(e.key==='Escape')close();
+  });
+
+  document.body.appendChild(overlay);
+  document.body.classList.add('delivery-location-modal-open');
+  requestAnimationFrame(()=>overlay.classList.add('is-open'));
+  setTimeout(()=>overlay.querySelector('input:checked')?.focus(),80);
+}
+
 function bind(){
   document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>setView(b.dataset.nav));
   document.querySelector('#language')?.addEventListener('click',openLanguagePicker);
-  document.querySelector('#location-top')?.addEventListener('click',()=>{if(view()!=='home')setView('home');setTimeout(()=>document.querySelector('.district-card')?.scrollIntoView({behavior:'smooth'}),80)});
+  document.querySelector('#location-top')?.addEventListener('click',openDeliveryLocationPopup);
   document.querySelector('#top-search')?.addEventListener('click',()=>openTopSearchOverlay());
   document.querySelector('#top-bell')?.addEventListener('click',()=>toast(t('سنضيف مركز التنبيهات في مرحلة الحسابات.','Notification centre will be connected in the account phase.')));
   document.querySelectorAll('.js-cart,#nav-cart').forEach(el=>el.addEventListener('click',showCart));
   document.querySelector('#header-cart')?.addEventListener('click',showCart);
+  document.querySelector('#mobile-language')?.addEventListener('click',openLanguagePicker);
+  document.querySelector('#mobile-location-top')?.addEventListener('click',openDeliveryLocationPopup);
+  document.querySelector('#mobile-top-search')?.addEventListener('click',()=>openTopSearchOverlay());
+  document.querySelector('#mobile-top-bell')?.addEventListener('click',()=>toast(t('سنضيف مركز التنبيهات في مرحلة الحسابات.','Notification centre will be connected in the account phase.')));
+  document.querySelector('#mobile-header-cart')?.addEventListener('click',showCart);
   document.querySelectorAll('.js-products,#nav-products').forEach(el=>el.addEventListener('click',()=>{if(view()!=='home')setView('home');setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'}),100)}));
   document.querySelectorAll('[data-hero-browse]').forEach(btn=>btn.addEventListener('click',()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'})));
   setupHeroSlider();
@@ -7879,7 +8481,7 @@ function bind(){
   document.querySelectorAll('[data-admin-status]').forEach(s=>s.onchange=()=>updateAdminStatus(s.dataset.adminStatus,s.value));
   applyRbacUi();
 }
-function renderProducts(){const el=document.querySelector('#products');if(!el)return;el.innerHTML=productCards();document.querySelectorAll('[data-product]').forEach(b=>b.onclick=e=>{e.stopPropagation();productDialog(b.dataset.product)});document.querySelectorAll('[data-product-detail-button]').forEach(b=>b.onclick=e=>{e.stopPropagation();setView('product/'+encodeURIComponent(b.dataset.productDetailButton))});document.querySelectorAll('[data-product-detail]').forEach(card=>{card.onclick=e=>{if(e.target.closest('button'))return;setView('product/'+encodeURIComponent(card.dataset.productDetail))}});document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const id=b.dataset.fav;favourites.has(id)?favourites.delete(id):favourites.add(id);persist();renderProducts()});document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareProduct(b.dataset.share));setupCustomBox3DShowcase()}
+function renderProducts(){const el=document.querySelector('#products');if(!el)return;el.innerHTML=productCards();document.querySelectorAll('[data-product]').forEach(b=>b.onclick=e=>{e.stopPropagation();productDialog(b.dataset.product)});document.querySelectorAll('[data-product-detail-button]').forEach(b=>b.onclick=e=>{e.stopPropagation();setView('product/'+encodeURIComponent(b.dataset.productDetailButton))});document.querySelectorAll('[data-product-detail]').forEach(card=>{card.onclick=e=>{if(e.target.closest('button'))return;setView('product/'+encodeURIComponent(card.dataset.productDetail))}});document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const id=b.dataset.fav;favourites.has(id)?favourites.delete(id):favourites.add(id);persist();renderProducts()});document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareProduct(b.dataset.share));setupCustomBox3DShowcase();setupV485MostRequestedSlider();if(typeof setupV487StableCarousel==='function')setupV487StableCarousel()}
 
 
 function productOptionsDialog(id){
@@ -15009,3 +15611,13540 @@ if(!window.__v469ResizeBound){
     installV469MobilePremiumCSS();
   }
 })();
+
+
+;(()=>{
+  const installV470DeliveryAreaDesktopFonts=()=>{
+    if(document.getElementById('v470-delivery-area-desktop-fonts')) return;
+
+    const style=document.createElement('style');
+    style.id='v470-delivery-area-desktop-fonts';
+    style.textContent=`
+/* Ass Al Halaal v470 — larger delivery-area typography on desktop only */
+
+@media (min-width:901px){
+
+  .app-shell:not(.admin-shell) .ref-district-card{
+    padding:16px 22px 18px!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-title{
+    gap:14px!important;
+    margin-bottom:14px!important;
+    max-width:74%!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-title .near{
+    width:50px!important;
+    height:50px!important;
+    min-width:50px!important;
+    min-height:50px!important;
+    font-size:16px!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-title h2{
+    font-size:24px!important;
+    line-height:1.12!important;
+    font-weight:800!important;
+    letter-spacing:-.2px!important;
+    margin:0 0 5px!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-title p{
+    font-size:13px!important;
+    line-height:1.4!important;
+    margin:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-chips{
+    max-width:74%!important;
+    gap:9px!important;
+    margin-top:10px!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-chips button{
+    min-height:42px!important;
+    padding:9px 18px!important;
+    font-size:13px!important;
+    font-weight:700!important;
+    line-height:1!important;
+  }
+}
+
+@media (min-width:901px) and (max-width:1180px){
+  .app-shell:not(.admin-shell) .district-title,
+  .app-shell:not(.admin-shell) .district-chips{
+    max-width:70%!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-title h2{
+    font-size:22px!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-chips button{
+    padding-inline:15px!important;
+    font-size:12px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV470DeliveryAreaDesktopFonts,{once:true});
+  }else{
+    installV470DeliveryAreaDesktopFonts();
+  }
+})();
+
+
+;(()=>{
+  const installV471DeliveryAreaLargerFonts=()=>{
+    if(document.getElementById('v471-delivery-area-larger-fonts')) return;
+
+    const style=document.createElement('style');
+    style.id='v471-delivery-area-larger-fonts';
+    style.textContent=`
+/* Ass Al Halaal v471 — stronger desktop delivery-area typography */
+
+@media (min-width:901px){
+
+  .app-shell:not(.admin-shell) .ref-district-card{
+    padding:18px 24px 20px!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-title{
+    max-width:78%!important;
+    gap:15px!important;
+    margin-bottom:16px!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-title .near{
+    width:54px!important;
+    height:54px!important;
+    min-width:54px!important;
+    min-height:54px!important;
+    font-size:18px!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-title h2{
+    font-size:28px!important;
+    line-height:1.08!important;
+    font-weight:800!important;
+    letter-spacing:-.25px!important;
+    margin:0 0 6px!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-title p{
+    font-size:15px!important;
+    line-height:1.4!important;
+    font-weight:500!important;
+    margin:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-chips{
+    max-width:78%!important;
+    gap:10px!important;
+    margin-top:12px!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-chips button{
+    min-height:46px!important;
+    padding:10px 20px!important;
+    font-size:15px!important;
+    line-height:1!important;
+    font-weight:800!important;
+    border-radius:999px!important;
+  }
+}
+
+@media (min-width:901px) and (max-width:1180px){
+
+  .app-shell:not(.admin-shell) .district-title,
+  .app-shell:not(.admin-shell) .district-chips{
+    max-width:74%!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-title h2{
+    font-size:25px!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-title p{
+    font-size:14px!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-chips button{
+    min-height:44px!important;
+    padding-inline:17px!important;
+    font-size:14px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV471DeliveryAreaLargerFonts,{once:true});
+  }else{
+    installV471DeliveryAreaLargerFonts();
+  }
+})();
+
+
+;(()=>{
+  const installV472PremiumResponsiveHero=()=>{
+    if(document.getElementById('v472-premium-responsive-hero')) return;
+
+    const style=document.createElement('style');
+    style.id='v472-premium-responsive-hero';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v472 — Premium responsive hero
+   Desktop: refined split panel
+   Mobile: image first, compact content second
+   All controls remain real/functional.
+   ========================================================= */
+
+/* ---------- DESKTOP / TABLET LANDSCAPE ---------- */
+@media (min-width:901px){
+
+  .app-shell:not(.admin-shell) .v94-hero-slider{
+    position:relative!important;
+    width:100%!important;
+    min-height:430px!important;
+    height:430px!important;
+    margin:8px 0 28px!important;
+    border:2px solid #d9ab3d!important;
+    border-radius:26px!important;
+    overflow:hidden!important;
+    background:#064535!important;
+    box-shadow:
+      0 18px 38px rgba(4,67,50,.16),
+      0 2px 0 rgba(255,255,255,.58) inset!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slides{
+    width:100%!important;
+    height:100%!important;
+    min-height:430px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide,
+  .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero{
+    width:100%!important;
+    height:430px!important;
+    min-height:430px!important;
+    display:grid!important;
+    grid-template-columns:51% 49%!important;
+    align-items:stretch!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    overflow:hidden!important;
+    background:
+      radial-gradient(circle at 98% 4%,rgba(32,121,89,.24),transparent 31%),
+      linear-gradient(135deg,#07513f 0%,#054235 58%,#04362d 100%)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media{
+    order:1!important;
+    position:relative!important;
+    display:block!important;
+    width:100%!important;
+    height:430px!important;
+    min-height:430px!important;
+    overflow:hidden!important;
+    background:#0a4a3b!important;
+    z-index:1!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media img{
+    position:absolute!important;
+    inset:0!important;
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    max-width:none!important;
+    max-height:none!important;
+    object-fit:cover!important;
+    object-position:center 48%!important;
+    border:0!important;
+    border-radius:0!important;
+    transform:none!important;
+    filter:saturate(1.03) contrast(1.02)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-naimi .hero-media img{
+    object-position:52% 48%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-premium .hero-media img{
+    object-position:center 52%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-livestock .hero-media img{
+    object-position:center 43%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-delivery .hero-media img{
+    object-position:center 50%!important;
+  }
+
+  /* Gold blend/divider between image and copy. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media:before{
+    content:""!important;
+    position:absolute!important;
+    top:-9%!important;
+    right:-32px!important;
+    width:70px!important;
+    height:118%!important;
+    border-radius:50%!important;
+    border-right:2px solid rgba(245,205,95,.92)!important;
+    background:linear-gradient(90deg,rgba(4,68,53,0),rgba(4,68,53,.9))!important;
+    pointer-events:none!important;
+    z-index:3!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media:after{
+    content:""!important;
+    position:absolute!important;
+    inset:0!important;
+    background:
+      linear-gradient(90deg,rgba(4,58,45,0) 55%,rgba(4,58,45,.78) 100%)!important;
+    pointer-events:none!important;
+    z-index:2!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    order:2!important;
+    position:relative!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    width:100%!important;
+    height:430px!important;
+    min-height:430px!important;
+    padding:34px 40px 42px!important;
+    box-sizing:border-box!important;
+    color:#fff!important;
+    overflow:hidden!important;
+    z-index:2!important;
+    background:
+      radial-gradient(circle at 100% 0,rgba(24,106,79,.28),transparent 35%),
+      linear-gradient(180deg,rgba(5,78,60,.96),rgba(4,58,47,.99))!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy:before{
+    content:""!important;
+    position:absolute!important;
+    inset:0!important;
+    background:
+      linear-gradient(135deg,rgba(255,255,255,.02),transparent 36%),
+      radial-gradient(circle at 84% 18%,rgba(218,172,55,.05),transparent 28%)!important;
+    pointer-events:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges{
+    display:flex!important;
+    align-items:center!important;
+    gap:9px!important;
+    margin:0 0 16px!important;
+    position:relative!important;
+    z-index:2!important;
+    overflow:visible!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges>span{
+    min-height:36px!important;
+    padding:8px 16px!important;
+    border-radius:999px!important;
+    font-size:10px!important;
+    font-weight:800!important;
+    letter-spacing:.2px!important;
+    box-shadow:0 5px 12px rgba(0,0,0,.12)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges small{
+    font-size:9px!important;
+    white-space:nowrap!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    margin:0 0 14px!important;
+    font-size:44px!important;
+    line-height:1.02!important;
+    letter-spacing:-.5px!important;
+    position:relative!important;
+    z-index:2!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-title-gold{
+    color:#e9b944!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title:after{
+    content:""!important;
+    display:block!important;
+    width:120px!important;
+    height:3px!important;
+    margin-top:14px!important;
+    border-radius:999px!important;
+    background:linear-gradient(90deg,#f0ca67,#d7a52f,transparent)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p{
+    max-width:94%!important;
+    margin:0 0 18px!important;
+    font-size:13px!important;
+    line-height:1.55!important;
+    color:#f3f7f5!important;
+    position:relative!important;
+    z-index:2!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:9px!important;
+    margin:0 0 18px!important;
+    position:relative!important;
+    z-index:2!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div{
+    min-width:0!important;
+    min-height:66px!important;
+    padding:9px 10px!important;
+    border:1px solid rgba(221,177,60,.56)!important;
+    border-radius:14px!important;
+    background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.012))!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div>span{
+    width:34px!important;
+    height:34px!important;
+    min-width:34px!important;
+    min-height:34px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row b{
+    font-size:10px!important;
+    line-height:1.15!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions{
+    display:grid!important;
+    grid-template-columns:minmax(180px,230px) minmax(0,1fr)!important;
+    gap:12px!important;
+    align-items:center!important;
+    margin:0!important;
+    position:relative!important;
+    z-index:2!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero{
+    width:100%!important;
+    min-height:52px!important;
+    height:52px!important;
+    border-radius:16px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small{
+    min-height:38px!important;
+    padding:8px 12px!important;
+    border-radius:14px!important;
+    font-size:8px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+    width:42px!important;
+    height:42px!important;
+    min-height:42px!important;
+    border:1px solid #f7dd87!important;
+    box-shadow:0 7px 18px rgba(0,0,0,.2)!important;
+    z-index:20!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-prev{left:14px!important}
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-next{right:14px!important}
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-dots{
+    bottom:13px!important;
+    z-index:20!important;
+  }
+}
+
+/* ---------- MOBILE / PORTRAIT TABLET ---------- */
+@media (max-width:900px){
+
+  .app-shell:not(.admin-shell) .v94-hero-slider{
+    width:100%!important;
+    min-height:0!important;
+    height:auto!important;
+    margin:0 0 18px!important;
+    border:1.5px solid #d9ab3d!important;
+    border-radius:20px!important;
+    overflow:hidden!important;
+    background:#064535!important;
+    box-shadow:0 12px 26px rgba(4,67,50,.13)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active,
+  .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero.is-active{
+    position:relative!important;
+    display:flex!important;
+    flex-direction:column!important;
+    width:100%!important;
+    min-height:0!important;
+    height:auto!important;
+    overflow:hidden!important;
+    opacity:1!important;
+    visibility:visible!important;
+  }
+
+  /* New dedicated mobile image: fit without stretching */
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468{
+    order:1!important;
+    position:relative!important;
+    display:block!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    aspect-ratio:16/9!important;
+    flex:0 0 auto!important;
+    overflow:hidden!important;
+    background:#0a4a3b!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468 img{
+    position:absolute!important;
+    inset:0!important;
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    max-width:none!important;
+    max-height:none!important;
+    object-fit:cover!important;
+    object-position:center 48%!important;
+    transform:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-naimi .mobile-hero-image-v468 img{
+    object-position:52% 45%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-premium .mobile-hero-image-v468 img{
+    object-position:center 52%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-livestock .mobile-hero-image-v468 img{
+    object-position:center 43%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-delivery .mobile-hero-image-v468 img{
+    object-position:center 50%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    order:2!important;
+    position:relative!important;
+    display:flex!important;
+    flex-direction:column!important;
+    width:100%!important;
+    min-height:0!important;
+    height:auto!important;
+    padding:18px 16px 56px!important;
+    box-sizing:border-box!important;
+    background:
+      radial-gradient(circle at 100% 0,rgba(26,112,84,.22),transparent 34%),
+      linear-gradient(180deg,#07513f 0%,#043d31 100%)!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges{
+    gap:6px!important;
+    margin:0 0 10px!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges>span{
+    min-height:30px!important;
+    max-width:100%!important;
+    padding:6px 10px!important;
+    font-size:9px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges small{
+    display:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    margin:0 0 10px!important;
+    font-size:30px!important;
+    line-height:1.02!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title:after{
+    content:""!important;
+    display:block!important;
+    width:88px!important;
+    height:3px!important;
+    margin-top:11px!important;
+    border-radius:999px!important;
+    background:linear-gradient(90deg,#f0ca67,#d7a52f,transparent)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p{
+    margin:0 0 14px!important;
+    font-size:12px!important;
+    line-height:1.5!important;
+    display:-webkit-box!important;
+    -webkit-line-clamp:3!important;
+    -webkit-box-orient:vertical!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+    margin:0 0 14px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div{
+    min-width:0!important;
+    min-height:54px!important;
+    padding:8px!important;
+    border-radius:13px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div>span{
+    width:30px!important;
+    height:30px!important;
+    min-width:30px!important;
+    min-height:30px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row b{
+    font-size:10px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:8px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero{
+    width:100%!important;
+    min-height:50px!important;
+    height:50px!important;
+    border-radius:15px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small{
+    min-height:36px!important;
+    padding:7px 10px!important;
+    font-size:8px!important;
+    border-radius:12px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+    top:calc((100vw - 24px) * .28125)!important;
+    width:38px!important;
+    height:38px!important;
+    min-height:38px!important;
+    margin-top:-19px!important;
+    z-index:20!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-prev{left:10px!important}
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-next{right:10px!important}
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-dots{
+    left:50%!important;
+    right:auto!important;
+    bottom:12px!important;
+    transform:translateX(-50%)!important;
+    z-index:20!important;
+  }
+}
+
+@media (max-width:430px){
+  .app-shell:not(.admin-shell) .v94-hero-slider{
+    border-radius:18px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    font-size:27px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    padding:16px 14px 54px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV472PremiumResponsiveHero,{once:true});
+  }else{
+    installV472PremiumResponsiveHero();
+  }
+})();
+
+
+;(()=>{
+  const installV473CompleteHero=()=>{
+    if(document.getElementById('v473-complete-hero-rebuild')) return;
+
+    const style=document.createElement('style');
+    style.id='v473-complete-hero-rebuild';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v473 — COMPLETE HERO REBUILD
+   One consistent hero system for all four slides.
+   ========================================================= */
+
+@media (min-width:901px){
+
+  .app-shell:not(.admin-shell) .v94-hero-slider{
+    position:relative!important;
+    width:100%!important;
+    height:500px!important;
+    min-height:500px!important;
+    margin:16px 0 30px!important;
+    border:2px solid #d7aa3e!important;
+    border-radius:26px!important;
+    overflow:hidden!important;
+    background:#064535!important;
+    box-shadow:0 18px 42px rgba(4,61,47,.16)!important;
+    isolation:isolate!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slides{
+    position:relative!important;
+    width:100%!important;
+    height:500px!important;
+    min-height:500px!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide{
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    height:500px!important;
+    min-height:500px!important;
+    display:grid!important;
+    grid-template-columns:52% 48%!important;
+    grid-template-areas:"media copy"!important;
+    overflow:hidden!important;
+    border-radius:24px!important;
+    background:#064535!important;
+    opacity:0!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active{
+    position:relative!important;
+    inset:auto!important;
+    opacity:1!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+    z-index:2!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468{
+    display:none!important;
+  }
+
+  /* REAL PHOTO PANEL */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media{
+    grid-area:media!important;
+    position:relative!important;
+    display:block!important;
+    width:100%!important;
+    height:500px!important;
+    min-height:500px!important;
+    overflow:hidden!important;
+    border-radius:24px 0 0 24px!important;
+    background:#0a4939!important;
+    z-index:1!important;
+  }
+
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .hero-media{
+    border-radius:0 24px 24px 0!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media img{
+    position:absolute!important;
+    inset:0!important;
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    min-width:100%!important;
+    min-height:100%!important;
+    max-width:none!important;
+    max-height:none!important;
+    object-fit:cover!important;
+    object-position:center!important;
+    transform:none!important;
+    filter:saturate(1.02) contrast(1.01)!important;
+    border:0!important;
+    border-radius:inherit!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-premium .hero-media img{
+    object-position:50% 52%!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-livestock .hero-media img{
+    object-position:50% 45%!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-naimi .hero-media img{
+    object-position:48% 46%!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-delivery .hero-media img{
+    object-position:50% 50%!important;
+  }
+
+  /* Subtle blend only at the join; never cover the photo. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media:before{
+    content:""!important;
+    position:absolute!important;
+    top:0!important;
+    right:0!important;
+    bottom:0!important;
+    width:54px!important;
+    background:linear-gradient(90deg,rgba(4,64,49,0),rgba(4,64,49,.72))!important;
+    pointer-events:none!important;
+    z-index:2!important;
+  }
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .hero-media:before{
+    right:auto!important;
+    left:0!important;
+    background:linear-gradient(270deg,rgba(4,64,49,0),rgba(4,64,49,.72))!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media:after{
+    content:""!important;
+    position:absolute!important;
+    top:0!important;
+    right:0!important;
+    width:2px!important;
+    height:100%!important;
+    background:linear-gradient(180deg,transparent 2%,#e2b744 12%,#e2b744 88%,transparent 98%)!important;
+    pointer-events:none!important;
+    z-index:3!important;
+  }
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .hero-media:after{
+    right:auto!important;
+    left:0!important;
+  }
+
+  /* CONTENT PANEL */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    grid-area:copy!important;
+    position:relative!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    width:100%!important;
+    height:500px!important;
+    min-height:500px!important;
+    padding:38px 38px 42px!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+    color:#fff!important;
+    background:
+      radial-gradient(circle at 100% 0,rgba(33,121,91,.22),transparent 34%),
+      linear-gradient(145deg,#07543f 0%,#064837 52%,#043b30 100%)!important;
+    z-index:2!important;
+  }
+
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    text-align:right!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy:before{
+    content:""!important;
+    position:absolute!important;
+    inset:0!important;
+    background:
+      radial-gradient(circle at 83% 18%,rgba(255,255,255,.035),transparent 20%),
+      linear-gradient(135deg,rgba(255,255,255,.025),transparent 45%)!important;
+    pointer-events:none!important;
+    z-index:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>*{
+    position:relative!important;
+    z-index:2!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges{
+    display:flex!important;
+    align-items:center!important;
+    flex-wrap:wrap!important;
+    gap:8px 10px!important;
+    margin:0 0 18px!important;
+    overflow:visible!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges>span{
+    display:inline-flex!important;
+    align-items:center!important;
+    min-height:36px!important;
+    padding:8px 16px!important;
+    border-radius:999px!important;
+    background:linear-gradient(180deg,#f5d26b,#e3ad34)!important;
+    color:#183c31!important;
+    font-size:10px!important;
+    font-weight:900!important;
+    letter-spacing:.2px!important;
+    box-shadow:0 5px 12px rgba(0,0,0,.12)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges small{
+    display:inline-flex!important;
+    align-items:center!important;
+    gap:4px!important;
+    color:#fff!important;
+    font-size:9px!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    margin:0 0 16px!important;
+    font-size:46px!important;
+    line-height:1.01!important;
+    letter-spacing:-.6px!important;
+    max-width:100%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-title-gold{
+    display:block!important;
+    color:#e9b746!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title>span:last-child{
+    display:block!important;
+    color:#fff!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title:after{
+    content:""!important;
+    display:block!important;
+    width:122px!important;
+    height:3px!important;
+    margin-top:15px!important;
+    border-radius:999px!important;
+    background:linear-gradient(90deg,#f3d274,#d7a52f,transparent)!important;
+  }
+
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title:after{
+    margin-left:auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p{
+    max-width:96%!important;
+    margin:0 0 20px!important;
+    font-size:13.5px!important;
+    line-height:1.58!important;
+    color:#f3f7f5!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:9px!important;
+    margin:0 0 20px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div{
+    display:flex!important;
+    align-items:center!important;
+    gap:8px!important;
+    min-width:0!important;
+    min-height:70px!important;
+    padding:10px 9px!important;
+    box-sizing:border-box!important;
+    border:1px solid rgba(224,179,58,.56)!important;
+    border-radius:14px!important;
+    background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.012))!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div>span{
+    flex:0 0 36px!important;
+    width:36px!important;
+    height:36px!important;
+    display:grid!important;
+    place-items:center!important;
+    border:1px solid rgba(232,190,75,.7)!important;
+    border-radius:50%!important;
+    color:#efc555!important;
+    font-size:15px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row b{
+    min-width:0!important;
+    font-size:10px!important;
+    line-height:1.18!important;
+    color:#fff!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions{
+    display:grid!important;
+    grid-template-columns:minmax(210px,240px) minmax(0,1fr)!important;
+    align-items:center!important;
+    gap:12px!important;
+    margin:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero{
+    width:100%!important;
+    height:54px!important;
+    min-height:54px!important;
+    border-radius:16px!important;
+    font-size:13px!important;
+    font-weight:800!important;
+    box-shadow:0 8px 18px rgba(0,0,0,.13)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small{
+    display:flex!important;
+    align-items:center!important;
+    gap:7px!important;
+    min-width:0!important;
+    min-height:40px!important;
+    padding:8px 12px!important;
+    border:1px solid rgba(255,255,255,.16)!important;
+    border-radius:14px!important;
+    font-size:8px!important;
+    color:#fff!important;
+    overflow:hidden!important;
+    white-space:nowrap!important;
+    text-overflow:ellipsis!important;
+  }
+
+  /* CONTROLS */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+    position:absolute!important;
+    top:50%!important;
+    transform:translateY(-50%)!important;
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
+    display:grid!important;
+    place-items:center!important;
+    border:1px solid #f4d77d!important;
+    border-radius:50%!important;
+    background:linear-gradient(180deg,#e7bd4d,#ca9523)!important;
+    color:#173b31!important;
+    box-shadow:0 8px 20px rgba(0,0,0,.2)!important;
+    z-index:30!important;
+    pointer-events:auto!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-prev{left:14px!important}
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-next{right:14px!important}
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-dots{
+    position:absolute!important;
+    left:50%!important;
+    right:auto!important;
+    bottom:14px!important;
+    transform:translateX(-50%)!important;
+    z-index:30!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:6px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-dots button{
+    width:9px!important;
+    height:9px!important;
+    min-width:9px!important;
+    min-height:9px!important;
+    padding:0!important;
+    border-radius:50%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-dots button.active{
+    width:30px!important;
+    border-radius:999px!important;
+  }
+}
+
+/* ================= MOBILE ================= */
+@media (max-width:900px){
+
+  .app-shell:not(.admin-shell) .v94-hero-slider{
+    position:relative!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    margin:0 0 20px!important;
+    border:1.5px solid #d7aa3e!important;
+    border-radius:20px!important;
+    overflow:hidden!important;
+    background:#064535!important;
+    box-shadow:0 12px 28px rgba(4,61,47,.13)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slides{
+    position:relative!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide{
+    position:absolute!important;
+    inset:0!important;
+    display:none!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    opacity:0!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active{
+    position:relative!important;
+    inset:auto!important;
+    display:flex!important;
+    flex-direction:column!important;
+    opacity:1!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media{
+    display:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468{
+    order:1!important;
+    position:relative!important;
+    display:block!important;
+    width:100%!important;
+    aspect-ratio:16/10!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:hidden!important;
+    background:#0a4939!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468 img{
+    position:absolute!important;
+    inset:0!important;
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    max-width:none!important;
+    max-height:none!important;
+    object-fit:cover!important;
+    object-position:center!important;
+    transform:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-premium .mobile-hero-image-v468 img{
+    object-position:50% 52%!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-livestock .mobile-hero-image-v468 img{
+    object-position:50% 44%!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-naimi .mobile-hero-image-v468 img{
+    object-position:48% 45%!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-delivery .mobile-hero-image-v468 img{
+    object-position:50% 50%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    order:2!important;
+    position:relative!important;
+    display:flex!important;
+    flex-direction:column!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    padding:18px 16px 58px!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+    background:
+      radial-gradient(circle at 100% 0,rgba(28,112,84,.2),transparent 33%),
+      linear-gradient(180deg,#07513f 0%,#043d31 100%)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges{
+    display:flex!important;
+    gap:6px!important;
+    margin:0 0 11px!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges>span{
+    min-height:30px!important;
+    max-width:100%!important;
+    padding:6px 10px!important;
+    font-size:9px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges small{
+    display:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    margin:0 0 11px!important;
+    font-size:30px!important;
+    line-height:1.02!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title:after{
+    content:""!important;
+    display:block!important;
+    width:86px!important;
+    height:3px!important;
+    margin-top:11px!important;
+    border-radius:999px!important;
+    background:linear-gradient(90deg,#f3d274,#d7a52f,transparent)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p{
+    margin:0 0 14px!important;
+    font-size:12px!important;
+    line-height:1.5!important;
+    display:-webkit-box!important;
+    -webkit-line-clamp:3!important;
+    -webkit-box-orient:vertical!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+    margin:0 0 14px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div{
+    display:flex!important;
+    align-items:center!important;
+    gap:8px!important;
+    min-width:0!important;
+    min-height:56px!important;
+    padding:8px!important;
+    border:1px solid rgba(224,179,58,.5)!important;
+    border-radius:13px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div>span{
+    flex:0 0 30px!important;
+    width:30px!important;
+    height:30px!important;
+    display:grid!important;
+    place-items:center!important;
+    border:1px solid rgba(232,190,75,.68)!important;
+    border-radius:50%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row b{
+    min-width:0!important;
+    font-size:10px!important;
+    line-height:1.16!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    gap:8px!important;
+    margin:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero{
+    width:100%!important;
+    height:50px!important;
+    min-height:50px!important;
+    border-radius:15px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small{
+    min-height:36px!important;
+    padding:7px 10px!important;
+    border-radius:12px!important;
+    font-size:8px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+    top:calc((100vw - 24px) * .3125)!important;
+    transform:translateY(-50%)!important;
+    width:38px!important;
+    height:38px!important;
+    min-width:38px!important;
+    min-height:38px!important;
+    z-index:30!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-prev{left:10px!important}
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-next{right:10px!important}
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-dots{
+    bottom:12px!important;
+    z-index:30!important;
+  }
+}
+
+@media (max-width:430px){
+  .app-shell:not(.admin-shell) .v94-hero-slider{
+    border-radius:18px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    padding:16px 14px 56px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    font-size:27px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV473CompleteHero,{once:true});
+  }else{
+    installV473CompleteHero();
+  }
+})();
+
+
+;(()=>{
+  const installV474RealisticHeroUpgrade=()=>{
+    if(document.getElementById('v474-realistic-hero-upgrade')) return;
+
+    const style=document.createElement('style');
+    style.id='v474-realistic-hero-upgrade';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v474 — Realistic Hero Upgrade
+   ========================================================= */
+
+@media (min-width:901px){
+  .app-shell:not(.admin-shell) .v94-hero-slider{
+    height:510px!important;
+    min-height:510px!important;
+    border:2px solid #d4a83a!important;
+    border-radius:28px!important;
+    box-shadow:0 20px 44px rgba(4,58,45,.16)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slides,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    height:510px!important;
+    min-height:510px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide{
+    grid-template-columns:52.5% 47.5%!important;
+    border-radius:26px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media{
+    border-radius:26px 0 0 26px!important;
+  }
+
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .hero-media{
+    border-radius:0 26px 26px 0!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media img{
+    object-fit:cover!important;
+    filter:saturate(1.02) contrast(1.02)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-premium .hero-media img{
+    object-position:52% 52%!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-livestock .hero-media img{
+    object-position:50% 48%!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-naimi .hero-media img{
+    object-position:50% 48%!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-delivery .hero-media img{
+    object-position:52% 52%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    padding:38px 40px 44px!important;
+    background:
+      radial-gradient(circle at 100% 0,rgba(28,112,84,.22),transparent 34%),
+      radial-gradient(circle at 16% 24%,rgba(238,192,71,.035),transparent 22%),
+      linear-gradient(150deg,#07533f 0%,#064736 48%,#043a2f 100%)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    font-family:Georgia,'Times New Roman',serif!important;
+    font-size:48px!important;
+    line-height:1.01!important;
+    font-weight:700!important;
+    letter-spacing:-.7px!important;
+    text-wrap:balance!important;
+    text-shadow:0 1px 1px rgba(0,0,0,.08)!important;
+    margin-bottom:16px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-title-gold{
+    color:#edbd4d!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p{
+    font-family:Arial,sans-serif!important;
+    font-size:14px!important;
+    line-height:1.62!important;
+    font-weight:500!important;
+    max-width:95%!important;
+    color:rgba(255,255,255,.94)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges>span{
+    font-family:Arial,sans-serif!important;
+    font-size:10.5px!important;
+    font-weight:800!important;
+    letter-spacing:.25px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges small{
+    font-family:Arial,sans-serif!important;
+    font-size:9.5px!important;
+    font-weight:600!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div{
+    min-height:72px!important;
+    border-color:rgba(224,178,57,.62)!important;
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.012))!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row b{
+    font-family:Arial,sans-serif!important;
+    font-size:10.5px!important;
+    font-weight:700!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero{
+    font-family:Arial,sans-serif!important;
+    font-size:13.5px!important;
+    font-weight:800!important;
+  }
+}
+
+@media (max-width:900px){
+  .app-shell:not(.admin-shell) .v94-hero-slider{
+    border-radius:20px!important;
+    border:1.5px solid #d4a83a!important;
+    box-shadow:0 13px 30px rgba(4,58,45,.13)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468{
+    aspect-ratio:16/10!important;
+    background:#0a4939!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468 img{
+    object-fit:cover!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-premium .mobile-hero-image-v468 img{
+    object-position:52% 52%!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-livestock .mobile-hero-image-v468 img{
+    object-position:50% 48%!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-naimi .mobile-hero-image-v468 img{
+    object-position:50% 48%!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-delivery .mobile-hero-image-v468 img{
+    object-position:52% 52%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    padding:18px 16px 58px!important;
+    background:
+      radial-gradient(circle at 100% 0,rgba(28,112,84,.2),transparent 34%),
+      linear-gradient(180deg,#07513f 0%,#043d31 100%)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    font-family:Georgia,'Times New Roman',serif!important;
+    font-size:31px!important;
+    line-height:1.03!important;
+    letter-spacing:-.35px!important;
+    text-wrap:balance!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p{
+    font-family:Arial,sans-serif!important;
+    font-size:12.5px!important;
+    line-height:1.52!important;
+    font-weight:500!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row b,
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero,
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges{
+    font-family:Arial,sans-serif!important;
+  }
+}
+
+@media (max-width:430px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    font-size:28px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV474RealisticHeroUpgrade,{once:true});
+  }else{
+    installV474RealisticHeroUpgrade();
+  }
+})();
+
+
+;(()=>{
+  const installV475SelectedHeroDesign=()=>{
+    if(document.getElementById('v475-selected-hero-design')) return;
+
+    const style=document.createElement('style');
+    style.id='v475-selected-hero-design';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v475 — selected premium hero design
+   Recreates the chosen reference in real HTML/CSS.
+   ========================================================= */
+
+@media (min-width:901px){
+
+  .app-shell:not(.admin-shell) .v94-hero-slider{
+    position:relative!important;
+    width:100%!important;
+    height:500px!important;
+    min-height:500px!important;
+    margin:16px 0 30px!important;
+    border:2px solid #d9ad3e!important;
+    border-radius:28px!important;
+    overflow:hidden!important;
+    background:#064635!important;
+    box-shadow:
+      0 22px 48px rgba(4,61,47,.17),
+      0 1px 0 rgba(255,255,255,.55) inset!important;
+    isolation:isolate!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slides{
+    position:relative!important;
+    width:100%!important;
+    height:500px!important;
+    min-height:500px!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide{
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    height:500px!important;
+    min-height:500px!important;
+    display:grid!important;
+    grid-template-columns:50% 50%!important;
+    grid-template-areas:"media copy"!important;
+    opacity:0!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+    overflow:hidden!important;
+    background:#064635!important;
+    border-radius:26px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active{
+    position:relative!important;
+    inset:auto!important;
+    opacity:1!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+    z-index:2!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468{
+    display:none!important;
+  }
+
+  /* ---------------- PHOTO PANEL ---------------- */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media{
+    grid-area:media!important;
+    position:relative!important;
+    display:block!important;
+    width:100%!important;
+    height:500px!important;
+    min-height:500px!important;
+    overflow:hidden!important;
+    background:#0a4939!important;
+    z-index:1!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media img{
+    position:absolute!important;
+    inset:0!important;
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    min-width:100%!important;
+    min-height:100%!important;
+    max-width:none!important;
+    max-height:none!important;
+    object-fit:cover!important;
+    object-position:center center!important;
+    transform:none!important;
+    border:0!important;
+    border-radius:0!important;
+    filter:saturate(1.02) contrast(1.02)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-naimi .hero-media img{
+    object-position:51% 47%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-premium .hero-media img{
+    object-position:52% 52%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-livestock .hero-media img{
+    object-position:50% 48%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-delivery .hero-media img{
+    object-position:52% 52%!important;
+  }
+
+  /* Selected design: strong curved gold separator */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media:before{
+    content:""!important;
+    position:absolute!important;
+    top:-12%!important;
+    right:-92px!important;
+    width:180px!important;
+    height:124%!important;
+    border-radius:50%!important;
+    border-right:4px solid #f0c95f!important;
+    background:
+      linear-gradient(90deg,rgba(5,71,55,0) 22%,rgba(5,71,55,.16) 48%,rgba(5,71,55,.96) 76%)!important;
+    pointer-events:none!important;
+    z-index:3!important;
+    box-shadow:10px 0 28px rgba(2,48,37,.11)!important;
+  }
+
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .hero-media:before{
+    right:auto!important;
+    left:-92px!important;
+    border-right:0!important;
+    border-left:4px solid #f0c95f!important;
+    background:
+      linear-gradient(270deg,rgba(5,71,55,0) 22%,rgba(5,71,55,.16) 48%,rgba(5,71,55,.96) 76%)!important;
+    box-shadow:-10px 0 28px rgba(2,48,37,.11)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media:after{
+    content:""!important;
+    position:absolute!important;
+    inset:0!important;
+    background:
+      linear-gradient(90deg,rgba(2,51,39,0) 68%,rgba(2,51,39,.22) 100%)!important;
+    pointer-events:none!important;
+    z-index:2!important;
+  }
+
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .hero-media:after{
+    background:
+      linear-gradient(270deg,rgba(2,51,39,0) 68%,rgba(2,51,39,.22) 100%)!important;
+  }
+
+  /* ---------------- COPY PANEL ---------------- */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    grid-area:copy!important;
+    position:relative!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    width:100%!important;
+    height:500px!important;
+    min-height:500px!important;
+    padding:42px 44px 48px!important;
+    box-sizing:border-box!important;
+    color:#fff!important;
+    overflow:hidden!important;
+    background:
+      radial-gradient(circle at 100% 0,rgba(28,111,83,.18),transparent 32%),
+      linear-gradient(148deg,#07523f 0%,#064836 51%,#043b30 100%)!important;
+    z-index:2!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy:before{
+    content:""!important;
+    position:absolute!important;
+    top:0!important;
+    right:0!important;
+    width:58%!important;
+    height:48%!important;
+    background:
+      repeating-linear-gradient(45deg,rgba(225,182,66,.04) 0 1px,transparent 1px 12px),
+      repeating-linear-gradient(-45deg,rgba(225,182,66,.028) 0 1px,transparent 1px 12px)!important;
+    opacity:.62!important;
+    pointer-events:none!important;
+    mask-image:linear-gradient(135deg,transparent 0%,#000 36%,#000 100%)!important;
+  }
+
+  /* Gold wave at bottom like selected reference */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy:after{
+    content:""!important;
+    position:absolute!important;
+    left:4%!important;
+    right:2%!important;
+    bottom:-42px!important;
+    height:110px!important;
+    border-top:3px solid rgba(237,190,73,.9)!important;
+    border-radius:50% 44% 0 0 / 22% 18% 0 0!important;
+    transform:rotate(-1.5deg)!important;
+    background:
+      radial-gradient(ellipse at 55% 0%,rgba(28,105,78,.2),transparent 54%)!important;
+    pointer-events:none!important;
+    z-index:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>*{
+    position:relative!important;
+    z-index:2!important;
+  }
+
+  /* ---------------- TYPOGRAPHY ---------------- */
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges{
+    display:flex!important;
+    align-items:center!important;
+    flex-wrap:wrap!important;
+    gap:8px 10px!important;
+    margin:0 0 18px!important;
+    overflow:visible!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges>span{
+    display:inline-flex!important;
+    align-items:center!important;
+    min-height:38px!important;
+    padding:8px 18px!important;
+    border-radius:999px!important;
+    background:linear-gradient(180deg,#f4d16a 0%,#dfaa31 100%)!important;
+    color:#183c31!important;
+    font-family:Arial,sans-serif!important;
+    font-size:10.5px!important;
+    font-weight:900!important;
+    letter-spacing:.2px!important;
+    box-shadow:0 6px 14px rgba(0,0,0,.12)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges small{
+    display:inline-flex!important;
+    align-items:center!important;
+    gap:4px!important;
+    color:#fff!important;
+    font-family:Arial,sans-serif!important;
+    font-size:9.5px!important;
+    font-weight:600!important;
+    white-space:nowrap!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    margin:0 0 16px!important;
+    max-width:100%!important;
+    font-family:Georgia,'Times New Roman',serif!important;
+    font-size:52px!important;
+    line-height:.98!important;
+    font-weight:700!important;
+    letter-spacing:-.8px!important;
+    text-wrap:balance!important;
+    text-shadow:0 1px 1px rgba(0,0,0,.08)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-title-gold{
+    display:block!important;
+    color:#efbd4b!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title>span:last-child{
+    display:block!important;
+    color:#fff!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title:after{
+    content:""!important;
+    display:block!important;
+    width:130px!important;
+    height:3px!important;
+    margin-top:16px!important;
+    border-radius:999px!important;
+    background:linear-gradient(90deg,#f3d174 0%,#d7a52f 58%,transparent 100%)!important;
+  }
+
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title:after{
+    margin-left:auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p{
+    max-width:96%!important;
+    margin:0 0 20px!important;
+    font-family:Arial,sans-serif!important;
+    font-size:14px!important;
+    line-height:1.58!important;
+    font-weight:500!important;
+    color:rgba(255,255,255,.95)!important;
+  }
+
+  /* ---------------- FEATURE CARDS ---------------- */
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:10px!important;
+    margin:0 0 22px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div{
+    display:flex!important;
+    align-items:center!important;
+    gap:9px!important;
+    min-width:0!important;
+    min-height:76px!important;
+    padding:10px!important;
+    box-sizing:border-box!important;
+    border:1px solid rgba(231,185,66,.72)!important;
+    border-radius:17px!important;
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.012))!important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.05),
+      0 7px 16px rgba(0,0,0,.05)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div>span{
+    flex:0 0 39px!important;
+    width:39px!important;
+    height:39px!important;
+    display:grid!important;
+    place-items:center!important;
+    border:1px solid rgba(238,194,79,.8)!important;
+    border-radius:50%!important;
+    color:#efc454!important;
+    font-size:16px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row b{
+    min-width:0!important;
+    font-family:Arial,sans-serif!important;
+    font-size:11px!important;
+    line-height:1.16!important;
+    font-weight:700!important;
+    color:#fff!important;
+  }
+
+  /* ---------------- ACTIONS ---------------- */
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions{
+    display:grid!important;
+    grid-template-columns:minmax(220px,250px) minmax(0,1fr)!important;
+    align-items:center!important;
+    gap:16px!important;
+    margin:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero{
+    width:100%!important;
+    height:56px!important;
+    min-height:56px!important;
+    border:1px solid #f5dc88!important;
+    border-radius:18px!important;
+    background:
+      linear-gradient(180deg,#f8d76f 0%,#e8ae30 100%)!important;
+    color:#18392f!important;
+    font-family:Arial,sans-serif!important;
+    font-size:14px!important;
+    font-weight:800!important;
+    box-shadow:
+      0 9px 20px rgba(0,0,0,.14),
+      inset 0 1px 0 rgba(255,255,255,.6)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small{
+    display:flex!important;
+    align-items:center!important;
+    gap:8px!important;
+    min-width:0!important;
+    min-height:42px!important;
+    padding:8px 13px!important;
+    border:1px solid rgba(255,255,255,.18)!important;
+    border-radius:15px!important;
+    font-family:Arial,sans-serif!important;
+    font-size:8.5px!important;
+    color:#fff!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    background:rgba(255,255,255,.015)!important;
+  }
+
+  /* ---------------- SLIDER CONTROLS ---------------- */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+    position:absolute!important;
+    top:50%!important;
+    transform:translateY(-50%)!important;
+    width:46px!important;
+    height:46px!important;
+    min-width:46px!important;
+    min-height:46px!important;
+    display:grid!important;
+    place-items:center!important;
+    border:1px solid #f4d77d!important;
+    border-radius:50%!important;
+    background:linear-gradient(180deg,#e8be4d,#ca9523)!important;
+    color:#173b31!important;
+    box-shadow:0 8px 20px rgba(0,0,0,.2)!important;
+    z-index:30!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-prev{left:16px!important}
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-next{right:16px!important}
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-dots{
+    position:absolute!important;
+    left:50%!important;
+    right:auto!important;
+    bottom:14px!important;
+    transform:translateX(-50%)!important;
+    z-index:30!important;
+  }
+}
+
+/* ---------------- MOBILE ---------------- */
+@media (max-width:900px){
+
+  .app-shell:not(.admin-shell) .v94-hero-slider{
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    margin:0 0 20px!important;
+    border:1.5px solid #d9ad3e!important;
+    border-radius:20px!important;
+    overflow:hidden!important;
+    background:#064635!important;
+    box-shadow:0 13px 30px rgba(4,58,45,.13)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active{
+    display:flex!important;
+    flex-direction:column!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media{
+    display:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468{
+    order:1!important;
+    position:relative!important;
+    display:block!important;
+    width:100%!important;
+    aspect-ratio:16/10!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:hidden!important;
+    background:#0a4939!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468 img{
+    position:absolute!important;
+    inset:0!important;
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    max-width:none!important;
+    max-height:none!important;
+    object-fit:cover!important;
+    object-position:center!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-naimi .mobile-hero-image-v468 img{
+    object-position:51% 47%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    order:2!important;
+    position:relative!important;
+    display:flex!important;
+    flex-direction:column!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    padding:19px 16px 58px!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+    background:
+      radial-gradient(circle at 100% 0,rgba(28,111,83,.18),transparent 32%),
+      linear-gradient(180deg,#07523f 0%,#043c30 100%)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy:after{
+    bottom:-58px!important;
+    height:100px!important;
+    border-top-width:2px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    font-size:31px!important;
+    line-height:1.02!important;
+    letter-spacing:-.4px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p{
+    font-size:12.5px!important;
+    line-height:1.52!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+    margin-bottom:15px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div{
+    min-height:57px!important;
+    padding:8px!important;
+    border-radius:13px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div>span{
+    flex-basis:31px!important;
+    width:31px!important;
+    height:31px!important;
+    font-size:13px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row b{
+    font-size:10px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions{
+    grid-template-columns:1fr!important;
+    gap:8px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero{
+    height:50px!important;
+    min-height:50px!important;
+    border-radius:15px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+    top:calc((100vw - 24px) * .3125)!important;
+    width:38px!important;
+    height:38px!important;
+    min-width:38px!important;
+    min-height:38px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-prev{left:10px!important}
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-next{right:10px!important}
+}
+
+@media (max-width:430px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    font-size:28px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    padding:17px 14px 56px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV475SelectedHeroDesign,{once:true});
+  }else{
+    installV475SelectedHeroDesign();
+  }
+})();
+
+
+;(()=>{
+  const installV476IntegratedCurveHero=()=>{
+    if(document.getElementById('v476-integrated-curve-hero')) return;
+
+    const style=document.createElement('style');
+    style.id='v476-integrated-curve-hero';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v476
+   COMPLETE HERO ASSETS + INTEGRATED CURVE FIX
+   ========================================================= */
+
+@media (min-width:901px){
+
+  .app-shell:not(.admin-shell) .v94-hero-slider{
+    height:500px!important;
+    min-height:500px!important;
+    border:2px solid #d9ad3e!important;
+    border-radius:28px!important;
+    overflow:hidden!important;
+    background:#064635!important;
+    box-shadow:0 22px 48px rgba(4,61,47,.17)!important;
+    isolation:isolate!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slides{
+    position:relative!important;
+    width:100%!important;
+    height:500px!important;
+    min-height:500px!important;
+    overflow:hidden!important;
+  }
+
+  /* One continuous hero canvas — no separate left/right boxes. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide{
+    position:absolute!important;
+    inset:0!important;
+    display:block!important;
+    width:100%!important;
+    height:500px!important;
+    min-height:500px!important;
+    overflow:hidden!important;
+    border-radius:26px!important;
+    background:
+      radial-gradient(circle at 92% 4%,rgba(31,117,87,.19),transparent 32%),
+      linear-gradient(148deg,#07523f 0%,#064836 52%,#043b30 100%)!important;
+    opacity:0!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active{
+    position:relative!important;
+    inset:auto!important;
+    opacity:1!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+    z-index:2!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468{
+    display:none!important;
+  }
+
+  /* Green content panel is full-canvas, underneath the photo. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    position:absolute!important;
+    inset:0!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    width:100%!important;
+    height:500px!important;
+    min-height:500px!important;
+    margin:0!important;
+    padding:40px 38px 46px 58%!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+    color:#fff!important;
+    background:
+      radial-gradient(circle at 96% 0,rgba(30,115,86,.21),transparent 34%),
+      linear-gradient(148deg,#07523f 0%,#064836 51%,#043b30 100%)!important;
+    z-index:1!important;
+  }
+
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    padding:40px 38px 46px 58%!important;
+    text-align:right!important;
+  }
+
+  /* Photo floats above the same green canvas. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media{
+    position:absolute!important;
+    left:0!important;
+    top:0!important;
+    bottom:0!important;
+    width:56%!important;
+    height:500px!important;
+    min-height:500px!important;
+    display:block!important;
+    margin:0!important;
+    overflow:hidden!important;
+    border-radius:26px 0 0 26px!important;
+    background:#0a4939!important;
+    z-index:3!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media img{
+    position:absolute!important;
+    inset:0!important;
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    min-width:100%!important;
+    min-height:100%!important;
+    max-width:none!important;
+    max-height:none!important;
+    object-fit:cover!important;
+    transform:none!important;
+    border:0!important;
+    border-radius:inherit!important;
+    filter:saturate(1.02) contrast(1.02)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-premium .hero-media img{
+    object-position:52% 52%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-livestock .hero-media img{
+    object-position:50% 48%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-naimi .hero-media img{
+    object-position:52% 47%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-delivery .hero-media img{
+    object-position:52% 52%!important;
+  }
+
+  /* This green ellipse CUTS INTO the photo and creates one smooth gold seam.
+     Since the green copy panel is underneath the photo, there is no box gap. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media:before{
+    content:""!important;
+    position:absolute!important;
+    top:-12%!important;
+    right:-118px!important;
+    width:236px!important;
+    height:124%!important;
+    border-radius:50%!important;
+    border-left:4px solid #f1cb63!important;
+    background:
+      linear-gradient(180deg,#07523f 0%,#064836 52%,#043b30 100%)!important;
+    box-shadow:
+      -10px 0 24px rgba(2,48,37,.08),
+      inset 5px 0 0 rgba(255,255,255,.01)!important;
+    pointer-events:none!important;
+    z-index:4!important;
+  }
+
+  /* Very subtle blend just before the curved seam. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media:after{
+    content:""!important;
+    position:absolute!important;
+    top:0!important;
+    right:0!important;
+    bottom:0!important;
+    width:120px!important;
+    background:linear-gradient(90deg,rgba(3,57,44,0),rgba(3,57,44,.24))!important;
+    pointer-events:none!important;
+    z-index:2!important;
+  }
+
+  /* Decorative pattern stays inside the green side only. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy:before{
+    content:""!important;
+    position:absolute!important;
+    top:0!important;
+    right:0!important;
+    width:58%!important;
+    height:48%!important;
+    background:
+      repeating-linear-gradient(45deg,rgba(225,182,66,.04) 0 1px,transparent 1px 12px),
+      repeating-linear-gradient(-45deg,rgba(225,182,66,.025) 0 1px,transparent 1px 12px)!important;
+    opacity:.58!important;
+    pointer-events:none!important;
+    mask-image:linear-gradient(135deg,transparent 0%,#000 38%,#000 100%)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy:after{
+    content:""!important;
+    position:absolute!important;
+    left:57%!important;
+    right:2%!important;
+    bottom:-42px!important;
+    height:110px!important;
+    border-top:3px solid rgba(237,190,73,.88)!important;
+    border-radius:50% 44% 0 0 / 22% 18% 0 0!important;
+    transform:rotate(-1.5deg)!important;
+    background:radial-gradient(ellipse at 55% 0%,rgba(28,105,78,.17),transparent 54%)!important;
+    pointer-events:none!important;
+    z-index:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>*{
+    position:relative!important;
+    z-index:2!important;
+  }
+
+  /* Keep the selected-design typography. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    font-family:Georgia,'Times New Roman',serif!important;
+    font-size:50px!important;
+    line-height:.99!important;
+    letter-spacing:-.75px!important;
+    text-wrap:balance!important;
+    margin-bottom:16px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-title-gold{
+    color:#efbd4b!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p{
+    font-family:Arial,sans-serif!important;
+    font-size:14px!important;
+    line-height:1.58!important;
+    font-weight:500!important;
+    max-width:96%!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div{
+    min-height:74px!important;
+  }
+
+  /* Controls remain on top of both visual halves. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-dots,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-progress{
+    z-index:40!important;
+  }
+}
+
+/* Mobile remains a clean stacked hero — no desktop curved overlay. */
+@media (max-width:900px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media{
+    display:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468{
+    display:block!important;
+    order:1!important;
+    width:100%!important;
+    aspect-ratio:16/10!important;
+    height:auto!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468 img{
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    order:2!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV476IntegratedCurveHero,{once:true});
+  }else{
+    installV476IntegratedCurveHero();
+  }
+})();
+
+
+;(()=>{
+  const installV477ControlledCurve=()=>{
+    if(document.getElementById('v477-controlled-curve')) return;
+
+    const style=document.createElement('style');
+    style.id='v477-controlled-curve';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v477 — controlled curved seam
+   Fixes v476 giant green oval.
+   ========================================================= */
+
+@media (min-width:901px){
+
+  /* Keep one continuous green canvas behind everything. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide{
+    background:
+      radial-gradient(circle at 92% 4%,rgba(31,117,87,.17),transparent 32%),
+      linear-gradient(148deg,#07523f 0%,#064836 52%,#043b30 100%)!important;
+  }
+
+  /* Photo gets most of the left half and stays fully visible. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media{
+    left:0!important;
+    right:auto!important;
+    width:55%!important;
+    height:500px!important;
+    overflow:hidden!important;
+    border-radius:26px 0 0 26px!important;
+    background:#0a4939!important;
+    z-index:3!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media img{
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
+    transform:none!important;
+  }
+
+  /* Content remains on the same hero canvas, not a separate box. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    inset:0!important;
+    width:100%!important;
+    height:500px!important;
+    padding:40px 38px 46px 57.5%!important;
+    background:
+      radial-gradient(circle at 96% 0,rgba(30,115,86,.20),transparent 34%),
+      linear-gradient(148deg,#07523f 0%,#064836 51%,#043b30 100%)!important;
+    z-index:1!important;
+  }
+
+  /* Narrow half-ellipse only at the join.
+     It covers ~48px of the photo, instead of the huge v476 oval. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media:before{
+    content:""!important;
+    position:absolute!important;
+    top:-6%!important;
+    right:-52px!important;
+    width:104px!important;
+    height:112%!important;
+    border-radius:50%!important;
+    border-left:3px solid #f0c95f!important;
+    background:
+      linear-gradient(180deg,#07523f 0%,#064836 52%,#043b30 100%)!important;
+    box-shadow:
+      -7px 0 18px rgba(2,48,37,.08)!important;
+    pointer-events:none!important;
+    z-index:4!important;
+  }
+
+  /* No dark vertical strip beside the curve. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media:after{
+    content:""!important;
+    position:absolute!important;
+    top:0!important;
+    right:0!important;
+    bottom:0!important;
+    width:52px!important;
+    background:linear-gradient(90deg,rgba(3,57,44,0),rgba(3,57,44,.10))!important;
+    pointer-events:none!important;
+    z-index:2!important;
+  }
+
+  /* Keep text comfortably away from the seam. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges,
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p,
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row,
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions{
+    max-width:100%!important;
+  }
+
+  /* Photo focus per slide */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-premium .hero-media img{
+    object-position:50% 52%!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-livestock .hero-media img{
+    object-position:50% 48%!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-naimi .hero-media img{
+    object-position:52% 47%!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-theme-delivery .hero-media img{
+    object-position:50% 52%!important;
+  }
+}
+
+/* Mobile: no curve at all; clean image-top layout. */
+@media (max-width:900px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media:before,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media:after{
+    display:none!important;
+    content:none!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV477ControlledCurve,{once:true});
+  }else{
+    installV477ControlledCurve();
+  }
+})();
+
+
+;(()=>{
+  const installV478PureGreenGoldHero=()=>{
+    if(document.getElementById('v478-pure-green-gold-hero')) return;
+
+    const style=document.createElement('style');
+    style.id='v478-pure-green-gold-hero';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v478 — PURE GREEN + GOLD HERO
+   No hero asset images. Entire hero is HTML/CSS.
+   ========================================================= */
+
+.app-shell:not(.admin-shell) .v94-hero-slider{
+  --hero-gold:#f2c552;
+  --hero-gold-2:#dca62e;
+  --hero-green-1:#064d3b;
+  --hero-green-2:#043c30;
+  --hero-green-3:#032f27;
+}
+
+/* ---------- DESKTOP ---------- */
+@media (min-width:901px){
+
+  .app-shell:not(.admin-shell) .v94-hero-slider{
+    position:relative!important;
+    width:100%!important;
+    height:500px!important;
+    min-height:500px!important;
+    margin:16px 0 30px!important;
+    border:2px solid var(--hero-gold)!important;
+    border-radius:30px!important;
+    overflow:hidden!important;
+    background:
+      radial-gradient(circle at 50% 10%,rgba(20,111,79,.26),transparent 34%),
+      linear-gradient(145deg,var(--hero-green-1) 0%,var(--hero-green-2) 55%,var(--hero-green-3) 100%)!important;
+    box-shadow:
+      0 22px 48px rgba(4,58,45,.18),
+      inset 0 1px 0 rgba(255,255,255,.04)!important;
+    isolation:isolate!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slides{
+    position:relative!important;
+    width:100%!important;
+    height:500px!important;
+    min-height:500px!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide{
+    position:absolute!important;
+    inset:0!important;
+    display:block!important;
+    width:100%!important;
+    height:500px!important;
+    min-height:500px!important;
+    opacity:0!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+    overflow:hidden!important;
+    border-radius:28px!important;
+    background:
+      radial-gradient(ellipse at 50% 0%,rgba(19,111,77,.25),transparent 42%),
+      radial-gradient(ellipse at 15% 78%,rgba(15,100,72,.18),transparent 34%),
+      radial-gradient(ellipse at 88% 72%,rgba(16,99,72,.16),transparent 36%),
+      linear-gradient(145deg,#07503d 0%,#044235 55%,#03372d 100%)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active{
+    position:relative!important;
+    opacity:1!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+    z-index:2!important;
+  }
+
+  /* Entire hero content is one centered panel. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    position:relative!important;
+    inset:auto!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    align-items:center!important;
+    width:100%!important;
+    height:500px!important;
+    min-height:500px!important;
+    margin:0!important;
+    padding:34px 150px 54px!important;
+    box-sizing:border-box!important;
+    text-align:center!important;
+    overflow:hidden!important;
+    background:transparent!important;
+    color:#fff!important;
+    z-index:2!important;
+  }
+
+  /* Large soft emerald waves */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy:before{
+    content:""!important;
+    position:absolute!important;
+    inset:-12% -5%!important;
+    background:
+      radial-gradient(115% 62% at -8% 110%,rgba(8,102,73,.34) 0 35%,transparent 36%),
+      radial-gradient(110% 62% at 110% -12%,rgba(9,103,74,.25) 0 35%,transparent 36%),
+      radial-gradient(96% 50% at 54% 115%,rgba(2,53,43,.42) 0 38%,transparent 39%)!important;
+    pointer-events:none!important;
+    z-index:0!important;
+  }
+
+  /* Gold illuminated sweeping lines like the reference */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy:after{
+    content:""!important;
+    position:absolute!important;
+    inset:0!important;
+    background:
+      linear-gradient(154deg,transparent 0 10%,rgba(245,204,89,.05) 11%,transparent 12% 100%),
+      radial-gradient(130% 75% at -8% -12%,transparent 0 41%,rgba(239,190,68,.92) 41.15% 41.35%,transparent 41.55%),
+      radial-gradient(128% 78% at 108% 112%,transparent 0 45%,rgba(239,190,68,.86) 45.15% 45.35%,transparent 45.55%)!important;
+    filter:drop-shadow(0 0 8px rgba(238,188,66,.42))!important;
+    pointer-events:none!important;
+    z-index:1!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>*{
+    position:relative!important;
+    z-index:3!important;
+  }
+
+  /* Top row */
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    flex-wrap:wrap!important;
+    gap:10px 14px!important;
+    width:100%!important;
+    margin:0 0 18px!important;
+    overflow:visible!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges>span{
+    display:inline-flex!important;
+    align-items:center!important;
+    min-height:40px!important;
+    padding:9px 20px!important;
+    border:1px solid #f6d875!important;
+    border-radius:999px!important;
+    background:linear-gradient(180deg,#f8d873 0%,#dfa72c 100%)!important;
+    color:#15382e!important;
+    font-family:Arial,sans-serif!important;
+    font-size:11px!important;
+    line-height:1!important;
+    font-weight:900!important;
+    letter-spacing:.35px!important;
+    text-transform:uppercase!important;
+    box-shadow:
+      0 7px 16px rgba(0,0,0,.13),
+      inset 0 1px 0 rgba(255,255,255,.65)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges small{
+    display:inline-flex!important;
+    align-items:center!important;
+    gap:6px!important;
+    color:#f3c95a!important;
+    font-family:Arial,sans-serif!important;
+    font-size:11px!important;
+    line-height:1!important;
+    font-weight:700!important;
+    white-space:nowrap!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges small i{
+    color:#f3c95a!important;
+  }
+
+  /* Main title — fully gold, like reference */
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    max-width:950px!important;
+    margin:0 auto 16px!important;
+    font-family:Georgia,'Times New Roman',serif!important;
+    font-size:58px!important;
+    line-height:.98!important;
+    font-weight:700!important;
+    letter-spacing:-.9px!important;
+    text-align:center!important;
+    text-wrap:balance!important;
+    text-shadow:
+      0 2px 0 rgba(84,52,2,.18),
+      0 5px 14px rgba(0,0,0,.12)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title span,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-title-gold{
+    display:block!important;
+    color:#f0bd48!important;
+    background:linear-gradient(180deg,#ffe58e 0%,#f2c455 42%,#dda52c 100%)!important;
+    -webkit-background-clip:text!important;
+    background-clip:text!important;
+    -webkit-text-fill-color:transparent!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title:after{
+    content:""!important;
+    display:block!important;
+    width:160px!important;
+    height:4px!important;
+    margin:18px auto 0!important;
+    border-radius:999px!important;
+    background:linear-gradient(90deg,transparent,#efbd47 18%,#ffe17c 50%,#efbd47 82%,transparent)!important;
+    box-shadow:0 0 14px rgba(239,189,71,.48)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p{
+    max-width:930px!important;
+    margin:0 auto 22px!important;
+    font-family:Arial,sans-serif!important;
+    font-size:17px!important;
+    line-height:1.45!important;
+    font-weight:500!important;
+    color:#f1c75a!important;
+    text-align:center!important;
+  }
+
+  /* Features */
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:16px!important;
+    width:min(100%,1030px)!important;
+    margin:0 auto 24px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:14px!important;
+    min-width:0!important;
+    min-height:82px!important;
+    padding:13px 18px!important;
+    box-sizing:border-box!important;
+    border:2px solid rgba(238,187,66,.88)!important;
+    border-radius:22px!important;
+    background:
+      linear-gradient(180deg,rgba(4,70,54,.74),rgba(3,57,46,.72))!important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.035),
+      0 8px 18px rgba(0,0,0,.06)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div>span{
+    flex:0 0 52px!important;
+    width:52px!important;
+    height:52px!important;
+    display:grid!important;
+    place-items:center!important;
+    border:2px solid rgba(244,196,77,.95)!important;
+    border-radius:50%!important;
+    color:#f0bd47!important;
+    font-size:22px!important;
+    font-weight:700!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row b{
+    color:#f2c556!important;
+    font-family:Arial,sans-serif!important;
+    font-size:15px!important;
+    line-height:1.15!important;
+    font-weight:800!important;
+    text-align:left!important;
+  }
+
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row b{
+    text-align:right!important;
+  }
+
+  /* Actions */
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:12px!important;
+    width:100%!important;
+    margin:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero{
+    width:min(100%,430px)!important;
+    height:68px!important;
+    min-height:68px!important;
+    padding:0 18px!important;
+    border:1px solid #ffe08b!important;
+    border-radius:999px!important;
+    background:
+      linear-gradient(180deg,#f9d873 0%,#e7ad2d 100%)!important;
+    color:#14392f!important;
+    font-family:Arial,sans-serif!important;
+    font-size:22px!important;
+    font-weight:900!important;
+    box-shadow:
+      0 10px 22px rgba(0,0,0,.14),
+      inset 0 1px 0 rgba(255,255,255,.65)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero .unified-login-icon,
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero i{
+    width:46px!important;
+    height:46px!important;
+    min-width:46px!important;
+    display:grid!important;
+    place-items:center!important;
+    border:1px solid rgba(83,63,8,.18)!important;
+    border-radius:50%!important;
+    background:rgba(216,160,31,.25)!important;
+    color:#173a30!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:10px!important;
+    width:min(100%,620px)!important;
+    min-height:46px!important;
+    padding:8px 16px!important;
+    box-sizing:border-box!important;
+    border:1px solid rgba(234,190,75,.42)!important;
+    border-radius:999px!important;
+    background:rgba(3,52,43,.55)!important;
+    color:#efc455!important;
+    font-family:Arial,sans-serif!important;
+    font-size:14px!important;
+    font-weight:600!important;
+    white-space:normal!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small i{
+    width:32px!important;
+    height:32px!important;
+    display:grid!important;
+    place-items:center!important;
+    border-radius:50%!important;
+    background:#f0bd47!important;
+    color:#164034!important;
+    font-style:normal!important;
+  }
+
+  /* Arrows */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+    position:absolute!important;
+    top:50%!important;
+    transform:translateY(-50%)!important;
+    width:56px!important;
+    height:56px!important;
+    min-width:56px!important;
+    min-height:56px!important;
+    display:grid!important;
+    place-items:center!important;
+    padding:0!important;
+    border:1px solid #ffe17c!important;
+    border-radius:50%!important;
+    background:linear-gradient(180deg,#f6cf65,#dc9f24)!important;
+    color:#15382e!important;
+    font-size:32px!important;
+    line-height:1!important;
+    box-shadow:
+      0 9px 20px rgba(0,0,0,.18),
+      inset 0 1px 0 rgba(255,255,255,.55)!important;
+    z-index:40!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-prev{
+    left:30px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-next{
+    right:30px!important;
+  }
+
+  /* Dots */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-dots{
+    position:absolute!important;
+    left:50%!important;
+    right:auto!important;
+    bottom:16px!important;
+    transform:translateX(-50%)!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:8px!important;
+    min-height:32px!important;
+    padding:5px 12px!important;
+    border:1px solid rgba(238,189,71,.38)!important;
+    border-radius:999px!important;
+    background:rgba(3,50,42,.72)!important;
+    z-index:40!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-dots button{
+    width:11px!important;
+    height:11px!important;
+    min-width:11px!important;
+    min-height:11px!important;
+    padding:0!important;
+    border-radius:50%!important;
+    background:#b8c8b9!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-dots button.active{
+    width:48px!important;
+    border-radius:999px!important;
+    background:linear-gradient(90deg,#e2aa2c,#ffd769)!important;
+  }
+
+  /* No asset/media layers whatsoever. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media,
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-media,
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468{
+    display:none!important;
+  }
+}
+
+/* ---------- MOBILE ---------- */
+@media (max-width:900px){
+
+  .app-shell:not(.admin-shell) .v94-hero-slider{
+    position:relative!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    margin:0 0 20px!important;
+    border:1.5px solid var(--hero-gold)!important;
+    border-radius:20px!important;
+    overflow:hidden!important;
+    background:
+      radial-gradient(circle at 50% 0,rgba(18,109,77,.24),transparent 34%),
+      linear-gradient(145deg,#07503d 0%,#044235 55%,#03372d 100%)!important;
+    box-shadow:0 13px 30px rgba(4,58,45,.14)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slides{
+    height:auto!important;
+    min-height:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide{
+    position:absolute!important;
+    inset:0!important;
+    display:none!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    opacity:0!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+    background:
+      radial-gradient(ellipse at 50% -10%,rgba(17,108,76,.25),transparent 40%),
+      radial-gradient(ellipse at 12% 92%,rgba(12,92,66,.22),transparent 34%),
+      radial-gradient(ellipse at 92% 88%,rgba(13,88,65,.18),transparent 35%),
+      linear-gradient(145deg,#07503d 0%,#044235 58%,#03372d 100%)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active{
+    position:relative!important;
+    inset:auto!important;
+    display:block!important;
+    opacity:1!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    position:relative!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    padding:28px 18px 64px!important;
+    box-sizing:border-box!important;
+    text-align:center!important;
+    background:transparent!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy:before{
+    inset:-10%!important;
+    background:
+      radial-gradient(125% 52% at -14% 108%,rgba(8,100,72,.27) 0 35%,transparent 36%),
+      radial-gradient(120% 54% at 112% -10%,rgba(9,101,73,.22) 0 35%,transparent 36%)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy:after{
+    background:
+      radial-gradient(142% 82% at -16% -8%,transparent 0 44%,rgba(239,190,68,.75) 44.15% 44.35%,transparent 44.55%),
+      radial-gradient(140% 82% at 114% 111%,transparent 0 47%,rgba(239,190,68,.72) 47.15% 47.35%,transparent 47.55%)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges{
+    gap:7px!important;
+    margin-bottom:16px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges>span{
+    min-height:34px!important;
+    padding:7px 12px!important;
+    font-size:9px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges small{
+    display:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    max-width:100%!important;
+    margin-bottom:14px!important;
+    font-size:35px!important;
+    line-height:1.02!important;
+    letter-spacing:-.45px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title:after{
+    width:96px!important;
+    height:3px!important;
+    margin-top:13px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p{
+    max-width:100%!important;
+    margin-bottom:18px!important;
+    font-size:13px!important;
+    line-height:1.5!important;
+    color:#f0c75b!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:9px!important;
+    width:100%!important;
+    margin-bottom:18px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div{
+    min-height:64px!important;
+    padding:9px!important;
+    gap:8px!important;
+    border-width:1.5px!important;
+    border-radius:15px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div>span{
+    flex-basis:34px!important;
+    width:34px!important;
+    height:34px!important;
+    font-size:14px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row b{
+    font-size:10px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero{
+    width:100%!important;
+    height:54px!important;
+    min-height:54px!important;
+    font-size:16px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero .unified-login-icon,
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero i{
+    width:36px!important;
+    height:36px!important;
+    min-width:36px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small{
+    width:100%!important;
+    min-height:40px!important;
+    padding:7px 10px!important;
+    font-size:9px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+    top:50%!important;
+    width:38px!important;
+    height:38px!important;
+    min-width:38px!important;
+    min-height:38px!important;
+    font-size:24px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-prev{
+    left:8px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-next{
+    right:8px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-dots{
+    bottom:12px!important;
+    min-height:28px!important;
+    padding:4px 9px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media,
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-media,
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468{
+    display:none!important;
+  }
+}
+
+@media (max-width:430px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    padding:24px 14px 62px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    font-size:31px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p{
+    font-size:12px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV478PureGreenGoldHero,{once:true});
+  }else{
+    installV478PureGreenGoldHero();
+  }
+})();
+
+
+;(()=>{
+  const installV479CenteredHero=()=>{
+    if(document.getElementById('v479-centered-hero')) return;
+
+    const style=document.createElement('style');
+    style.id='v479-centered-hero';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v479 — FULLY CENTERED HERO CONTENT
+   ========================================================= */
+
+@media (min-width:901px){
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    height:500px!important;
+    min-height:500px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    padding:32px 120px 58px!important;
+    box-sizing:border-box!important;
+    text-align:center!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges{
+    justify-content:center!important;
+    width:100%!important;
+    max-width:1100px!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    width:100%!important;
+    max-width:980px!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+    text-align:center!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title:after{
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title:after{
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p{
+    width:100%!important;
+    max-width:900px!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+    text-align:center!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+    width:min(100%,1030px)!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions{
+    width:100%!important;
+    align-items:center!important;
+    justify-content:center!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero{
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small{
+    margin-left:auto!important;
+    margin-right:auto!important;
+    text-align:center!important;
+  }
+}
+
+@media (max-width:900px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    align-items:center!important;
+    text-align:center!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges,
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p,
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row,
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions{
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV479CenteredHero,{once:true});
+  }else{
+    installV479CenteredHero();
+  }
+})();
+
+
+;(()=>{
+  const installV480TrueCenterHero=()=>{
+    if(document.getElementById('v480-true-center-hero')) return;
+
+    const style=document.createElement('style');
+    style.id='v480-true-center-hero';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v480 — TRUE CENTER HERO LOCK
+   Strong override against all previous split/right-panel rules.
+   ========================================================= */
+
+@media (min-width:901px){
+
+  .app-shell:not(.admin-shell) .v94-hero-slider,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slides,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide{
+    height:540px!important;
+    min-height:540px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide{
+    display:block!important;
+    grid-template-columns:none!important;
+    grid-template-areas:none!important;
+  }
+
+  /* Absolute full-canvas lock: no right half, no inherited 50% width. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active > .hero-copy{
+    position:absolute!important;
+    left:0!important;
+    right:0!important;
+    top:0!important;
+    bottom:0!important;
+    inset:0!important;
+
+    width:auto!important;
+    max-width:none!important;
+    min-width:0!important;
+
+    height:540px!important;
+    min-height:540px!important;
+    max-height:540px!important;
+
+    margin:0!important;
+    transform:none!important;
+    translate:none!important;
+
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+
+    padding:30px 120px 58px!important;
+    box-sizing:border-box!important;
+
+    text-align:center!important;
+    overflow:hidden!important;
+    background:transparent!important;
+
+    grid-column:1 / -1!important;
+    grid-row:1 / -1!important;
+    place-self:stretch!important;
+    z-index:5!important;
+  }
+
+  /* Center every direct hero content group on the same axis. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active > .hero-copy > *{
+    width:auto!important;
+    max-width:none!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+    align-self:center!important;
+    text-align:center!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges{
+    display:flex!important;
+    width:min(100%,1100px)!important;
+    max-width:1100px!important;
+    justify-content:center!important;
+    align-items:center!important;
+    margin:0 auto 16px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    display:block!important;
+    width:min(100%,980px)!important;
+    max-width:980px!important;
+    margin:0 auto 14px!important;
+    text-align:center!important;
+    font-size:56px!important;
+    line-height:.98!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title:after,
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title:after{
+    margin:16px auto 0!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy > p{
+    display:block!important;
+    width:min(100%,900px)!important;
+    max-width:900px!important;
+    margin:0 auto 20px!important;
+    text-align:center!important;
+    font-size:16px!important;
+    line-height:1.45!important;
+  }
+
+  /* Force feature cards back into the centered design. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    width:min(100%,1030px)!important;
+    max-width:1030px!important;
+    gap:14px!important;
+    margin:0 auto 22px!important;
+    align-self:center!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row > div{
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:none!important;
+    gap:10px!important;
+    margin:0 auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero{
+    width:min(100%,430px)!important;
+    max-width:430px!important;
+    margin:0 auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions > small{
+    width:min(100%,620px)!important;
+    max-width:620px!important;
+    margin:0 auto!important;
+    justify-content:center!important;
+    text-align:center!important;
+  }
+
+  /* Slider controls remain independent from centered content. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-prev{
+    left:28px!important;
+    right:auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-next{
+    right:28px!important;
+    left:auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-dots{
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+    bottom:14px!important;
+  }
+}
+
+@media (max-width:900px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active > .hero-copy{
+    width:100%!important;
+    max-width:none!important;
+    margin:0!important;
+    padding:26px 18px 62px!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    text-align:center!important;
+    transform:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active > .hero-copy > *{
+    margin-left:auto!important;
+    margin-right:auto!important;
+    text-align:center!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+    display:grid!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  const applyV480TrueCenterRuntime=()=>{
+    if(!window.matchMedia?.('(min-width:901px)').matches) return;
+    document.querySelectorAll('.v94-hero-slider .hero-slide.is-active > .hero-copy').forEach(copy=>{
+      Object.assign(copy.style,{
+        position:'absolute',
+        left:'0',
+        right:'0',
+        top:'0',
+        bottom:'0',
+        width:'100%',
+        maxWidth:'none',
+        height:'540px',
+        minHeight:'540px',
+        margin:'0',
+        transform:'none',
+        boxSizing:'border-box',
+        display:'flex',
+        flexDirection:'column',
+        alignItems:'center',
+        justifyContent:'center',
+        textAlign:'center'
+      });
+    });
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',()=>{
+      installV480TrueCenterHero();
+      requestAnimationFrame(applyV480TrueCenterRuntime);
+    },{once:true});
+  }else{
+    installV480TrueCenterHero();
+    requestAnimationFrame(applyV480TrueCenterRuntime);
+  }
+
+  if(!window.__v480HeroCenterObserver){
+    window.__v480HeroCenterObserver=new MutationObserver(()=>{
+      requestAnimationFrame(applyV480TrueCenterRuntime);
+    });
+    window.__v480HeroCenterObserver.observe(document.documentElement,{
+      subtree:true,
+      childList:true,
+      attributes:true,
+      attributeFilter:['class','aria-hidden','dir']
+    });
+  }
+
+  window.addEventListener('resize',()=>{
+    requestAnimationFrame(applyV480TrueCenterRuntime);
+  },{passive:true});
+})();
+
+
+;(()=>{
+  const installV481HeroCleanup=()=>{
+    if(document.getElementById('v481-hero-cleanup')) return;
+
+    const style=document.createElement('style');
+    style.id='v481-hero-cleanup';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v481 — Hero artifact + feature-card fix
+   ========================================================= */
+
+@media (min-width:901px){
+
+  /* REMOVE rectangular decorative pseudo-layers completely. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy:before,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy:after,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active > .hero-copy:before,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active > .hero-copy:after{
+    content:none!important;
+    display:none!important;
+    background:none!important;
+    border:0!important;
+    box-shadow:none!important;
+    filter:none!important;
+  }
+
+  /* Put decorative gold sweeps directly into the full hero background,
+     so there can never be a visible rectangle/box around them. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide{
+    background:
+      radial-gradient(145% 90% at -18% -22%, transparent 0 45%, rgba(241,194,72,.88) 45.15% 45.34%, transparent 45.55%),
+      radial-gradient(140% 88% at 118% 120%, transparent 0 47%, rgba(236,184,57,.78) 47.12% 47.32%, transparent 47.52%),
+      radial-gradient(ellipse at 50% 0%,rgba(19,111,77,.20),transparent 42%),
+      radial-gradient(ellipse at 15% 78%,rgba(15,100,72,.15),transparent 34%),
+      radial-gradient(ellipse at 88% 72%,rgba(16,99,72,.14),transparent 36%),
+      linear-gradient(145deg,#07503d 0%,#044235 55%,#03372d 100%)!important;
+  }
+
+  /* Keep all centered content above the background decoration. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy > *{
+    position:relative!important;
+    z-index:3!important;
+  }
+
+  /* FULL feature row — no clipping. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    width:min(100%,1040px)!important;
+    max-width:1040px!important;
+    min-height:92px!important;
+    height:auto!important;
+    max-height:none!important;
+    gap:14px!important;
+    margin:0 auto 22px!important;
+    padding:0!important;
+    overflow:visible!important;
+    align-items:stretch!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row > div{
+    position:relative!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:13px!important;
+    width:100%!important;
+    min-width:0!important;
+    height:88px!important;
+    min-height:88px!important;
+    max-height:none!important;
+    padding:12px 16px!important;
+    box-sizing:border-box!important;
+    overflow:visible!important;
+    border:2px solid rgba(238,187,66,.9)!important;
+    border-radius:20px!important;
+    background:linear-gradient(180deg,rgba(4,72,55,.82),rgba(3,57,46,.80))!important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.04),
+      0 7px 16px rgba(0,0,0,.06)!important;
+    visibility:visible!important;
+    opacity:1!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row > div > span{
+    flex:0 0 50px!important;
+    width:50px!important;
+    height:50px!important;
+    min-width:50px!important;
+    min-height:50px!important;
+    display:grid!important;
+    place-items:center!important;
+    margin:0!important;
+    border:2px solid rgba(244,196,77,.95)!important;
+    border-radius:50%!important;
+    color:#f0bd47!important;
+    font-size:20px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row > div > b{
+    display:block!important;
+    min-width:0!important;
+    margin:0!important;
+    color:#f2c556!important;
+    font-family:Arial,sans-serif!important;
+    font-size:14px!important;
+    line-height:1.18!important;
+    font-weight:800!important;
+    white-space:normal!important;
+    overflow:visible!important;
+  }
+
+  /* Ensure the feature row does not get hidden behind Login. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions{
+    position:relative!important;
+    z-index:4!important;
+    margin-top:0!important;
+  }
+}
+
+@media (max-width:900px){
+  /* Same cleanup on mobile: no rectangle artefact. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy:before,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy:after{
+    content:none!important;
+    display:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide{
+    background:
+      radial-gradient(135% 78% at -20% -16%, transparent 0 47%, rgba(241,194,72,.55) 47.1% 47.3%, transparent 47.5%),
+      radial-gradient(135% 80% at 120% 115%, transparent 0 48%, rgba(236,184,57,.52) 48.1% 48.3%, transparent 48.5%),
+      radial-gradient(ellipse at 50% -10%,rgba(17,108,76,.22),transparent 40%),
+      linear-gradient(145deg,#07503d 0%,#044235 58%,#03372d 100%)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    min-height:0!important;
+    height:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+    gap:9px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row > div{
+    height:68px!important;
+    min-height:68px!important;
+    max-height:none!important;
+    overflow:visible!important;
+    border-radius:15px!important;
+    border-width:1.5px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV481HeroCleanup,{once:true});
+  }else{
+    installV481HeroCleanup();
+  }
+})();
+
+
+;(()=>{
+  const OLD_HERO_STYLES=[
+    'v478-pure-green-gold-hero',
+    'v479-centered-hero',
+    'v480-true-center-hero',
+    'v481-hero-cleanup'
+  ];
+
+  const removeOldHeroOverrides=()=>{
+    OLD_HERO_STYLES.forEach(id=>document.getElementById(id)?.remove());
+    try{
+      if(window.__v480HeroCenterObserver){
+        window.__v480HeroCenterObserver.disconnect();
+        window.__v480HeroCenterObserver=null;
+      }
+    }catch{}
+  };
+
+  const installV482HeroSystem=()=>{
+    if(document.getElementById('v482-hero-system')) return;
+    removeOldHeroOverrides();
+
+    const style=document.createElement('style');
+    style.id='v482-hero-system';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v482 — ALL HERO SLIDES NORMALIZED
+   Single authoritative hero layout.
+   ========================================================= */
+
+.app-shell:not(.admin-shell) .v94-hero-slider{
+  --v482-gold:#efbd47;
+  --v482-gold-bright:#ffe17e;
+  --v482-green-1:#07503d;
+  --v482-green-2:#044235;
+  --v482-green-3:#03372d;
+}
+
+/* ---------- LARGE DESKTOP ---------- */
+@media (min-width:1151px){
+
+  .app-shell:not(.admin-shell) .v94-hero-slider,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slides{
+    position:relative!important;
+    width:100%!important;
+    height:570px!important;
+    min-height:570px!important;
+    max-height:570px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider{
+    margin:16px 0 30px!important;
+    border:2px solid var(--v482-gold)!important;
+    border-radius:28px!important;
+    overflow:hidden!important;
+    background:linear-gradient(145deg,var(--v482-green-1),var(--v482-green-3))!important;
+    box-shadow:0 22px 48px rgba(4,58,45,.17)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide{
+    position:absolute!important;
+    inset:0!important;
+    display:none!important;
+    width:100%!important;
+    height:570px!important;
+    min-height:570px!important;
+    max-height:570px!important;
+    opacity:0!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+    border-radius:26px!important;
+    overflow:hidden!important;
+    background:
+      radial-gradient(135% 90% at -18% -20%,transparent 0 47%,rgba(239,189,71,.34) 47.15% 47.30%,transparent 47.48%),
+      radial-gradient(135% 88% at 116% 118%,transparent 0 48%,rgba(239,189,71,.28) 48.12% 48.27%,transparent 48.45%),
+      radial-gradient(ellipse at 50% -8%,rgba(19,111,77,.22),transparent 42%),
+      linear-gradient(145deg,#07503d 0%,#044235 55%,#03372d 100%)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active{
+    position:relative!important;
+    inset:auto!important;
+    display:block!important;
+    opacity:1!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+    z-index:2!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active > .hero-copy{
+    position:absolute!important;
+    inset:0!important;
+    left:0!important;
+    right:0!important;
+    top:0!important;
+    bottom:0!important;
+    width:100%!important;
+    max-width:none!important;
+    min-width:0!important;
+    height:570px!important;
+    min-height:570px!important;
+    max-height:570px!important;
+    margin:0!important;
+    padding:34px 130px 60px!important;
+    box-sizing:border-box!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:0!important;
+    text-align:center!important;
+    transform:none!important;
+    overflow:visible!important;
+    background:transparent!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy:before,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy:after{
+    content:none!important;
+    display:none!important;
+  }
+
+  /* Top badge row — can wrap naturally, never squeeze. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges{
+    display:flex!important;
+    flex-wrap:wrap!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:8px 14px!important;
+    width:min(100%,1080px)!important;
+    max-width:1080px!important;
+    min-width:0!important;
+    margin:0 auto 18px!important;
+    padding:0!important;
+    overflow:visible!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges>span{
+    flex:0 0 auto!important;
+    min-height:40px!important;
+    padding:9px 18px!important;
+    border:1px solid #f7d774!important;
+    border-radius:999px!important;
+    background:linear-gradient(180deg,#f8d875,#dfa72d)!important;
+    color:#17392f!important;
+    font-family:Arial,sans-serif!important;
+    font-size:11px!important;
+    line-height:1!important;
+    font-weight:900!important;
+    letter-spacing:.25px!important;
+    white-space:nowrap!important;
+    box-shadow:0 7px 16px rgba(0,0,0,.12)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges small{
+    flex:0 0 auto!important;
+    display:inline-flex!important;
+    align-items:center!important;
+    gap:5px!important;
+    min-width:0!important;
+    color:#f2c557!important;
+    font-family:Arial,sans-serif!important;
+    font-size:10.5px!important;
+    line-height:1.15!important;
+    font-weight:700!important;
+    white-space:nowrap!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges small i{
+    flex:0 0 auto!important;
+    font-style:normal!important;
+  }
+
+  /* Title — same scale rules for all 4 slides. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    display:block!important;
+    width:min(100%,980px)!important;
+    max-width:980px!important;
+    min-width:0!important;
+    margin:0 auto 15px!important;
+    font-family:Georgia,'Times New Roman',serif!important;
+    font-size:clamp(48px,3.45vw,60px)!important;
+    line-height:1.02!important;
+    font-weight:700!important;
+    letter-spacing:-.65px!important;
+    text-align:center!important;
+    text-wrap:balance!important;
+    white-space:normal!important;
+    overflow:visible!important;
+    word-break:normal!important;
+    overflow-wrap:normal!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title span,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-title-gold{
+    display:block!important;
+    color:#f0bd48!important;
+    background:linear-gradient(180deg,#ffe58e 0%,#f2c455 42%,#dda52c 100%)!important;
+    -webkit-background-clip:text!important;
+    background-clip:text!important;
+    -webkit-text-fill-color:transparent!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title:after,
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title:after{
+    content:""!important;
+    display:block!important;
+    width:145px!important;
+    height:3px!important;
+    margin:15px auto 0!important;
+    border-radius:999px!important;
+    background:linear-gradient(90deg,transparent,#efbd47 20%,#ffe17c 50%,#efbd47 80%,transparent)!important;
+    box-shadow:0 0 12px rgba(239,189,71,.36)!important;
+  }
+
+  /* Arabic titles need slightly smaller safe scale. */
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    font-family:Arial,Tahoma,sans-serif!important;
+    font-size:clamp(42px,3vw,54px)!important;
+    line-height:1.18!important;
+    letter-spacing:0!important;
+    font-weight:800!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p{
+    display:block!important;
+    width:min(100%,900px)!important;
+    max-width:900px!important;
+    min-width:0!important;
+    margin:0 auto 21px!important;
+    color:#f4cf6a!important;
+    font-family:Arial,sans-serif!important;
+    font-size:16px!important;
+    line-height:1.48!important;
+    font-weight:500!important;
+    text-align:center!important;
+    white-space:normal!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+    word-break:normal!important;
+    overflow-wrap:break-word!important;
+  }
+
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p{
+    font-size:15.5px!important;
+    line-height:1.7!important;
+  }
+
+  /* Feature cards — identical proportions for all slide labels/icons. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    align-items:stretch!important;
+    width:min(100%,1040px)!important;
+    max-width:1040px!important;
+    min-width:0!important;
+    height:auto!important;
+    min-height:92px!important;
+    max-height:none!important;
+    gap:14px!important;
+    margin:0 auto 22px!important;
+    padding:0!important;
+    overflow:visible!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:13px!important;
+    width:100%!important;
+    min-width:0!important;
+    height:92px!important;
+    min-height:92px!important;
+    max-height:92px!important;
+    padding:12px 16px!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+    border:2px solid rgba(238,187,66,.9)!important;
+    border-radius:20px!important;
+    background:linear-gradient(180deg,rgba(4,72,55,.82),rgba(3,57,46,.80))!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 7px 16px rgba(0,0,0,.06)!important;
+    visibility:visible!important;
+    opacity:1!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div>span{
+    flex:0 0 50px!important;
+    width:50px!important;
+    height:50px!important;
+    min-width:50px!important;
+    min-height:50px!important;
+    max-width:50px!important;
+    max-height:50px!important;
+    display:grid!important;
+    place-items:center!important;
+    margin:0!important;
+    padding:0!important;
+    border:2px solid rgba(244,196,77,.95)!important;
+    border-radius:50%!important;
+    color:#f0bd47!important;
+    font-family:Arial,sans-serif!important;
+    font-size:20px!important;
+    line-height:1!important;
+    font-weight:700!important;
+    transform:none!important;
+    aspect-ratio:1/1!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div>b{
+    flex:1 1 auto!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:0!important;
+    color:#f2c556!important;
+    font-family:Arial,sans-serif!important;
+    font-size:14px!important;
+    line-height:1.2!important;
+    font-weight:800!important;
+    text-align:left!important;
+    white-space:normal!important;
+    overflow:visible!important;
+    text-overflow:clip!important;
+    word-break:normal!important;
+    overflow-wrap:break-word!important;
+  }
+
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div>b{
+    text-align:right!important;
+    font-size:13.5px!important;
+    line-height:1.35!important;
+  }
+
+  /* CTA group — fixed proportions, never stretched. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    max-width:none!important;
+    gap:10px!important;
+    margin:0 auto!important;
+    padding:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero{
+    flex:0 0 auto!important;
+    width:min(100%,430px)!important;
+    max-width:430px!important;
+    min-width:320px!important;
+    height:62px!important;
+    min-height:62px!important;
+    max-height:62px!important;
+    padding:0 14px!important;
+    margin:0 auto!important;
+    box-sizing:border-box!important;
+    border:1px solid #ffe08b!important;
+    border-radius:999px!important;
+    background:linear-gradient(180deg,#f9d873,#e7ad2d)!important;
+    color:#14392f!important;
+    font-family:Arial,sans-serif!important;
+    font-size:20px!important;
+    line-height:1!important;
+    font-weight:900!important;
+    box-shadow:0 9px 20px rgba(0,0,0,.13),inset 0 1px 0 rgba(255,255,255,.65)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero .unified-login-icon,
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero i{
+    flex:0 0 42px!important;
+    width:42px!important;
+    height:42px!important;
+    min-width:42px!important;
+    min-height:42px!important;
+    max-width:42px!important;
+    max-height:42px!important;
+    display:grid!important;
+    place-items:center!important;
+    margin:0!important;
+    padding:0!important;
+    border-radius:50%!important;
+    transform:none!important;
+    aspect-ratio:1/1!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:9px!important;
+    width:min(100%,620px)!important;
+    max-width:620px!important;
+    min-height:42px!important;
+    height:auto!important;
+    padding:7px 14px!important;
+    margin:0 auto!important;
+    box-sizing:border-box!important;
+    border:1px solid rgba(234,190,75,.42)!important;
+    border-radius:999px!important;
+    background:rgba(3,52,43,.55)!important;
+    color:#efc455!important;
+    font-family:Arial,sans-serif!important;
+    font-size:13px!important;
+    line-height:1.25!important;
+    font-weight:600!important;
+    text-align:center!important;
+    white-space:normal!important;
+    overflow:visible!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small i{
+    flex:0 0 28px!important;
+    width:28px!important;
+    height:28px!important;
+    min-width:28px!important;
+    min-height:28px!important;
+    display:grid!important;
+    place-items:center!important;
+    border-radius:50%!important;
+    background:#f0bd47!important;
+    color:#164034!important;
+    font-style:normal!important;
+  }
+
+  /* Arrows / dots — stable sizes. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+    position:absolute!important;
+    top:50%!important;
+    transform:translateY(-50%)!important;
+    width:54px!important;
+    height:54px!important;
+    min-width:54px!important;
+    min-height:54px!important;
+    max-width:54px!important;
+    max-height:54px!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    border:1px solid #ffe17c!important;
+    border-radius:50%!important;
+    background:linear-gradient(180deg,#f6cf65,#dc9f24)!important;
+    color:#15382e!important;
+    font-family:Arial,sans-serif!important;
+    font-size:30px!important;
+    line-height:1!important;
+    z-index:40!important;
+    aspect-ratio:1/1!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-prev{left:28px!important;right:auto!important}
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-next{right:28px!important;left:auto!important}
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-dots{
+    position:absolute!important;
+    left:50%!important;
+    right:auto!important;
+    bottom:14px!important;
+    transform:translateX(-50%)!important;
+    z-index:40!important;
+  }
+
+  /* No media layers. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media,
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-media,
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468{
+    display:none!important;
+  }
+}
+
+/* ---------- TABLET / SMALL DESKTOP ----------
+   Prevents feature text squeezing at narrower widths. */
+@media (min-width:901px) and (max-width:1150px){
+
+  .app-shell:not(.admin-shell) .v94-hero-slider,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slides,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active > .hero-copy{
+    height:680px!important;
+    min-height:680px!important;
+    max-height:680px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active > .hero-copy{
+    padding:34px 88px 60px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    font-size:46px!important;
+    max-width:820px!important;
+  }
+
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    font-size:42px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p{
+    max-width:780px!important;
+    font-size:15px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    width:min(100%,760px)!important;
+    min-height:0!important;
+    gap:10px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div{
+    height:76px!important;
+    min-height:76px!important;
+    max-height:76px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div>span{
+    flex-basis:44px!important;
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
+    max-width:44px!important;
+    max-height:44px!important;
+    font-size:18px!important;
+  }
+}
+
+/* ---------- MOBILE ---------- */
+@media (max-width:900px){
+
+  .app-shell:not(.admin-shell) .v94-hero-slider{
+    position:relative!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    margin:0 0 20px!important;
+    border:1.5px solid var(--v482-gold)!important;
+    border-radius:20px!important;
+    overflow:hidden!important;
+    background:linear-gradient(145deg,#07503d,#03372d)!important;
+    box-shadow:0 13px 30px rgba(4,58,45,.14)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slides{
+    position:relative!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide{
+    position:absolute!important;
+    inset:0!important;
+    display:none!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    opacity:0!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+    background:
+      radial-gradient(ellipse at 50% -10%,rgba(17,108,76,.22),transparent 40%),
+      linear-gradient(145deg,#07503d 0%,#044235 58%,#03372d 100%)!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active{
+    position:relative!important;
+    inset:auto!important;
+    display:block!important;
+    opacity:1!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active > .hero-copy{
+    position:relative!important;
+    inset:auto!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    margin:0!important;
+    padding:26px 48px 64px!important;
+    box-sizing:border-box!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    text-align:center!important;
+    transform:none!important;
+    overflow:visible!important;
+    background:transparent!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy:before,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy:after{
+    content:none!important;
+    display:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges{
+    display:flex!important;
+    flex-wrap:wrap!important;
+    justify-content:center!important;
+    gap:6px!important;
+    width:100%!important;
+    margin:0 auto 14px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges>span{
+    flex:0 1 auto!important;
+    min-height:34px!important;
+    max-width:100%!important;
+    padding:7px 11px!important;
+    border-radius:999px!important;
+    font-size:9px!important;
+    line-height:1.15!important;
+    white-space:normal!important;
+    text-align:center!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges small{
+    display:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    width:100%!important;
+    max-width:100%!important;
+    margin:0 auto 13px!important;
+    font-family:Georgia,'Times New Roman',serif!important;
+    font-size:clamp(29px,8vw,36px)!important;
+    line-height:1.05!important;
+    letter-spacing:-.3px!important;
+    text-align:center!important;
+    white-space:normal!important;
+    text-wrap:balance!important;
+    overflow:visible!important;
+  }
+
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    font-family:Arial,Tahoma,sans-serif!important;
+    font-size:clamp(28px,7.4vw,34px)!important;
+    line-height:1.22!important;
+    letter-spacing:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title:after,
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title:after{
+    width:88px!important;
+    height:3px!important;
+    margin:11px auto 0!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p{
+    width:100%!important;
+    max-width:560px!important;
+    margin:0 auto 16px!important;
+    color:#f3cb63!important;
+    font-family:Arial,sans-serif!important;
+    font-size:12.5px!important;
+    line-height:1.5!important;
+    font-weight:500!important;
+    text-align:center!important;
+    white-space:normal!important;
+    overflow:visible!important;
+    word-break:normal!important;
+    overflow-wrap:break-word!important;
+  }
+
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p{
+    line-height:1.7!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    width:100%!important;
+    min-height:0!important;
+    height:auto!important;
+    max-height:none!important;
+    gap:9px!important;
+    margin:0 auto 16px!important;
+    overflow:visible!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:8px!important;
+    width:100%!important;
+    min-width:0!important;
+    height:68px!important;
+    min-height:68px!important;
+    max-height:68px!important;
+    padding:8px 9px!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+    border:1.5px solid rgba(238,187,66,.9)!important;
+    border-radius:15px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div>span{
+    flex:0 0 34px!important;
+    width:34px!important;
+    height:34px!important;
+    min-width:34px!important;
+    min-height:34px!important;
+    max-width:34px!important;
+    max-height:34px!important;
+    display:grid!important;
+    place-items:center!important;
+    font-size:14px!important;
+    line-height:1!important;
+    aspect-ratio:1/1!important;
+    transform:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div>b{
+    min-width:0!important;
+    color:#f2c556!important;
+    font-family:Arial,sans-serif!important;
+    font-size:10px!important;
+    line-height:1.22!important;
+    font-weight:800!important;
+    white-space:normal!important;
+    overflow:visible!important;
+    word-break:normal!important;
+    overflow-wrap:break-word!important;
+    text-align:left!important;
+  }
+
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div>b{
+    text-align:right!important;
+    font-size:9.8px!important;
+    line-height:1.35!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    gap:8px!important;
+    margin:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero{
+    width:100%!important;
+    max-width:460px!important;
+    min-width:0!important;
+    height:54px!important;
+    min-height:54px!important;
+    max-height:54px!important;
+    font-size:16px!important;
+    line-height:1!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero .unified-login-icon,
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero i{
+    flex-basis:36px!important;
+    width:36px!important;
+    height:36px!important;
+    min-width:36px!important;
+    min-height:36px!important;
+    max-width:36px!important;
+    max-height:36px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small{
+    width:100%!important;
+    max-width:520px!important;
+    min-height:40px!important;
+    height:auto!important;
+    padding:7px 10px!important;
+    font-size:9.5px!important;
+    line-height:1.3!important;
+    white-space:normal!important;
+    overflow:visible!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+    top:50%!important;
+    width:38px!important;
+    height:38px!important;
+    min-width:38px!important;
+    min-height:38px!important;
+    max-width:38px!important;
+    max-height:38px!important;
+    font-size:24px!important;
+    aspect-ratio:1/1!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-prev{left:7px!important;right:auto!important}
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-next{right:7px!important;left:auto!important}
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-dots{
+    bottom:10px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-media,
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-media,
+  .app-shell:not(.admin-shell) .v94-hero-slider .mobile-hero-image-v468{
+    display:none!important;
+  }
+}
+
+/* Very narrow phones: one feature card per row to avoid squeeze. */
+@media (max-width:390px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active > .hero-copy{
+    padding-left:44px!important;
+    padding-right:44px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row{
+    grid-template-columns:1fr!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row>div{
+    height:60px!important;
+    min-height:60px!important;
+    max-height:60px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow{
+    width:34px!important;
+    height:34px!important;
+    min-width:34px!important;
+    min-height:34px!important;
+    max-width:34px!important;
+    max-height:34px!important;
+    font-size:21px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  const normalizeActiveHero=()=>{
+    const root=document.querySelector('.v94-hero-slider');
+    if(!root) return;
+    root.querySelectorAll('.hero-slide').forEach(slide=>{
+      const active=slide.classList.contains('is-active');
+      slide.setAttribute('aria-hidden',active?'false':'true');
+    });
+  };
+
+  const boot=()=>{
+    installV482HeroSystem();
+    requestAnimationFrame(normalizeActiveHero);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',boot,{once:true});
+  }else{
+    boot();
+  }
+
+  if(!window.__v482HeroObserver){
+    window.__v482HeroObserver=new MutationObserver(()=>{
+      requestAnimationFrame(normalizeActiveHero);
+    });
+    window.__v482HeroObserver.observe(document.documentElement,{
+      subtree:true,
+      attributes:true,
+      attributeFilter:['class','dir']
+    });
+  }
+})();
+
+
+;(()=>{
+  const installV483HeroFontClippingFix=()=>{
+    if(document.getElementById('v483-hero-font-clipping-fix')) return;
+
+    const style=document.createElement('style');
+    style.id='v483-hero-font-clipping-fix';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v483 — HERO FONT CLIPPING FIX
+   Fixes clipped capitals/descenders without changing design.
+   ========================================================= */
+
+/* ---------- HERO TITLE SAFE GLYPH BOX ---------- */
+.app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+  overflow:visible!important;
+  padding:2px 10px 5px!important;
+  box-sizing:border-box!important;
+}
+
+.app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title > span,
+.app-shell:not(.admin-shell) .v94-hero-slider .hero-title-gold{
+  position:relative!important;
+  display:block!important;
+  width:fit-content!important;
+  max-width:100%!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+
+  /* protects left/right glyph overhang + bottom serif/descenders */
+  padding:2px .12em .10em!important;
+  box-sizing:content-box!important;
+
+  line-height:1.08!important;
+  overflow:visible!important;
+  white-space:normal!important;
+  text-overflow:clip!important;
+  word-break:normal!important;
+  overflow-wrap:normal!important;
+}
+
+/* Keep the gold appearance but avoid WebKit clipping at glyph edges. */
+.app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title > span{
+  color:#efbd47!important;
+  -webkit-text-fill-color:#efbd47!important;
+  background:none!important;
+  -webkit-background-clip:border-box!important;
+  background-clip:border-box!important;
+  text-shadow:
+    0 1px 0 rgba(255,235,161,.18),
+    0 2px 0 rgba(104,71,8,.12),
+    0 4px 10px rgba(0,0,0,.10)!important;
+}
+
+/* Arabic safe line box too. */
+html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title > span{
+  padding-top:.08em!important;
+  padding-bottom:.16em!important;
+  line-height:1.24!important;
+}
+
+/* ---------- LOGIN LABEL SAFE DESCENDER BOX ---------- */
+.app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero{
+  align-items:center!important;
+}
+
+/* This is the actual Login label span. */
+.app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero > span:nth-child(2){
+  position:relative!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+
+  min-width:0!important;
+  min-height:30px!important;
+  height:auto!important;
+
+  padding:3px 6px 5px!important;
+  margin:0!important;
+  box-sizing:border-box!important;
+
+  font-family:Arial,sans-serif!important;
+  font-size:inherit!important;
+  font-weight:900!important;
+  line-height:1.24!important;
+
+  white-space:nowrap!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+}
+
+/* The button itself may keep its rounded clipping, but its text now sits safely inside. */
+.app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero{
+  padding-top:4px!important;
+  padding-bottom:4px!important;
+}
+
+/* Safe label line box for Arabic login text. */
+html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero > span:nth-child(2){
+  line-height:1.38!important;
+  padding-top:2px!important;
+  padding-bottom:5px!important;
+}
+
+/* ---------- FEATURE LABEL SAFETY ---------- */
+.app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row > div > b{
+  padding-top:2px!important;
+  padding-bottom:3px!important;
+  line-height:1.28!important;
+  overflow:visible!important;
+}
+
+html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row > div > b{
+  line-height:1.42!important;
+}
+
+/* ---------- MOBILE ---------- */
+@media (max-width:900px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title{
+    padding-inline:5px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title > span{
+    padding-left:.10em!important;
+    padding-right:.10em!important;
+    padding-bottom:.12em!important;
+    line-height:1.10!important;
+  }
+
+  html[dir="rtl"] .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title > span{
+    line-height:1.26!important;
+    padding-bottom:.17em!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero > span:nth-child(2){
+    min-height:26px!important;
+    padding-top:2px!important;
+    padding-bottom:4px!important;
+    line-height:1.28!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV483HeroFontClippingFix,{once:true});
+  }else{
+    installV483HeroFontClippingFix();
+  }
+})();
+
+
+;(()=>{
+  const installV484ThirdSlideTagsSpacing=()=>{
+    if(document.getElementById('v484-third-slide-tags-spacing')) return;
+
+    const style=document.createElement('style');
+    style.id='v484-third-slide-tags-spacing';
+    style.textContent=`
+/* Ass Al Halaal v484
+   ONLY delivery / 3rd hero slide top tags moved slightly down.
+   Other slides remain unchanged. */
+
+@media (min-width:901px){
+  .app-shell:not(.admin-shell)
+  .v94-hero-slider
+  .hero-theme-delivery
+  .luxury-hero-badges{
+    transform:translateY(16px)!important;
+    margin-bottom:34px!important;
+  }
+}
+
+@media (max-width:900px){
+  .app-shell:not(.admin-shell)
+  .v94-hero-slider
+  .hero-theme-delivery
+  .luxury-hero-badges{
+    transform:translateY(8px)!important;
+    margin-bottom:22px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV484ThirdSlideTagsSpacing,{once:true});
+  }else{
+    installV484ThirdSlideTagsSpacing();
+  }
+})();
+
+
+/* =========================================================
+   Ass Al Halaal v485 — MOST REQUESTED PRODUCT SLIDER
+   Isolated to the home #collection / #products section only.
+   ========================================================= */
+
+function setupV485MostRequestedSlider(){
+  const track=document.querySelector('#collection.ref-collection #products.ref-products');
+  if(!track)return;
+
+  let shell=track.closest('.v485-product-carousel-shell');
+
+  if(!shell){
+    shell=document.createElement('div');
+    shell.className='v485-product-carousel-shell';
+    track.parentNode.insertBefore(shell,track);
+    shell.appendChild(track);
+
+    const prev=document.createElement('button');
+    prev.type='button';
+    prev.className='v485-carousel-arrow v485-carousel-prev';
+    prev.setAttribute('aria-label',document.documentElement.dir==='rtl'?'السابق':'Previous products');
+    prev.innerHTML='‹';
+
+    const next=document.createElement('button');
+    next.type='button';
+    next.className='v485-carousel-arrow v485-carousel-next';
+    next.setAttribute('aria-label',document.documentElement.dir==='rtl'?'التالي':'Next products');
+    next.innerHTML='›';
+
+    shell.appendChild(prev);
+    shell.appendChild(next);
+
+    const cardStep=()=>{
+      const card=track.querySelector(':scope > .product-card');
+      if(!card)return Math.max(260,track.clientWidth*.8);
+      const styles=getComputedStyle(track);
+      const gap=parseFloat(styles.columnGap||styles.gap||'14')||14;
+      return card.getBoundingClientRect().width+gap;
+    };
+
+    const scrollPhysical=dir=>{
+      track.scrollBy({
+        left:dir*cardStep(),
+        behavior:'smooth'
+      });
+    };
+
+    prev.addEventListener('click',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      scrollPhysical(-1);
+    });
+
+    next.addEventListener('click',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      scrollPhysical(1);
+    });
+
+    // Desktop mouse-drag. Touch uses native swipe for best mobile behavior.
+    let dragging=false;
+    let startX=0;
+    let startScroll=0;
+    let moved=false;
+    let lastDragAt=0;
+
+    track.addEventListener('pointerdown',e=>{
+      if(e.pointerType!=='mouse')return;
+      if(e.button!==0)return;
+      if(e.target.closest('button,a,input,select,textarea,[role="button"]'))return;
+
+      dragging=true;
+      moved=false;
+      startX=e.clientX;
+      startScroll=track.scrollLeft;
+      track.classList.add('is-v485-dragging');
+      try{track.setPointerCapture(e.pointerId)}catch{}
+    });
+
+    track.addEventListener('pointermove',e=>{
+      if(!dragging)return;
+      const dx=e.clientX-startX;
+      if(Math.abs(dx)>5)moved=true;
+      track.scrollLeft=startScroll-dx;
+      if(moved)e.preventDefault();
+    });
+
+    const finishDrag=e=>{
+      if(!dragging)return;
+      dragging=false;
+      if(moved)lastDragAt=Date.now();
+      track.classList.remove('is-v485-dragging');
+      try{track.releasePointerCapture(e.pointerId)}catch{}
+    };
+
+    track.addEventListener('pointerup',finishDrag);
+    track.addEventListener('pointercancel',finishDrag);
+    track.addEventListener('pointerleave',e=>{
+      if(dragging)finishDrag(e);
+    });
+
+    // Stop a dragged card from immediately opening after release.
+    shell.addEventListener('click',e=>{
+      if(Date.now()-lastDragAt<260){
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    },true);
+
+    // Mouse wheel: allow shift+wheel to move the rail.
+    track.addEventListener('wheel',e=>{
+      if(!e.shiftKey)return;
+      e.preventDefault();
+      track.scrollBy({left:e.deltaY,behavior:'auto'});
+    },{passive:false});
+  }
+
+  // The card set can be replaced by renderProducts(), so normalize the
+  // current children every time this function runs.
+  track.classList.add('v485-product-carousel-track');
+  [...track.children].forEach(card=>{
+    if(card.classList?.contains('product-card')){
+      card.classList.add('v485-carousel-card');
+    }
+  });
+
+  // Keep current position valid after re-render.
+  if(track.scrollWidth<=track.clientWidth){
+    track.scrollLeft=0;
+  }
+}
+
+;(()=>{
+  const installV485ProductSliderCSS=()=>{
+    if(document.getElementById('v485-most-requested-product-slider'))return;
+
+    const style=document.createElement('style');
+    style.id='v485-most-requested-product-slider';
+    style.textContent=`
+/* =========================================================
+   v485 — isolated MOST REQUESTED horizontal rail
+   ========================================================= */
+
+.app-shell:not(.admin-shell) #collection.ref-collection{
+  position:relative!important;
+  overflow:visible!important;
+}
+
+/* Slider viewport */
+.app-shell:not(.admin-shell) #collection.ref-collection .v485-product-carousel-shell{
+  position:relative!important;
+  width:100%!important;
+  max-width:100%!important;
+  margin:0!important;
+  padding:2px 44px 8px!important;
+  box-sizing:border-box!important;
+  overflow:visible!important;
+}
+
+/* Track: override all previous grid rules ONLY for this exact section. */
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+#products.ref-products.v485-product-carousel-track{
+  display:flex!important;
+  grid-template-columns:none!important;
+  grid-auto-flow:unset!important;
+
+  flex-wrap:nowrap!important;
+  align-items:stretch!important;
+  justify-content:flex-start!important;
+
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+
+  gap:16px!important;
+  margin:0!important;
+  padding:8px 2px 18px!important;
+
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+
+  scroll-behavior:smooth!important;
+  scroll-snap-type:x mandatory!important;
+  scroll-padding-inline:2px!important;
+
+  overscroll-behavior-inline:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+
+  scrollbar-width:none!important;
+  cursor:grab!important;
+}
+
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+#products.ref-products.v485-product-carousel-track::-webkit-scrollbar{
+  display:none!important;
+}
+
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+#products.ref-products.v485-product-carousel-track.is-v485-dragging{
+  cursor:grabbing!important;
+  scroll-behavior:auto!important;
+  user-select:none!important;
+}
+
+/* Cards stay independent, equal-width, and never stretch sideways. */
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+#products.ref-products.v485-product-carousel-track
+> .product-card.v485-carousel-card{
+  flex:0 0 clamp(270px,21.2vw,310px)!important;
+  width:clamp(270px,21.2vw,310px)!important;
+  min-width:clamp(270px,21.2vw,310px)!important;
+  max-width:310px!important;
+
+  margin:0!important;
+  align-self:stretch!important;
+
+  scroll-snap-align:start!important;
+  scroll-snap-stop:normal!important;
+
+  transform:none!important;
+}
+
+/* Preserve safe image proportions — no stretch/squeeze. */
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+#products.ref-products.v485-product-carousel-track
+> .product-card.v485-carousel-card
+.product-image,
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+#products.ref-products.v485-product-carousel-track
+> .product-card.v485-carousel-card
+.harri-final-visual,
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+#products.ref-products.v485-product-carousel-track
+> .product-card.v485-carousel-card
+.hashi-final-visual{
+  width:100%!important;
+  height:auto!important;
+  aspect-ratio:1501/1048!important;
+  overflow:hidden!important;
+  flex:0 0 auto!important;
+}
+
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+#products.ref-products.v485-product-carousel-track
+> .product-card.v485-carousel-card
+.product-image img,
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+#products.ref-products.v485-product-carousel-track
+> .product-card.v485-carousel-card
+.harri-final-visual img,
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+#products.ref-products.v485-product-carousel-track
+> .product-card.v485-carousel-card
+.hashi-final-visual img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  transform:none!important;
+}
+
+/* Keep card internals aligned without altering existing functionality. */
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+#products.ref-products.v485-product-carousel-track
+> .product-card.v485-carousel-card
+.product-content{
+  display:flex!important;
+  flex-direction:column!important;
+  min-height:0!important;
+  flex:1 1 auto!important;
+}
+
+/* Prev/Next floating arrows. */
+.app-shell:not(.admin-shell) #collection.ref-collection .v485-carousel-arrow{
+  position:absolute!important;
+  top:44%!important;
+  z-index:25!important;
+
+  width:42px!important;
+  height:42px!important;
+  min-width:42px!important;
+  min-height:42px!important;
+
+  display:grid!important;
+  place-items:center!important;
+
+  margin:0!important;
+  padding:0 0 3px!important;
+
+  border:1px solid #e4b63f!important;
+  border-radius:50%!important;
+
+  background:linear-gradient(180deg,#0b684f,#07513f)!important;
+  color:#f6cb57!important;
+
+  font-family:Arial,sans-serif!important;
+  font-size:30px!important;
+  line-height:1!important;
+  font-weight:500!important;
+
+  box-shadow:0 8px 20px rgba(5,74,56,.18)!important;
+
+  cursor:pointer!important;
+  touch-action:manipulation!important;
+
+  transition:transform .16s ease,box-shadow .16s ease,background .16s ease!important;
+}
+
+.app-shell:not(.admin-shell) #collection.ref-collection .v485-carousel-arrow:hover{
+  transform:scale(1.06)!important;
+  box-shadow:0 10px 24px rgba(5,74,56,.24)!important;
+  background:linear-gradient(180deg,#0d7559,#07513f)!important;
+}
+
+.app-shell:not(.admin-shell) #collection.ref-collection .v485-carousel-prev{
+  left:4px!important;
+}
+
+.app-shell:not(.admin-shell) #collection.ref-collection .v485-carousel-next{
+  right:4px!important;
+}
+
+/* Slight fade at both rail edges for a carousel feel. */
+.app-shell:not(.admin-shell) #collection.ref-collection .v485-product-carousel-shell:before,
+.app-shell:not(.admin-shell) #collection.ref-collection .v485-product-carousel-shell:after{
+  content:""!important;
+  position:absolute!important;
+  top:8px!important;
+  bottom:18px!important;
+  width:24px!important;
+  z-index:12!important;
+  pointer-events:none!important;
+}
+
+.app-shell:not(.admin-shell) #collection.ref-collection .v485-product-carousel-shell:before{
+  left:42px!important;
+  background:linear-gradient(90deg,#f8f5ed 0%,rgba(248,245,237,0) 100%)!important;
+}
+
+.app-shell:not(.admin-shell) #collection.ref-collection .v485-product-carousel-shell:after{
+  right:42px!important;
+  background:linear-gradient(270deg,#f8f5ed 0%,rgba(248,245,237,0) 100%)!important;
+}
+
+/* ---------- TABLET ---------- */
+@media (max-width:1100px){
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  #products.ref-products.v485-product-carousel-track
+  > .product-card.v485-carousel-card{
+    flex-basis:clamp(255px,42vw,295px)!important;
+    width:clamp(255px,42vw,295px)!important;
+    min-width:clamp(255px,42vw,295px)!important;
+  }
+}
+
+/* ---------- MOBILE ---------- */
+@media (max-width:900px){
+  .app-shell:not(.admin-shell) #collection.ref-collection .v485-product-carousel-shell{
+    padding:0 8px 8px!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  #products.ref-products.v485-product-carousel-track{
+    gap:12px!important;
+    padding:8px 2px 16px!important;
+    touch-action:pan-x pan-y!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  #products.ref-products.v485-product-carousel-track
+  > .product-card.v485-carousel-card{
+    flex:0 0 min(82vw,320px)!important;
+    width:min(82vw,320px)!important;
+    min-width:min(82vw,320px)!important;
+    max-width:320px!important;
+  }
+
+  /* Mobile uses native swipe, so arrows stay compact and unobtrusive. */
+  .app-shell:not(.admin-shell) #collection.ref-collection .v485-carousel-arrow{
+    width:36px!important;
+    height:36px!important;
+    min-width:36px!important;
+    min-height:36px!important;
+    top:42%!important;
+    font-size:25px!important;
+    background:rgba(7,81,63,.94)!important;
+  }
+
+  .app-shell:not(.admin-shell) #collection.ref-collection .v485-carousel-prev{
+    left:4px!important;
+  }
+
+  .app-shell:not(.admin-shell) #collection.ref-collection .v485-carousel-next{
+    right:4px!important;
+  }
+
+  .app-shell:not(.admin-shell) #collection.ref-collection .v485-product-carousel-shell:before,
+  .app-shell:not(.admin-shell) #collection.ref-collection .v485-product-carousel-shell:after{
+    display:none!important;
+  }
+}
+
+@media (max-width:430px){
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  #products.ref-products.v485-product-carousel-track
+  > .product-card.v485-carousel-card{
+    flex-basis:84vw!important;
+    width:84vw!important;
+    min-width:84vw!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',()=>{
+      installV485ProductSliderCSS();
+      setupV485MostRequestedSlider();
+    },{once:true});
+  }else{
+    installV485ProductSliderCSS();
+    setupV485MostRequestedSlider();
+  }
+})();
+
+
+/* =========================================================
+   Ass Al Halaal v486 — ACTIVE CAROUSEL CONTROLS + MOUSE DRAG
+   Rebinds v485 carousel with robust desktop interaction.
+   ========================================================= */
+
+function setupV486MostRequestedInteractions(){
+  const shell=document.querySelector('#collection.ref-collection .v485-product-carousel-shell');
+  const track=shell?.querySelector('#products.ref-products.v485-product-carousel-track');
+  if(!shell || !track)return;
+
+  // Remove/replace old arrows so v485 listeners cannot conflict.
+  const oldPrev=shell.querySelector('.v485-carousel-prev');
+  const oldNext=shell.querySelector('.v485-carousel-next');
+
+  const makeArrow=(old, cls, label, html)=>{
+    const btn=old ? old.cloneNode(false) : document.createElement('button');
+    btn.type='button';
+    btn.className=`v485-carousel-arrow ${cls} v486-active-arrow`;
+    btn.setAttribute('aria-label',label);
+    btn.innerHTML=html;
+    if(old) old.replaceWith(btn);
+    else shell.appendChild(btn);
+    return btn;
+  };
+
+  const rtl=document.documentElement.dir==='rtl';
+  const prev=makeArrow(
+    oldPrev,
+    'v485-carousel-prev',
+    rtl?'السابق':'Previous product',
+    '‹'
+  );
+  const next=makeArrow(
+    oldNext,
+    'v485-carousel-next',
+    rtl?'التالي':'Next product',
+    '›'
+  );
+
+  const cards=()=>[...track.querySelectorAll(':scope > .product-card.v485-carousel-card')];
+
+  const nearestIndex=()=>{
+    const list=cards();
+    if(!list.length)return 0;
+    const box=track.getBoundingClientRect();
+    const anchor=rtl ? box.right : box.left;
+
+    let best=0;
+    let dist=Infinity;
+    list.forEach((card,i)=>{
+      const r=card.getBoundingClientRect();
+      const edge=rtl ? r.right : r.left;
+      const d=Math.abs(edge-anchor);
+      if(d<dist){dist=d;best=i;}
+    });
+    return best;
+  };
+
+  const goToIndex=(index,behavior='smooth')=>{
+    const list=cards();
+    if(!list.length)return;
+    const target=list[Math.max(0,Math.min(list.length-1,index))];
+    target.scrollIntoView({
+      behavior,
+      block:'nearest',
+      inline:'start'
+    });
+  };
+
+  const updateArrowState=()=>{
+    const list=cards();
+    if(list.length<=1){
+      prev.disabled=true;
+      next.disabled=true;
+      return;
+    }
+
+    const i=nearestIndex();
+    prev.disabled=i<=0;
+    next.disabled=i>=list.length-1;
+
+    prev.setAttribute('aria-disabled',String(prev.disabled));
+    next.setAttribute('aria-disabled',String(next.disabled));
+  };
+
+  prev.onclick=e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    goToIndex(nearestIndex()-1,'smooth');
+    setTimeout(updateArrowState,380);
+  };
+
+  next.onclick=e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    goToIndex(nearestIndex()+1,'smooth');
+    setTimeout(updateArrowState,380);
+  };
+
+  // Robust desktop mouse-drag.
+  // Uses document-level mousemove so dragging continues even if pointer leaves track.
+  if(!track.dataset.v486MouseDrag){
+    track.dataset.v486MouseDrag='1';
+
+    let dragging=false;
+    let startX=0;
+    let startScroll=0;
+    let moved=false;
+    let suppressClickUntil=0;
+
+    const interactiveSelector='button,a,input,select,textarea,label,[role="button"]';
+
+    const down=e=>{
+      if(e.button!==0)return;
+      if(e.target.closest(interactiveSelector))return;
+
+      dragging=true;
+      moved=false;
+      startX=e.clientX;
+      startScroll=track.scrollLeft;
+
+      track.classList.add('is-v486-dragging');
+      document.documentElement.classList.add('v486-carousel-dragging');
+
+      e.preventDefault();
+    };
+
+    const move=e=>{
+      if(!dragging)return;
+
+      const dx=e.clientX-startX;
+      if(Math.abs(dx)>4)moved=true;
+
+      // Physical drag: pull rail with the mouse.
+      track.scrollLeft=startScroll-dx;
+
+      if(moved)e.preventDefault();
+    };
+
+    const up=e=>{
+      if(!dragging)return;
+
+      dragging=false;
+      track.classList.remove('is-v486-dragging');
+      document.documentElement.classList.remove('v486-carousel-dragging');
+
+      if(moved){
+        suppressClickUntil=Date.now()+320;
+        // Snap cleanly to nearest card after drag.
+        const index=nearestIndex();
+        requestAnimationFrame(()=>goToIndex(index,'smooth'));
+      }
+
+      setTimeout(updateArrowState,360);
+    };
+
+    track.addEventListener('mousedown',down);
+    document.addEventListener('mousemove',move,{passive:false});
+    document.addEventListener('mouseup',up);
+
+    track.addEventListener('dragstart',e=>e.preventDefault());
+
+    // Prevent accidental card-open after an actual drag.
+    track.addEventListener('click',e=>{
+      if(Date.now()<suppressClickUntil){
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    },true);
+  }
+
+  // Native touch swipe remains enabled.
+  if(!track.dataset.v486ScrollState){
+    track.dataset.v486ScrollState='1';
+    let raf=0;
+    track.addEventListener('scroll',()=>{
+      cancelAnimationFrame(raf);
+      raf=requestAnimationFrame(updateArrowState);
+    },{passive:true});
+  }
+
+  // Image dragging should never steal the mouse gesture.
+  track.querySelectorAll('img').forEach(img=>{
+    img.draggable=false;
+    img.style.webkitUserDrag='none';
+  });
+
+  requestAnimationFrame(updateArrowState);
+}
+
+;(()=>{
+  const installV486CarouselCSS=()=>{
+    if(document.getElementById('v486-active-carousel-controls'))return;
+
+    const style=document.createElement('style');
+    style.id='v486-active-carousel-controls';
+    style.textContent=`
+/* =========================================================
+   v486 — active arrows and desktop drag
+   ========================================================= */
+
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell{
+  position:relative!important;
+}
+
+/* Make sure BOTH arrows are visible and clickable inside the carousel. */
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+.v486-active-arrow{
+  display:grid!important;
+  visibility:visible!important;
+  opacity:1!important;
+
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+
+  top:50%!important;
+  transform:translateY(-50%)!important;
+
+  width:46px!important;
+  height:46px!important;
+  min-width:46px!important;
+  min-height:46px!important;
+
+  z-index:120!important;
+
+  border:2px solid #e4b63f!important;
+  background:linear-gradient(180deg,#0c7055,#06513e)!important;
+  color:#f7cf62!important;
+
+  box-shadow:0 9px 24px rgba(4,64,49,.23)!important;
+}
+
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+.v485-carousel-prev.v486-active-arrow{
+  left:10px!important;
+  right:auto!important;
+}
+
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+.v485-carousel-next.v486-active-arrow{
+  right:10px!important;
+  left:auto!important;
+}
+
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+.v486-active-arrow:hover:not(:disabled){
+  transform:translateY(-50%) scale(1.07)!important;
+  background:linear-gradient(180deg,#108263,#06513e)!important;
+  box-shadow:0 12px 28px rgba(4,64,49,.30)!important;
+}
+
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+.v486-active-arrow:active:not(:disabled){
+  transform:translateY(-50%) scale(.96)!important;
+}
+
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+.v486-active-arrow:disabled{
+  opacity:.28!important;
+  cursor:default!important;
+  pointer-events:none!important;
+}
+
+/* The rail itself is mouse-draggable. */
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+#products.ref-products.v485-product-carousel-track{
+  cursor:grab!important;
+  user-select:none!important;
+  -webkit-user-select:none!important;
+}
+
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+#products.ref-products.v485-product-carousel-track.is-v486-dragging{
+  cursor:grabbing!important;
+  scroll-snap-type:none!important;
+  scroll-behavior:auto!important;
+}
+
+html.v486-carousel-dragging,
+html.v486-carousel-dragging body{
+  cursor:grabbing!important;
+  user-select:none!important;
+  -webkit-user-select:none!important;
+}
+
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+#products.ref-products.v485-product-carousel-track img{
+  user-select:none!important;
+  -webkit-user-select:none!important;
+  -webkit-user-drag:none!important;
+  pointer-events:none!important;
+}
+
+/* Re-enable actual card controls above the drag layer. */
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+#products.ref-products.v485-product-carousel-track button,
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+#products.ref-products.v485-product-carousel-track a,
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+#products.ref-products.v485-product-carousel-track [role="button"]{
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+}
+
+/* Native touch swipe stays smooth. */
+@media (max-width:900px){
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  #products.ref-products.v485-product-carousel-track{
+    cursor:auto!important;
+    touch-action:pan-x pan-y!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  .v486-active-arrow{
+    width:38px!important;
+    height:38px!important;
+    min-width:38px!important;
+    min-height:38px!important;
+    z-index:120!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  .v485-carousel-prev.v486-active-arrow{
+    left:6px!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  .v485-carousel-next.v486-active-arrow{
+    right:6px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  const boot=()=>{
+    installV486CarouselCSS();
+    setupV486MostRequestedInteractions();
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',boot,{once:true});
+  }else{
+    boot();
+  }
+
+  // Product rerenders replace children; keep controls/state fresh.
+  if(!window.__v486CarouselObserver){
+    window.__v486CarouselObserver=new MutationObserver(()=>{
+      requestAnimationFrame(setupV486MostRequestedInteractions);
+    });
+
+    const startObserver=()=>{
+      const collection=document.querySelector('#collection.ref-collection');
+      if(collection){
+        window.__v486CarouselObserver.observe(collection,{
+          subtree:true,
+          childList:true
+        });
+      }
+    };
+
+    if(document.readyState==='loading'){
+      document.addEventListener('DOMContentLoaded',startObserver,{once:true});
+    }else{
+      startObserver();
+    }
+  }
+})();
+
+
+/* =========================================================
+   Ass Al Halaal v487 — STABLE ACTIVE PRODUCT CAROUSEL
+   Removes v486 self-rebinding observer loop.
+   ========================================================= */
+
+function setupV487StableCarousel(){
+  // Stop the v486 observer loop first.
+  try{
+    if(window.__v486CarouselObserver){
+      window.__v486CarouselObserver.disconnect();
+      window.__v486CarouselObserver=null;
+    }
+  }catch{}
+
+  const shell=document.querySelector('#collection.ref-collection .v485-product-carousel-shell');
+  let track=shell?.querySelector('#products.ref-products.v485-product-carousel-track');
+  if(!shell || !track)return;
+
+  // On the first v487 setup, replace only the TRACK NODE itself.
+  // Moving children preserves all product-button/card listeners, while old
+  // v485/v486 drag listeners attached directly to the track are discarded.
+  if(track.dataset.v487Stable!=='1'){
+    const clean=document.createElement(track.tagName.toLowerCase());
+    [...track.attributes].forEach(a=>clean.setAttribute(a.name,a.value));
+    clean.dataset.v487Stable='1';
+
+    while(track.firstChild)clean.appendChild(track.firstChild);
+    track.replaceWith(clean);
+    track=clean;
+  }
+
+  track.classList.add('v485-product-carousel-track','v487-stable-track');
+
+  [...track.children].forEach(card=>{
+    if(card.classList?.contains('product-card')){
+      card.classList.add('v485-carousel-card','v487-stable-card');
+    }
+  });
+
+  // Remove every legacy carousel button and install exactly one stable pair.
+  shell.querySelectorAll('.v485-carousel-arrow').forEach(btn=>{
+    if(!btn.classList.contains('v487-carousel-arrow'))btn.remove();
+  });
+
+  let prev=shell.querySelector('.v487-carousel-prev');
+  let next=shell.querySelector('.v487-carousel-next');
+
+  if(!prev){
+    prev=document.createElement('button');
+    prev.type='button';
+    prev.className='v485-carousel-arrow v487-carousel-arrow v487-carousel-prev';
+    prev.innerHTML='‹';
+    shell.appendChild(prev);
+  }
+
+  if(!next){
+    next=document.createElement('button');
+    next.type='button';
+    next.className='v485-carousel-arrow v487-carousel-arrow v487-carousel-next';
+    next.innerHTML='›';
+    shell.appendChild(next);
+  }
+
+  const rtl=document.documentElement.dir==='rtl';
+  prev.setAttribute('aria-label',rtl?'السابق':'Previous product');
+  next.setAttribute('aria-label',rtl?'التالي':'Next product');
+
+  const cards=()=>[...track.querySelectorAll(':scope > .product-card.v487-stable-card')];
+
+  const getIndex=()=>{
+    const list=cards();
+    if(!list.length)return 0;
+
+    const left=track.getBoundingClientRect().left;
+    let best=0;
+    let bestDistance=Infinity;
+
+    list.forEach((card,index)=>{
+      const d=Math.abs(card.getBoundingClientRect().left-left);
+      if(d<bestDistance){
+        bestDistance=d;
+        best=index;
+      }
+    });
+    return best;
+  };
+
+  const scrollToIndex=(index,behavior='smooth')=>{
+    const list=cards();
+    if(!list.length)return;
+
+    const count=list.length;
+    const wrapped=((index%count)+count)%count;
+    const target=list[wrapped];
+
+    // Track is forced LTR for consistent physical scroll math; card content
+    // gets its language direction separately in CSS.
+    const left=target.offsetLeft-track.offsetLeft-track.clientLeft-2;
+
+    track.scrollTo({
+      left:Math.max(0,left),
+      behavior
+    });
+  };
+
+  // Bind arrows once only.
+  if(prev.dataset.v487Bound!=='1'){
+    prev.dataset.v487Bound='1';
+    prev.addEventListener('click',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      scrollToIndex(getIndex()-1,'smooth');
+    });
+  }
+
+  if(next.dataset.v487Bound!=='1'){
+    next.dataset.v487Bound='1';
+    next.addEventListener('click',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      scrollToIndex(getIndex()+1,'smooth');
+    });
+  }
+
+  // Stable pointer-drag engine on the clean track.
+  if(track.dataset.v487DragBound!=='1'){
+    track.dataset.v487DragBound='1';
+
+    let dragging=false;
+    let moved=false;
+    let startX=0;
+    let startScroll=0;
+    let suppressUntil=0;
+
+    const interactive='button,a,input,select,textarea,label,[role="button"]';
+
+    track.addEventListener('pointerdown',e=>{
+      if(e.pointerType==='mouse' && e.button!==0)return;
+      if(e.pointerType!=='mouse')return; // mobile keeps native swipe
+      if(e.target.closest(interactive))return;
+
+      dragging=true;
+      moved=false;
+      startX=e.clientX;
+      startScroll=track.scrollLeft;
+
+      track.classList.add('is-v487-dragging');
+      document.documentElement.classList.add('v487-global-dragging');
+
+      try{track.setPointerCapture(e.pointerId)}catch{}
+      e.preventDefault();
+    });
+
+    track.addEventListener('pointermove',e=>{
+      if(!dragging)return;
+
+      const dx=e.clientX-startX;
+      if(Math.abs(dx)>4)moved=true;
+
+      track.scrollLeft=startScroll-dx;
+
+      if(moved)e.preventDefault();
+    });
+
+    const endDrag=e=>{
+      if(!dragging)return;
+      dragging=false;
+
+      track.classList.remove('is-v487-dragging');
+      document.documentElement.classList.remove('v487-global-dragging');
+
+      try{track.releasePointerCapture(e.pointerId)}catch{}
+
+      if(moved){
+        suppressUntil=Date.now()+320;
+        const i=getIndex();
+        requestAnimationFrame(()=>scrollToIndex(i,'smooth'));
+      }
+    };
+
+    track.addEventListener('pointerup',endDrag);
+    track.addEventListener('pointercancel',endDrag);
+    track.addEventListener('lostpointercapture',endDrag);
+
+    // Prevent browser native image dragging.
+    track.addEventListener('dragstart',e=>e.preventDefault());
+
+    // Do not accidentally open a product after a real drag.
+    track.addEventListener('click',e=>{
+      if(Date.now()<suppressUntil){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    },true);
+  }
+
+  // New cards can appear after renderProducts().
+  track.querySelectorAll('img').forEach(img=>{
+    img.draggable=false;
+    img.style.webkitUserDrag='none';
+  });
+}
+
+;(()=>{
+  const installV487StableCarouselCSS=()=>{
+    if(document.getElementById('v487-stable-active-carousel'))return;
+
+    // Disable v486 visual layer; v487 owns the controls now.
+    document.getElementById('v486-active-carousel-controls')?.remove();
+
+    const style=document.createElement('style');
+    style.id='v487-stable-active-carousel';
+    style.textContent=`
+/* =========================================================
+   v487 — stable active carousel
+   ========================================================= */
+
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell{
+  position:relative!important;
+  overflow:visible!important;
+  padding-left:54px!important;
+  padding-right:54px!important;
+}
+
+/* Keep physical scrolling consistent regardless of app language. */
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+#products.ref-products.v487-stable-track{
+  direction:ltr!important;
+  position:relative!important;
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  gap:16px!important;
+
+  width:100%!important;
+  max-width:100%!important;
+
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+
+  scroll-snap-type:x mandatory!important;
+  scroll-behavior:smooth!important;
+  overscroll-behavior-x:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+
+  cursor:grab!important;
+  user-select:none!important;
+  -webkit-user-select:none!important;
+
+  scrollbar-width:none!important;
+}
+
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+#products.ref-products.v487-stable-track::-webkit-scrollbar{
+  display:none!important;
+}
+
+/* Restore the language direction inside each card. */
+html[dir="ltr"] .app-shell:not(.admin-shell)
+#collection.ref-collection
+#products.ref-products.v487-stable-track > .v487-stable-card{
+  direction:ltr!important;
+}
+
+html[dir="rtl"] .app-shell:not(.admin-shell)
+#collection.ref-collection
+#products.ref-products.v487-stable-track > .v487-stable-card{
+  direction:rtl!important;
+}
+
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+#products.ref-products.v487-stable-track > .v487-stable-card{
+  flex:0 0 clamp(270px,21.2vw,310px)!important;
+  width:clamp(270px,21.2vw,310px)!important;
+  min-width:clamp(270px,21.2vw,310px)!important;
+  max-width:310px!important;
+  scroll-snap-align:start!important;
+  transform:none!important;
+}
+
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+#products.ref-products.v487-stable-track.is-v487-dragging{
+  cursor:grabbing!important;
+  scroll-snap-type:none!important;
+  scroll-behavior:auto!important;
+}
+
+html.v487-global-dragging,
+html.v487-global-dragging body{
+  cursor:grabbing!important;
+  user-select:none!important;
+  -webkit-user-select:none!important;
+}
+
+/* Buttons are ALWAYS visible and active. Carousel loops at the ends. */
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+.v487-carousel-arrow{
+  position:absolute!important;
+  top:50%!important;
+  transform:translateY(-50%)!important;
+  z-index:500!important;
+
+  display:grid!important;
+  place-items:center!important;
+  visibility:visible!important;
+  opacity:1!important;
+
+  width:46px!important;
+  height:46px!important;
+  min-width:46px!important;
+  min-height:46px!important;
+
+  margin:0!important;
+  padding:0 0 3px!important;
+
+  border:2px solid #e7b83e!important;
+  border-radius:50%!important;
+
+  background:linear-gradient(180deg,#0d7257,#05503d)!important;
+  color:#f8d064!important;
+
+  font-family:Arial,sans-serif!important;
+  font-size:31px!important;
+  line-height:1!important;
+  font-weight:600!important;
+
+  box-shadow:0 9px 24px rgba(4,64,49,.24)!important;
+
+  cursor:pointer!important;
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+}
+
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+.v487-carousel-prev{
+  left:6px!important;
+  right:auto!important;
+}
+
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+.v487-carousel-next{
+  right:6px!important;
+  left:auto!important;
+}
+
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+.v487-carousel-arrow:hover{
+  transform:translateY(-50%) scale(1.07)!important;
+  background:linear-gradient(180deg,#118464,#05503d)!important;
+}
+
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+.v487-carousel-arrow:active{
+  transform:translateY(-50%) scale(.95)!important;
+}
+
+/* Images never steal the drag gesture. */
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+#products.ref-products.v487-stable-track img{
+  -webkit-user-drag:none!important;
+  user-select:none!important;
+  -webkit-user-select:none!important;
+}
+
+/* Existing product controls stay clickable. */
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+#products.ref-products.v487-stable-track button,
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+#products.ref-products.v487-stable-track a,
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+#products.ref-products.v487-stable-track [role="button"]{
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+}
+
+/* Tablet */
+@media (max-width:1100px){
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  #products.ref-products.v487-stable-track > .v487-stable-card{
+    flex-basis:clamp(255px,42vw,295px)!important;
+    width:clamp(255px,42vw,295px)!important;
+    min-width:clamp(255px,42vw,295px)!important;
+  }
+}
+
+/* Mobile: native swipe remains primary, buttons still work. */
+@media (max-width:900px){
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell{
+    padding-left:42px!important;
+    padding-right:42px!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  #products.ref-products.v487-stable-track{
+    gap:12px!important;
+    cursor:auto!important;
+    touch-action:pan-x pan-y!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  #products.ref-products.v487-stable-track > .v487-stable-card{
+    flex:0 0 min(82vw,320px)!important;
+    width:min(82vw,320px)!important;
+    min-width:min(82vw,320px)!important;
+    max-width:320px!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  .v487-carousel-arrow{
+    width:36px!important;
+    height:36px!important;
+    min-width:36px!important;
+    min-height:36px!important;
+    font-size:25px!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  .v487-carousel-prev{
+    left:3px!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  .v487-carousel-next{
+    right:3px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  const boot=()=>{
+    installV487StableCarouselCSS();
+    setupV487StableCarousel();
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',boot,{once:true});
+  }else{
+    boot();
+  }
+
+  // Route/language renders can replace the whole section. We only watch for
+  // a NEW #products node; unlike v486 we never replace arrows in a loop.
+  if(!window.__v487RouteObserver){
+    let queued=false;
+    window.__v487RouteObserver=new MutationObserver(()=>{
+      if(queued)return;
+      queued=true;
+      requestAnimationFrame(()=>{
+        queued=false;
+        setupV487StableCarousel();
+      });
+    });
+    window.__v487RouteObserver.observe(document.body,{subtree:true,childList:true});
+  }
+})();
+
+
+/* =========================================================
+   Ass Al Halaal v488 — PAGE HORIZONTAL OVERFLOW FIX
+   Keeps v487 carousel active but prevents it from shifting
+   the whole page sideways.
+   ========================================================= */
+
+;(()=>{
+  const installV488OverflowFix=()=>{
+    if(document.getElementById('v488-page-overflow-fix')) return;
+
+    const style=document.createElement('style');
+    style.id='v488-page-overflow-fix';
+    style.textContent=`
+/* ---------- GLOBAL PAGE SAFETY ---------- */
+html,
+body{
+  max-width:100%!important;
+  overflow-x:hidden!important;
+}
+
+body{
+  margin-left:0!important;
+  margin-right:0!important;
+}
+
+/* Main app wrappers must never become wider than viewport. */
+.app-shell,
+.app-shell:not(.admin-shell),
+.app-shell:not(.admin-shell) main,
+.app-shell:not(.admin-shell) .main,
+.app-shell:not(.admin-shell) .content,
+.app-shell:not(.admin-shell) .page,
+.app-shell:not(.admin-shell) .page-content{
+  max-width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+}
+
+/* ---------- MOST REQUESTED SECTION CONTAINMENT ---------- */
+.app-shell:not(.admin-shell) #collection.ref-collection{
+  position:relative!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell{
+  position:relative!important;
+
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+
+  margin-left:0!important;
+  margin-right:0!important;
+
+  padding-left:54px!important;
+  padding-right:54px!important;
+
+  box-sizing:border-box!important;
+  overflow:hidden!important;
+}
+
+/* Track stays scrollable INSIDE its shell only. */
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+#products.ref-products.v487-stable-track{
+  position:relative!important;
+
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+
+  margin:0!important;
+  box-sizing:border-box!important;
+
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+
+  contain:layout paint!important;
+  overscroll-behavior-x:contain!important;
+}
+
+/* Cards may be wider than viewport collectively, but never escape track. */
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+#products.ref-products.v487-stable-track
+> .v487-stable-card{
+  position:relative!important;
+  max-width:310px!important;
+  box-sizing:border-box!important;
+}
+
+/* Keep carousel arrows inside the safe shell. */
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+.v487-carousel-prev{
+  left:6px!important;
+  right:auto!important;
+}
+
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell
+.v487-carousel-next{
+  right:6px!important;
+  left:auto!important;
+}
+
+/* Remove v485 edge fade layers if they extend outside the clipped shell. */
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell:before,
+.app-shell:not(.admin-shell)
+#collection.ref-collection
+.v485-product-carousel-shell:after{
+  display:none!important;
+  content:none!important;
+}
+
+/* ---------- MOBILE ---------- */
+@media (max-width:900px){
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell{
+    padding-left:42px!important;
+    padding-right:42px!important;
+    overflow:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  #products.ref-products.v487-stable-track{
+    width:100%!important;
+    max-width:100%!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  const resetHorizontalPageOffset=()=>{
+    try{
+      document.documentElement.scrollLeft=0;
+      document.body.scrollLeft=0;
+      window.scrollTo({left:0,top:window.scrollY,behavior:'auto'});
+    }catch{
+      window.scrollTo(0,window.scrollY);
+    }
+  };
+
+  const boot=()=>{
+    installV488OverflowFix();
+    requestAnimationFrame(()=>{
+      resetHorizontalPageOffset();
+      if(typeof setupV487StableCarousel==='function'){
+        setupV487StableCarousel();
+      }
+    });
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',boot,{once:true});
+  }else{
+    boot();
+  }
+
+  window.addEventListener('resize',()=>{
+    requestAnimationFrame(resetHorizontalPageOffset);
+  },{passive:true});
+})();
+
+
+/* =========================================================
+   Ass Al Halaal v489 — WHAT SUITS YOUR REQUEST
+   Interactive occasion/use-case recommendation section.
+   ========================================================= */
+
+function getV489RequestFitData(){
+  const ar=lang==='ar';
+
+  const choose=(a,e)=>ar?a:e;
+
+  return {
+    camping:{
+      kicker:choose('للرحلات الخارجية','OUTDOOR & CAMPING'),
+      title:choose('تجهيز عملي للرحلات والتخييم','Practical cuts for camping & outdoor trips'),
+      description:choose(
+        'اختيار سهل الحمل والتخزين، مناسب للشواء والطبخ السريع مع تقسيم واضح للقطع.',
+        'Easy-to-handle cuts for grilling and camp cooking, portioned for simple storage and quick preparation.'
+      ),
+      type:choose('غنم أو ماعز','Lamb or goat'),
+      cuts:choose('ريش، كتف، مكعبات','Ribs, shoulder, cubes'),
+      qty:choose('5–8 كجم','5–8 kg'),
+      prep:choose('عبوات للشواء والطبخ','Grill + cooking packs'),
+      summaryTitle:choose('سهل للنقل وسريع في التجهيز','Easy to carry, quick to prepare'),
+      summary:choose(
+        'مناسب للرحلات القصيرة أو التخييم مع عبوات منفصلة تقلل الفوضى وتسهل الاستخدام.',
+        'Ideal for short trips and camping, with separated packs that make cooking and storage simpler.'
+      )
+    },
+    household:{
+      kicker:choose('للاستخدام اليومي','EVERYDAY HOME USE'),
+      title:choose('اختيار متوازن لطبخ المنزل','A balanced selection for everyday household cooking'),
+      description:choose(
+        'قطع متنوعة للوجبات اليومية مع تقسيم أصغر يسهل التخزين والاستخدام على عدة أيام.',
+        'A practical mix of everyday cuts in smaller packs that are easy to store and use across several meals.'
+      ),
+      type:choose('غنم، ماعز أو بقر','Lamb, goat or beef'),
+      cuts:choose('قطع طبخ متنوعة','Mixed everyday cuts'),
+      qty:choose('3–5 كجم','3–5 kg'),
+      prep:choose('عبوات منزلية صغيرة','Small household packs'),
+      summaryTitle:choose('مناسب للثلاجة والوجبات اليومية','Made for daily meals and easy storage'),
+      summary:choose(
+        'تقسيم بسيط وواضح يساعدك على استخدام الكمية حسب الوجبة بدون فتح كامل الطلب.',
+        'Smaller separated packs let you use only what you need for each meal without opening the full order.'
+      )
+    },
+    events:{
+      kicker:choose('للمناسبات الكبيرة','EVENTS & OCCASIONS'),
+      title:choose('تجهيز أكبر للمناسبات والولائم','Larger preparation for events and special occasions'),
+      description:choose(
+        'كمية أكبر مع إمكانية تخصيص التقطيع والتقسيم حسب عدد الضيوف وطريقة التقديم.',
+        'A larger order with custom cutting and packing based on guest count and how you plan to serve it.'
+      ),
+      type:choose('ذبيحة كاملة أو نصف','Whole or half carcass'),
+      cuts:choose('تقطيع حسب الطلب','Custom cuts by request'),
+      qty:choose('10–15 كجم+','10–15 kg+'),
+      prep:choose('عبوات كبيرة ومنفصلة','Large separated packs'),
+      summaryTitle:choose('مرن للمناسبات وعدد الضيوف','Flexible for guest count and occasion size'),
+      summary:choose(
+        'اختر التقطيع المناسب للمندي أو الكبسة أو الشواء مع تقسيم الطلب حسب الاستخدام.',
+        'Choose a preparation style for rice dishes, roasting or grilling, with packs separated by use.'
+      )
+    },
+    family:{
+      kicker:choose('للتجمعات العائلية','FAMILY GATHERINGS'),
+      title:choose('تشكيلة متوازنة لجلسة عائلية','A balanced mix for a family gathering'),
+      description:choose(
+        'مزيج من القطع المناسبة للشواء والطبخ، بكمية تكفي تجمعاً عائلياً متوسطاً.',
+        'A balanced mix of grill and cooking cuts sized for a medium family gathering.'
+      ),
+      type:choose('نعيمي، حري أو ماعز','Naimi, Harri or goat'),
+      cuts:choose('ريش، فخذ، كتف','Ribs, leg, shoulder'),
+      qty:choose('8–12 كجم','8–12 kg'),
+      prep:choose('شواء + طبخ','Grill + cooking split'),
+      summaryTitle:choose('اختيار واحد يغطي أكثر من طبق','One selection for several dishes'),
+      summary:choose(
+        'توزيع متوازن للقطع يساعد على تجهيز أكثر من طبق بدون شراء أصناف منفصلة.',
+        'A balanced cut mix helps prepare several dishes without ordering separate products.'
+      )
+    },
+    bbq:{
+      kicker:choose('للشواء','BBQ & GRILL'),
+      title:choose('قطع مختارة للشواء المباشر','Selected cuts designed for BBQ & grilling'),
+      description:choose(
+        'قطع مناسبة للشواية مع أحجام متقاربة لسهولة التسوية والتقديم.',
+        'Grill-friendly cuts with consistent sizing for easier cooking and serving.'
+      ),
+      type:choose('غنم، ماعز أو بقر','Lamb, goat or beef'),
+      cuts:choose('ريش، شرائح، مكعبات','Chops, ribs, cubes'),
+      qty:choose('5–8 كجم','5–8 kg'),
+      prep:choose('تقطيع جاهز للشواء','Grill-ready cutting'),
+      summaryTitle:choose('أقل تجهيز قبل الشواء','Less preparation before the grill'),
+      summary:choose(
+        'القطع تصل مقسمة بشكل عملي لتقليل وقت التجهيز قبل إشعال الشواية.',
+        'Cuts arrive portioned for the grill, reducing preparation time before cooking.'
+      )
+    },
+    majlis:{
+      kicker:choose('للضيافة والمجالس','MAJLIS & GUESTS'),
+      title:choose('اختيار مميز للضيوف والمجالس','A premium selection for majlis & guests'),
+      description:choose(
+        'قطع مرتبة واختيار أعلى جودة للمناسبات المنزلية واستقبال الضيوف.',
+        'A refined selection with presentation-friendly cuts for hosting guests at home or in the majlis.'
+      ),
+      type:choose('غنم مميز','Premium lamb'),
+      cuts:choose('فخذ، كتف، ريش','Leg, shoulder, ribs'),
+      qty:choose('8–12 كجم','8–12 kg'),
+      prep:choose('تغليف مرتب حسب القطع','Presentation-ready packs'),
+      summaryTitle:choose('اختيار مرتب للضيافة','A polished choice for hosting'),
+      summary:choose(
+        'تجهيز منظم يساعد على تقديم أكثر من طبق مع سهولة فصل القطع حسب طريقة الطبخ.',
+        'Organised packing makes it easier to prepare multiple dishes and separate cuts by cooking method.'
+      )
+    }
+  };
+}
+
+function setupV489RequestFitSelector(){
+  const section=document.querySelector('#request-fit.request-fit-section');
+  if(!section)return;
+
+  const tabs=[...section.querySelectorAll('[data-request-fit]')];
+  if(!tabs.length)return;
+
+  const data=getV489RequestFitData();
+
+  const renderFit=(key)=>{
+    const item=data[key]||data.camping;
+
+    tabs.forEach(btn=>{
+      const active=btn.dataset.requestFit===key;
+      btn.classList.toggle('selected',active);
+      btn.setAttribute('aria-selected',active?'true':'false');
+      btn.tabIndex=active?0:-1;
+    });
+
+    const set=(sel,value)=>{
+      const el=section.querySelector(sel);
+      if(el)el.textContent=value||'';
+    };
+
+    set('[data-fit-kicker]',item.kicker);
+    set('[data-fit-title]',item.title);
+    set('[data-fit-description]',item.description);
+    set('[data-fit-type]',item.type);
+    set('[data-fit-cuts]',item.cuts);
+    set('[data-fit-qty]',item.qty);
+    set('[data-fit-prep]',item.prep);
+    set('[data-fit-summary-title]',item.summaryTitle);
+    set('[data-fit-summary]',item.summary);
+  };
+
+  tabs.forEach(btn=>{
+    btn.onclick=()=>{
+      renderFit(btn.dataset.requestFit);
+    };
+
+    btn.onkeydown=e=>{
+      if(!['ArrowLeft','ArrowRight'].includes(e.key))return;
+      e.preventDefault();
+      const i=tabs.indexOf(btn);
+      const step=e.key==='ArrowRight'?1:-1;
+      const next=tabs[(i+step+tabs.length)%tabs.length];
+      next.focus();
+      next.click();
+    };
+  });
+
+  section.querySelector('[data-fit-browse]')?.addEventListener('click',()=>{
+    document.querySelector('#collection')?.scrollIntoView({
+      behavior:'smooth',
+      block:'start'
+    });
+  });
+
+  const selected=section.querySelector('[data-request-fit].selected');
+  renderFit(selected?.dataset.requestFit||'camping');
+}
+
+;(()=>{
+  const installV489RequestFitCSS=()=>{
+    if(document.getElementById('v489-request-fit-css'))return;
+
+    const style=document.createElement('style');
+    style.id='v489-request-fit-css';
+    style.textContent=`
+/* =========================================================
+   v489 — WHAT SUITS YOUR REQUEST
+   ========================================================= */
+
+.app-shell:not(.admin-shell) .request-fit-section{
+  position:relative!important;
+  width:100%!important;
+  max-width:100%!important;
+  margin:26px 0 30px!important;
+  padding:28px!important;
+  box-sizing:border-box!important;
+
+  border:1px solid #dccb9c!important;
+  border-radius:24px!important;
+
+  background:
+    radial-gradient(circle at 92% 0,rgba(19,104,79,.10),transparent 34%),
+    linear-gradient(180deg,#fbf5e9 0%,#f7eddb 100%)!important;
+
+  box-shadow:
+    0 16px 32px rgba(51,44,25,.07),
+    inset 0 1px 0 rgba(255,255,255,.78)!important;
+
+  overflow:hidden!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-section:before{
+  content:""!important;
+  position:absolute!important;
+  left:0!important;
+  top:0!important;
+  width:100%!important;
+  height:5px!important;
+  background:linear-gradient(90deg,#08705a 0 35%,#ddb03f 35% 58%,#08705a 58% 100%)!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-heading{
+  max-width:780px!important;
+  margin:0 auto 22px!important;
+  text-align:center!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-eyebrow{
+  display:inline-block!important;
+  margin-bottom:6px!important;
+  color:#b18424!important;
+  font-family:Arial,sans-serif!important;
+  font-size:11px!important;
+  font-weight:900!important;
+  letter-spacing:1.4px!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-heading h2{
+  margin:0!important;
+  color:#0a5f4a!important;
+  font-family:Arial,sans-serif!important;
+  font-size:clamp(30px,3vw,42px)!important;
+  line-height:1.05!important;
+  font-weight:900!important;
+  letter-spacing:.2px!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-heading h2:after{
+  content:""!important;
+  display:block!important;
+  width:74px!important;
+  height:3px!important;
+  margin:12px auto!important;
+  border-radius:999px!important;
+  background:#dca92c!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-heading p{
+  margin:0 auto!important;
+  max-width:720px!important;
+  color:#68756f!important;
+  font-size:13px!important;
+  line-height:1.55!important;
+}
+
+/* Tabs */
+.app-shell:not(.admin-shell) .request-fit-tabs{
+  display:grid!important;
+  grid-template-columns:repeat(6,minmax(0,1fr))!important;
+  gap:10px!important;
+  margin:0 0 18px!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-tab{
+  display:flex!important;
+  align-items:center!important;
+  gap:9px!important;
+
+  min-width:0!important;
+  min-height:68px!important;
+  padding:10px 11px!important;
+
+  border:1px solid #d8cba9!important;
+  border-radius:16px!important;
+
+  background:#fffaf1!important;
+  color:#18493c!important;
+
+  text-align:left!important;
+  cursor:pointer!important;
+
+  box-shadow:0 5px 12px rgba(54,46,27,.04)!important;
+  transition:transform .16s ease,border-color .16s ease,background .16s ease,box-shadow .16s ease!important;
+}
+
+html[dir="rtl"] .app-shell:not(.admin-shell) .request-fit-tab{
+  text-align:right!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-tab:hover{
+  transform:translateY(-2px)!important;
+  border-color:#cfa12d!important;
+  box-shadow:0 8px 16px rgba(54,46,27,.07)!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-tab.selected{
+  border-color:#0b654f!important;
+  background:linear-gradient(180deg,#0d7257,#08533f)!important;
+  color:#fff!important;
+  box-shadow:0 9px 18px rgba(8,86,66,.16)!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-tab-icon{
+  flex:0 0 36px!important;
+  width:36px!important;
+  height:36px!important;
+  display:grid!important;
+  place-items:center!important;
+
+  border:1px solid #dfbd62!important;
+  border-radius:12px!important;
+
+  background:#fff5d8!important;
+  color:#a57716!important;
+
+  font-family:Arial,sans-serif!important;
+  font-size:18px!important;
+  font-weight:800!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-tab.selected .request-fit-tab-icon{
+  border-color:#e6bd50!important;
+  background:rgba(246,204,91,.13)!important;
+  color:#f4cb58!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-tab>span:last-child{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:3px!important;
+  min-width:0!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-tab b{
+  display:block!important;
+  font-family:Arial,sans-serif!important;
+  font-size:12px!important;
+  line-height:1.15!important;
+  font-weight:800!important;
+  white-space:normal!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-tab small{
+  display:block!important;
+  color:#86918b!important;
+  font-size:9px!important;
+  line-height:1.2!important;
+  white-space:normal!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-tab.selected small{
+  color:#cfe2da!important;
+}
+
+/* Detail panel */
+.app-shell:not(.admin-shell) .request-fit-detail{
+  display:grid!important;
+  grid-template-columns:minmax(0,1.7fr) minmax(280px,.7fr)!important;
+  gap:16px!important;
+
+  padding:20px!important;
+  border:1px solid rgba(22,94,74,.18)!important;
+  border-radius:20px!important;
+
+  background:
+    linear-gradient(135deg,#0b654f 0%,#07503f 55%,#043b31 100%)!important;
+
+  box-shadow:0 12px 24px rgba(5,69,53,.10)!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-copy{
+  min-width:0!important;
+  padding:4px 4px 2px!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-kicker{
+  display:block!important;
+  margin-bottom:6px!important;
+  color:#f0c34e!important;
+  font-family:Arial,sans-serif!important;
+  font-size:10px!important;
+  font-weight:900!important;
+  letter-spacing:1.1px!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-copy h3{
+  margin:0 0 8px!important;
+  color:#fff!important;
+  font-family:Arial,sans-serif!important;
+  font-size:clamp(22px,2vw,30px)!important;
+  line-height:1.08!important;
+  font-weight:850!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-copy>p{
+  margin:0 0 16px!important;
+  max-width:760px!important;
+  color:#d9e7e1!important;
+  font-size:12px!important;
+  line-height:1.55!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-metrics{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:9px!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-metrics article{
+  min-width:0!important;
+  min-height:86px!important;
+  padding:12px!important;
+  box-sizing:border-box!important;
+
+  border:1px solid rgba(231,188,71,.42)!important;
+  border-radius:14px!important;
+
+  background:rgba(255,255,255,.035)!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-metrics small{
+  display:block!important;
+  margin-bottom:7px!important;
+  color:#e1b84c!important;
+  font-size:8px!important;
+  line-height:1.1!important;
+  font-weight:900!important;
+  letter-spacing:.7px!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-metrics strong{
+  display:block!important;
+  color:#fff!important;
+  font-family:Arial,sans-serif!important;
+  font-size:11px!important;
+  line-height:1.3!important;
+  font-weight:700!important;
+  overflow-wrap:break-word!important;
+}
+
+/* Right recommendation card */
+.app-shell:not(.admin-shell) .request-fit-summary{
+  position:relative!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+
+  min-width:0!important;
+  padding:18px!important;
+
+  border:1px solid #e2ba52!important;
+  border-radius:18px!important;
+
+  background:
+    radial-gradient(circle at 100% 0,rgba(235,193,78,.13),transparent 42%),
+    linear-gradient(180deg,#fff9ea,#f4e4bd)!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-summary-icon{
+  width:38px!important;
+  height:38px!important;
+  display:grid!important;
+  place-items:center!important;
+  margin-bottom:11px!important;
+
+  border-radius:50%!important;
+  background:#0b654f!important;
+  color:#f2c34d!important;
+
+  font-size:18px!important;
+  font-weight:900!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-summary>small{
+  color:#a77917!important;
+  font-size:9px!important;
+  line-height:1.1!important;
+  font-weight:900!important;
+  letter-spacing:.8px!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-summary h4{
+  margin:6px 0 7px!important;
+  color:#13493b!important;
+  font-family:Arial,sans-serif!important;
+  font-size:17px!important;
+  line-height:1.16!important;
+  font-weight:850!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-summary p{
+  margin:0 0 14px!important;
+  color:#66736d!important;
+  font-size:10px!important;
+  line-height:1.5!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-summary button{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+
+  width:100%!important;
+  min-height:42px!important;
+  padding:9px 12px!important;
+
+  border:0!important;
+  border-radius:12px!important;
+
+  background:linear-gradient(180deg,#0d7257,#07503f)!important;
+  color:#fff!important;
+
+  font-family:Arial,sans-serif!important;
+  font-size:10px!important;
+  font-weight:800!important;
+
+  cursor:pointer!important;
+  box-shadow:0 6px 12px rgba(7,80,63,.15)!important;
+}
+
+.app-shell:not(.admin-shell) .request-fit-summary button span{
+  color:#f4c853!important;
+  font-size:16px!important;
+}
+
+/* Tablet */
+@media (max-width:1150px){
+  .app-shell:not(.admin-shell) .request-fit-tabs{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+
+  .app-shell:not(.admin-shell) .request-fit-metrics{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
+
+/* Mobile */
+@media (max-width:900px){
+  .app-shell:not(.admin-shell) .request-fit-section{
+    margin:18px 0 22px!important;
+    padding:20px 14px!important;
+    border-radius:20px!important;
+  }
+
+  .app-shell:not(.admin-shell) .request-fit-heading{
+    margin-bottom:16px!important;
+  }
+
+  .app-shell:not(.admin-shell) .request-fit-heading h2{
+    font-size:28px!important;
+  }
+
+  .app-shell:not(.admin-shell) .request-fit-tabs{
+    display:flex!important;
+    gap:9px!important;
+    margin:0 -2px 14px!important;
+    padding:2px 2px 8px!important;
+
+    overflow-x:auto!important;
+    scroll-snap-type:x mandatory!important;
+    scrollbar-width:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .request-fit-tabs::-webkit-scrollbar{
+    display:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .request-fit-tab{
+    flex:0 0 164px!important;
+    width:164px!important;
+    min-height:62px!important;
+    scroll-snap-align:start!important;
+  }
+
+  .app-shell:not(.admin-shell) .request-fit-detail{
+    grid-template-columns:1fr!important;
+    padding:15px!important;
+  }
+
+  .app-shell:not(.admin-shell) .request-fit-metrics{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+
+  .app-shell:not(.admin-shell) .request-fit-summary{
+    padding:15px!important;
+  }
+}
+
+@media (max-width:430px){
+  .app-shell:not(.admin-shell) .request-fit-metrics{
+    grid-template-columns:1fr 1fr!important;
+  }
+
+  .app-shell:not(.admin-shell) .request-fit-metrics article{
+    min-height:78px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  const boot=()=>{
+    installV489RequestFitCSS();
+    setupV489RequestFitSelector();
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',boot,{once:true});
+  }else{
+    boot();
+  }
+})();
+
+
+/* =========================================================
+   Ass Al Halaal v490 — REFERENCE-STYLE REQUEST SECTION
+   3 visual cards + Ass Al Halaal Advisor
+   ========================================================= */
+
+function setupV490RequestSection(){
+  const section=document.querySelector('#request-fit.v490-request-section');
+  if(!section)return;
+
+  const cards=[...section.querySelectorAll('[data-v490-request]')];
+
+  cards.forEach(card=>{
+    const activate=()=>{
+      cards.forEach(c=>c.classList.remove('selected'));
+      card.classList.add('selected');
+
+      const target=document.querySelector('#collection');
+      if(target){
+        target.scrollIntoView({behavior:'smooth',block:'start'});
+      }
+    };
+
+    card.onclick=e=>{
+      if(e.target.closest('button')) return;
+      activate();
+    };
+
+    card.querySelector('.v490-card-arrow')?.addEventListener('click',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      activate();
+    });
+  });
+
+  section.querySelector('[data-v490-advisor]')?.addEventListener('click',()=>{
+    const first=section.querySelector('[data-v490-request].selected') || cards[0];
+    if(first) first.classList.add('selected');
+
+    const target=document.querySelector('#collection');
+    if(target){
+      target.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+  });
+}
+
+;(()=>{
+  const installV490RequestCSS=()=>{
+    if(document.getElementById('v490-request-section-css'))return;
+
+    /* Remove v489 styling so it cannot interfere with the new structure. */
+    document.getElementById('v489-request-fit-css')?.remove();
+
+    const style=document.createElement('style');
+    style.id='v490-request-section-css';
+    style.textContent=`
+/* =========================================================
+   v490 — reference-style request section in Ass Al Halaal theme
+   ========================================================= */
+
+.app-shell:not(.admin-shell) .v490-request-section{
+  position:relative!important;
+  width:100%!important;
+  max-width:100%!important;
+
+  /*
+    Pulls the block into the existing empty space under the product rail.
+    Desktop only; mobile stays in normal document flow.
+  */
+  margin:56px 0 90px!important;
+  padding:26px 22px!important;
+  box-sizing:border-box!important;
+
+  border:1px solid rgba(200,170,98,.42)!important;
+  border-radius:24px!important;
+
+  background:
+    radial-gradient(circle at 92% 8%,rgba(17,99,75,.07),transparent 33%),
+    linear-gradient(180deg,#fffdfa 0%,#fbf7ee 100%)!important;
+
+  box-shadow:
+    0 18px 36px rgba(38,35,25,.07),
+    inset 0 1px 0 rgba(255,255,255,.9)!important;
+
+  overflow:hidden!important;
+  z-index:2!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-section:before{
+  content:""!important;
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  top:0!important;
+  height:4px!important;
+  background:linear-gradient(90deg,#0b654f 0 36%,#e0b13e 36% 59%,#0b654f 59% 100%)!important;
+}
+
+/* Four-column reference structure: 3 request cards + advisor */
+.app-shell:not(.admin-shell) .v490-request-layout{
+  display:grid!important;
+  grid-template-columns:minmax(0,3fr) minmax(280px,1fr)!important;
+  gap:20px!important;
+  align-items:stretch!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-main{
+  min-width:0!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-heading{
+  margin:0 auto 18px!important;
+  text-align:center!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-heading>span{
+  display:block!important;
+  margin-bottom:5px!important;
+  color:#b58722!important;
+  font-family:Arial,sans-serif!important;
+  font-size:10px!important;
+  font-weight:900!important;
+  letter-spacing:1.35px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-heading h2{
+  margin:0!important;
+  color:#0a5f4a!important;
+  font-family:Arial,sans-serif!important;
+  font-size:clamp(28px,2.6vw,38px)!important;
+  line-height:1.05!important;
+  font-weight:900!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-heading p{
+  max-width:650px!important;
+  margin:8px auto 0!important;
+  color:#7c817d!important;
+  font-size:11px!important;
+  line-height:1.45!important;
+}
+
+/* 3 cards */
+.app-shell:not(.admin-shell) .v490-request-cards{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:14px!important;
+  align-items:stretch!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-card{
+  position:relative!important;
+  display:flex!important;
+  flex-direction:column!important;
+
+  min-width:0!important;
+  min-height:390px!important;
+
+  padding:12px 12px 56px!important;
+  box-sizing:border-box!important;
+
+  border:1px solid #ded7c6!important;
+  border-radius:18px!important;
+
+  background:#fff!important;
+  box-shadow:0 7px 18px rgba(44,39,26,.05)!important;
+
+  cursor:pointer!important;
+  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-card:hover,
+.app-shell:not(.admin-shell) .v490-request-card.selected{
+  transform:translateY(-4px)!important;
+  border-color:#d8ae3b!important;
+  box-shadow:0 12px 24px rgba(44,39,26,.10)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-art{
+  width:100%!important;
+  aspect-ratio:1.35/1!important;
+  margin-bottom:14px!important;
+  overflow:hidden!important;
+  border-radius:14px!important;
+  background:#fcf6e8!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-art svg{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+}
+
+.app-shell:not(.admin-shell) .v490-card-copy{
+  padding:0 8px!important;
+  text-align:center!important;
+}
+
+.app-shell:not(.admin-shell) .v490-card-copy h3{
+  margin:0 0 8px!important;
+  color:#113f34!important;
+  font-family:Arial,sans-serif!important;
+  font-size:17px!important;
+  line-height:1.12!important;
+  font-weight:900!important;
+  text-transform:none!important;
+}
+
+.app-shell:not(.admin-shell) .v490-card-copy p{
+  max-width:210px!important;
+  margin:0 auto!important;
+  color:#777d79!important;
+  font-size:10.5px!important;
+  line-height:1.45!important;
+}
+
+.app-shell:not(.admin-shell) .v490-card-arrow{
+  position:absolute!important;
+  left:16px!important;
+  bottom:16px!important;
+
+  width:36px!important;
+  height:36px!important;
+  min-width:36px!important;
+  min-height:36px!important;
+
+  display:grid!important;
+  place-items:center!important;
+
+  border:0!important;
+  border-radius:50%!important;
+
+  background:#eef7f2!important;
+  color:#0b654f!important;
+
+  font-family:Arial,sans-serif!important;
+  font-size:20px!important;
+  line-height:1!important;
+
+  cursor:pointer!important;
+}
+
+html[dir="rtl"] .app-shell:not(.admin-shell) .v490-card-arrow{
+  left:auto!important;
+  right:16px!important;
+  transform:scaleX(-1)!important;
+}
+
+/* Advisor card */
+.app-shell:not(.admin-shell) .v490-advisor-card{
+  display:flex!important;
+  flex-direction:column!important;
+
+  min-width:0!important;
+  min-height:100%!important;
+  padding:24px!important;
+  box-sizing:border-box!important;
+
+  border:1px solid #dccb9c!important;
+  border-radius:20px!important;
+
+  background:
+    radial-gradient(circle at 85% 16%,rgba(17,99,75,.08),transparent 35%),
+    linear-gradient(180deg,#fbf2db 0%,#f5e5bd 100%)!important;
+
+  box-shadow:0 10px 22px rgba(78,61,18,.07)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-head{
+  text-align:center!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-head>span{
+  display:block!important;
+  margin-bottom:6px!important;
+  color:#b1811d!important;
+  font-size:9px!important;
+  font-weight:900!important;
+  letter-spacing:1.15px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-head h3{
+  margin:0!important;
+  color:#0a5946!important;
+  font-family:Arial,sans-serif!important;
+  font-size:27px!important;
+  line-height:1.08!important;
+  font-weight:900!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-head p{
+  margin:9px auto 0!important;
+  max-width:270px!important;
+  color:#6f7772!important;
+  font-size:10.5px!important;
+  line-height:1.45!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-art{
+  width:100%!important;
+  margin:16px 0 18px!important;
+  aspect-ratio:1.36/1!important;
+  overflow:hidden!important;
+  border-radius:15px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-art svg{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-button{
+  margin-top:auto!important;
+
+  width:100%!important;
+  min-height:52px!important;
+  padding:10px 16px!important;
+
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:14px!important;
+
+  border:1px solid #e4be55!important;
+  border-radius:14px!important;
+
+  background:linear-gradient(180deg,#0e7358,#07503f)!important;
+  color:#fff!important;
+
+  font-family:Arial,sans-serif!important;
+  font-size:12px!important;
+  font-weight:900!important;
+
+  box-shadow:0 7px 14px rgba(7,80,63,.16)!important;
+  cursor:pointer!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-button span{
+  color:#f2c650!important;
+  font-size:19px!important;
+  line-height:1!important;
+}
+
+/* Ensure Quality Assurance follows immediately after the new block. */
+.app-shell:not(.admin-shell) .v490-request-section + .premium-safety-standards{
+  margin-top:0!important;
+}
+
+/* Tablet */
+@media (max-width:1150px){
+  .app-shell:not(.admin-shell) .v490-request-section{
+    margin-top:48px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v490-request-layout{
+    grid-template-columns:1fr!important;
+  }
+
+  .app-shell:not(.admin-shell) .v490-advisor-card{
+    min-height:auto!important;
+  }
+
+  .app-shell:not(.admin-shell) .v490-advisor-art{
+    max-width:360px!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+}
+
+/* Mobile: normal flow, no overlap */
+@media (max-width:900px){
+  .app-shell:not(.admin-shell) .v490-request-section{
+    margin:16px 0 22px!important;
+    padding:18px 12px!important;
+    border-radius:20px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v490-request-layout{
+    grid-template-columns:1fr!important;
+    gap:14px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v490-request-heading h2{
+    font-size:27px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v490-request-cards{
+    display:flex!important;
+    gap:11px!important;
+    overflow-x:auto!important;
+    padding:2px 1px 10px!important;
+    scroll-snap-type:x mandatory!important;
+    scrollbar-width:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v490-request-cards::-webkit-scrollbar{
+    display:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v490-request-card{
+    flex:0 0 78vw!important;
+    min-width:78vw!important;
+    max-width:320px!important;
+    min-height:360px!important;
+    scroll-snap-align:start!important;
+  }
+
+  .app-shell:not(.admin-shell) .v490-advisor-card{
+    padding:18px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v490-advisor-head h3{
+    font-size:24px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v490-advisor-art{
+    max-width:330px!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  const boot=()=>{
+    installV490RequestCSS();
+    setupV490RequestSection();
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',boot,{once:true});
+  }else{
+    boot();
+  }
+})();
+
+
+;(()=>{
+  const installV491PremiumRequestPolish=()=>{
+    if(document.getElementById('v491-premium-request-polish')) return;
+
+    const style=document.createElement('style');
+    style.id='v491-premium-request-polish';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v491 — PREMIUM REQUEST SECTION POLISH
+   Keeps v490 structure; improves only visual quality.
+   ========================================================= */
+
+.app-shell:not(.admin-shell) .v490-request-section{
+  padding:30px 26px!important;
+  border-color:rgba(207,173,86,.52)!important;
+  background:
+    radial-gradient(circle at 90% 6%,rgba(7,92,69,.075),transparent 30%),
+    radial-gradient(circle at 10% 100%,rgba(221,177,62,.055),transparent 28%),
+    linear-gradient(180deg,#fffefb 0%,#fbf7ee 100%)!important;
+  box-shadow:
+    0 22px 46px rgba(38,35,25,.085),
+    inset 0 1px 0 rgba(255,255,255,.96)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-section:before{
+  height:5px!important;
+  background:
+    linear-gradient(90deg,
+      #0b654f 0 34%,
+      #f0c455 34% 50%,
+      #0b654f 50% 66%,
+      #d6a937 66% 100%)!important;
+}
+
+/* Heading */
+.app-shell:not(.admin-shell) .v490-request-heading{
+  margin-bottom:22px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-heading>span{
+  color:#b4861f!important;
+  font-size:10.5px!important;
+  letter-spacing:1.6px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-heading h2{
+  font-size:clamp(30px,2.8vw,42px)!important;
+  letter-spacing:-.25px!important;
+  text-shadow:0 1px 0 rgba(255,255,255,.7)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-heading p{
+  max-width:700px!important;
+  margin-top:9px!important;
+  color:#757d78!important;
+  font-size:11.5px!important;
+}
+
+/* Main 3 cards */
+.app-shell:not(.admin-shell) .v490-request-cards{
+  gap:16px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-card{
+  min-height:405px!important;
+  padding:13px 13px 62px!important;
+  border:1px solid #e2dbc9!important;
+  border-radius:20px!important;
+  background:
+    linear-gradient(180deg,#ffffff 0%,#fffdf8 100%)!important;
+  box-shadow:
+    0 8px 18px rgba(41,37,26,.055),
+    inset 0 1px 0 rgba(255,255,255,.95)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-card:before{
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  border-radius:20px!important;
+  border:1px solid transparent!important;
+  pointer-events:none!important;
+  transition:border-color .2s ease,box-shadow .2s ease!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-card:hover,
+.app-shell:not(.admin-shell) .v490-request-card.selected{
+  transform:translateY(-5px)!important;
+  border-color:#d9ad39!important;
+  box-shadow:
+    0 16px 30px rgba(41,37,26,.11),
+    0 0 0 1px rgba(216,173,57,.10)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-card:hover:before,
+.app-shell:not(.admin-shell) .v490-request-card.selected:before{
+  border-color:rgba(214,171,52,.30)!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.45)!important;
+}
+
+/* Illustration panels */
+.app-shell:not(.admin-shell) .v490-request-art{
+  position:relative!important;
+  margin-bottom:17px!important;
+  border-radius:16px!important;
+  border:1px solid rgba(220,199,143,.55)!important;
+  background:
+    radial-gradient(circle at 78% 18%,rgba(232,189,82,.16),transparent 24%),
+    linear-gradient(180deg,#fff8e8,#f7ecd1)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.8),
+    0 5px 12px rgba(75,61,22,.035)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-art:after{
+  content:""!important;
+  position:absolute!important;
+  left:12%!important;
+  right:12%!important;
+  bottom:8px!important;
+  height:1px!important;
+  background:linear-gradient(90deg,transparent,rgba(179,137,36,.25),transparent)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-art svg{
+  transform:scale(.96)!important;
+  transform-origin:center!important;
+}
+
+/* Card text */
+.app-shell:not(.admin-shell) .v490-card-copy{
+  padding:0 10px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-card-copy h3{
+  margin-bottom:9px!important;
+  color:#0d4739!important;
+  font-size:18px!important;
+  line-height:1.16!important;
+  letter-spacing:-.15px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-card-copy p{
+  max-width:225px!important;
+  color:#747b77!important;
+  font-size:10.8px!important;
+  line-height:1.5!important;
+}
+
+/* Small card arrow */
+.app-shell:not(.admin-shell) .v490-card-arrow{
+  width:38px!important;
+  height:38px!important;
+  min-width:38px!important;
+  min-height:38px!important;
+  left:18px!important;
+  bottom:17px!important;
+  border:1px solid #d9eadf!important;
+  background:linear-gradient(180deg,#f3faf6,#e7f3ec)!important;
+  color:#0a654f!important;
+  box-shadow:0 4px 10px rgba(8,93,70,.08)!important;
+  transition:transform .16s ease,background .16s ease!important;
+}
+
+.app-shell:not(.admin-shell) .v490-card-arrow:hover{
+  transform:translateX(3px)!important;
+  background:linear-gradient(180deg,#eaf7f0,#dfeee6)!important;
+}
+
+html[dir="rtl"] .app-shell:not(.admin-shell) .v490-card-arrow{
+  left:auto!important;
+  right:18px!important;
+}
+
+/* Advisor panel */
+.app-shell:not(.admin-shell) .v490-advisor-card{
+  position:relative!important;
+  padding:26px 22px 22px!important;
+  border:1px solid #d9ba65!important;
+  border-radius:22px!important;
+  background:
+    radial-gradient(circle at 88% 12%,rgba(8,103,78,.085),transparent 29%),
+    linear-gradient(180deg,#fff6dc 0%,#f5e4b6 100%)!important;
+  box-shadow:
+    0 14px 28px rgba(95,71,18,.09),
+    inset 0 1px 0 rgba(255,255,255,.72)!important;
+  overflow:hidden!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-card:before{
+  content:""!important;
+  position:absolute!important;
+  top:0!important;
+  left:0!important;
+  right:0!important;
+  height:4px!important;
+  background:linear-gradient(90deg,#0a654f,#e0b544,#0a654f)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-head>span{
+  color:#aa7a18!important;
+  letter-spacing:1.25px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-head h3{
+  color:#0a5d49!important;
+  font-size:29px!important;
+  line-height:1.05!important;
+  letter-spacing:-.3px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-head p{
+  max-width:290px!important;
+  margin-top:10px!important;
+  color:#6c746f!important;
+  font-size:10.8px!important;
+}
+
+/* Advisor illustration */
+.app-shell:not(.admin-shell) .v490-advisor-art{
+  position:relative!important;
+  margin:18px 0 20px!important;
+  border:1px solid rgba(210,183,105,.36)!important;
+  border-radius:17px!important;
+  background:linear-gradient(180deg,#fbf1d5,#f3e2b7)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.55)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-art:after{
+  content:""!important;
+  position:absolute!important;
+  inset:12px!important;
+  border:1px dashed rgba(162,125,31,.12)!important;
+  border-radius:14px!important;
+  pointer-events:none!important;
+}
+
+/* Advisor CTA */
+.app-shell:not(.admin-shell) .v490-advisor-button{
+  min-height:54px!important;
+  border:1px solid #d9b145!important;
+  border-radius:14px!important;
+  background:
+    linear-gradient(180deg,#0f765a 0%,#07503f 100%)!important;
+  box-shadow:
+    0 10px 18px rgba(6,77,60,.18),
+    inset 0 1px 0 rgba(255,255,255,.08)!important;
+  transition:transform .16s ease,box-shadow .16s ease!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-button:hover{
+  transform:translateY(-2px)!important;
+  box-shadow:
+    0 13px 22px rgba(6,77,60,.23),
+    inset 0 1px 0 rgba(255,255,255,.10)!important;
+}
+
+/* Slightly cleaner alignment */
+.app-shell:not(.admin-shell) .v490-request-layout{
+  gap:22px!important;
+}
+
+/* Tablet */
+@media (max-width:1150px){
+  .app-shell:not(.admin-shell) .v490-request-section{
+    padding:24px 20px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v490-advisor-card{
+    padding:22px!important;
+  }
+}
+
+/* Mobile */
+@media (max-width:900px){
+  .app-shell:not(.admin-shell) .v490-request-section{
+    padding:18px 12px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v490-request-card{
+    min-height:372px!important;
+    padding-bottom:58px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v490-card-copy h3{
+    font-size:17px!important;
+  }
+
+  .app-shell:not(.admin-shell) .v490-advisor-head h3{
+    font-size:25px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV491PremiumRequestPolish,{once:true});
+  }else{
+    installV491PremiumRequestPolish();
+  }
+})();
+
+;(()=>{
+  const installV492PremiumRequestRedesign=()=>{
+    if(document.getElementById('v492-premium-request-redesign')) return;
+
+    const style=document.createElement('style');
+    style.id='v492-premium-request-redesign';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v492 — REQUEST SECTION PREMIUM REDESIGN
+   Visual-only layer. Existing markup, handlers and data remain unchanged.
+   ========================================================= */
+
+.app-shell:not(.admin-shell) .v490-request-section{
+  position:relative!important;
+  padding:42px 34px 36px!important;
+  border:1px solid rgba(194,155,62,.30)!important;
+  border-radius:30px!important;
+  background:
+    radial-gradient(circle at 8% 12%,rgba(211,171,69,.10),transparent 22%),
+    radial-gradient(circle at 92% 6%,rgba(7,92,69,.10),transparent 24%),
+    linear-gradient(135deg,#fffefb 0%,#fbf7ec 52%,#f7f2e6 100%)!important;
+  box-shadow:
+    0 26px 60px rgba(31,44,36,.10),
+    inset 0 1px 0 rgba(255,255,255,.96)!important;
+  overflow:hidden!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-section:before{
+  height:6px!important;
+  background:linear-gradient(
+    90deg,
+    #075a46 0 32%,
+    #e1b441 32% 50%,
+    #075a46 50% 68%,
+    #d6a634 68% 100%
+  )!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-section:after{
+  content:""!important;
+  position:absolute!important;
+  width:260px!important;
+  height:260px!important;
+  right:-90px!important;
+  bottom:-110px!important;
+  border:1px solid rgba(9,91,69,.08)!important;
+  border-radius:50%!important;
+  box-shadow:
+    0 0 0 34px rgba(9,91,69,.025),
+    0 0 0 70px rgba(211,171,69,.018)!important;
+  pointer-events:none!important;
+}
+
+/* Main layout */
+.app-shell:not(.admin-shell) .v490-request-layout{
+  grid-template-columns:minmax(0,3.25fr) minmax(300px,.95fr)!important;
+  gap:28px!important;
+  align-items:stretch!important;
+  position:relative!important;
+  z-index:1!important;
+}
+
+/* Heading */
+.app-shell:not(.admin-shell) .v490-request-heading{
+  margin:2px auto 28px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-heading>span{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-height:28px!important;
+  padding:0 12px!important;
+  margin-bottom:10px!important;
+  border:1px solid rgba(203,160,52,.22)!important;
+  border-radius:999px!important;
+  background:rgba(244,226,177,.38)!important;
+  color:#9a6e11!important;
+  font-size:10px!important;
+  letter-spacing:1.45px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-heading h2{
+  color:#075846!important;
+  font-size:clamp(32px,3vw,46px)!important;
+  line-height:1.05!important;
+  letter-spacing:-.65px!important;
+  text-shadow:none!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-heading p{
+  max-width:720px!important;
+  margin-top:11px!important;
+  color:#6f7b76!important;
+  font-size:12px!important;
+  line-height:1.65!important;
+}
+
+/* Option cards */
+.app-shell:not(.admin-shell) .v490-request-cards{
+  gap:18px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-card{
+  min-height:430px!important;
+  padding:14px 14px 64px!important;
+  border:1px solid rgba(198,178,125,.42)!important;
+  border-radius:22px!important;
+  background:
+    linear-gradient(180deg,#fff 0%,#fffdf8 100%)!important;
+  box-shadow:
+    0 10px 26px rgba(34,48,40,.07),
+    inset 0 1px 0 rgba(255,255,255,.96)!important;
+  overflow:hidden!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-card:before{
+  inset:0!important;
+  border-radius:22px!important;
+  border:1px solid transparent!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-card:after{
+  content:""!important;
+  position:absolute!important;
+  left:14px!important;
+  right:14px!important;
+  top:14px!important;
+  height:3px!important;
+  border-radius:999px!important;
+  background:linear-gradient(90deg,#075a46,#e1b441,#075a46)!important;
+  opacity:.72!important;
+  pointer-events:none!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-card:hover,
+.app-shell:not(.admin-shell) .v490-request-card.selected{
+  transform:translateY(-7px)!important;
+  border-color:rgba(205,159,42,.78)!important;
+  box-shadow:
+    0 20px 38px rgba(34,48,40,.13),
+    0 0 0 1px rgba(211,169,57,.08)!important;
+}
+
+/* Illustration area */
+.app-shell:not(.admin-shell) .v490-request-art{
+  margin:8px 0 20px!important;
+  aspect-ratio:1.42/1!important;
+  border:1px solid rgba(211,183,111,.38)!important;
+  border-radius:18px!important;
+  background:
+    radial-gradient(circle at 82% 18%,rgba(231,183,62,.18),transparent 25%),
+    radial-gradient(circle at 18% 84%,rgba(7,91,69,.06),transparent 30%),
+    linear-gradient(180deg,#fff7e3 0%,#f7ecd0 100%)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.9),
+    0 8px 18px rgba(78,59,16,.045)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-art:after{
+  left:16%!important;
+  right:16%!important;
+  bottom:10px!important;
+  background:linear-gradient(90deg,transparent,rgba(165,124,26,.22),transparent)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-art svg{
+  transform:scale(.93)!important;
+}
+
+/* Card copy */
+.app-shell:not(.admin-shell) .v490-card-copy{
+  padding:0 14px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-card-copy h3{
+  margin:0 0 10px!important;
+  color:#093f33!important;
+  font-size:19px!important;
+  line-height:1.2!important;
+  letter-spacing:-.2px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-card-copy p{
+  max-width:245px!important;
+  color:#76817c!important;
+  font-size:11.2px!important;
+  line-height:1.65!important;
+}
+
+/* Card arrow */
+.app-shell:not(.admin-shell) .v490-card-arrow{
+  width:40px!important;
+  height:40px!important;
+  min-width:40px!important;
+  min-height:40px!important;
+  bottom:18px!important;
+  border:1px solid rgba(7,91,69,.14)!important;
+  background:#eef7f2!important;
+  color:#075b47!important;
+  box-shadow:0 6px 16px rgba(7,91,69,.10)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-card:hover .v490-card-arrow{
+  background:#075b47!important;
+  color:#fff!important;
+  border-color:#075b47!important;
+}
+
+/* Advisor — strong premium focal card */
+.app-shell:not(.admin-shell) .v490-advisor-card{
+  position:relative!important;
+  padding:28px 24px 24px!important;
+  border:1px solid rgba(226,185,75,.55)!important;
+  border-radius:24px!important;
+  background:
+    radial-gradient(circle at 90% 7%,rgba(236,197,90,.16),transparent 28%),
+    radial-gradient(circle at 12% 88%,rgba(255,255,255,.055),transparent 26%),
+    linear-gradient(165deg,#0d6a52 0%,#07513f 54%,#043b2f 100%)!important;
+  box-shadow:
+    0 22px 42px rgba(6,64,49,.20),
+    inset 0 1px 0 rgba(255,255,255,.10)!important;
+  overflow:hidden!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-card:before{
+  height:5px!important;
+  background:linear-gradient(90deg,#f0c758,#fff0ad,#d9a92e)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-card:after{
+  content:""!important;
+  position:absolute!important;
+  width:145px!important;
+  height:145px!important;
+  right:-58px!important;
+  top:52px!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  border-radius:50%!important;
+  box-shadow:0 0 0 24px rgba(255,255,255,.025)!important;
+  pointer-events:none!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-head{
+  position:relative!important;
+  z-index:2!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-head>span{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-height:26px!important;
+  padding:0 10px!important;
+  margin-bottom:9px!important;
+  border:1px solid rgba(240,199,88,.34)!important;
+  border-radius:999px!important;
+  background:rgba(255,255,255,.07)!important;
+  color:#f2c95d!important;
+  font-size:9.5px!important;
+  letter-spacing:1.25px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-head h3{
+  color:#fff6d7!important;
+  font-size:31px!important;
+  line-height:1.05!important;
+  letter-spacing:-.4px!important;
+  text-shadow:0 2px 10px rgba(0,0,0,.12)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-head p{
+  max-width:285px!important;
+  margin-top:11px!important;
+  color:rgba(255,255,255,.72)!important;
+  font-size:11px!important;
+  line-height:1.65!important;
+}
+
+/* Advisor illustration on cream glass */
+.app-shell:not(.admin-shell) .v490-advisor-art{
+  position:relative!important;
+  z-index:2!important;
+  margin:22px 0 24px!important;
+  aspect-ratio:1.38/1!important;
+  border:1px solid rgba(245,214,126,.52)!important;
+  border-radius:19px!important;
+  background:
+    radial-gradient(circle at 80% 18%,rgba(223,176,58,.17),transparent 26%),
+    linear-gradient(180deg,#fff7df 0%,#f4e2af 100%)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.88),
+    0 12px 24px rgba(0,0,0,.13)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-art:after{
+  inset:13px!important;
+  border:1px dashed rgba(117,84,14,.14)!important;
+  border-radius:15px!important;
+}
+
+/* Advisor CTA becomes gold */
+.app-shell:not(.admin-shell) .v490-advisor-button{
+  position:relative!important;
+  z-index:2!important;
+  min-height:56px!important;
+  border:1px solid #f1cf72!important;
+  border-radius:15px!important;
+  background:linear-gradient(180deg,#f0ca63 0%,#d9a82e 100%)!important;
+  color:#073f32!important;
+  box-shadow:
+    0 12px 22px rgba(0,0,0,.18),
+    inset 0 1px 0 rgba(255,255,255,.38)!important;
+  font-size:12.5px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-button span{
+  color:#073f32!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-button:hover{
+  transform:translateY(-2px)!important;
+  box-shadow:
+    0 16px 28px rgba(0,0,0,.23),
+    inset 0 1px 0 rgba(255,255,255,.42)!important;
+}
+
+/* Responsive */
+@media (max-width:1150px){
+  .app-shell:not(.admin-shell) .v490-request-section{
+    padding:28px 22px!important;
+  }
+  .app-shell:not(.admin-shell) .v490-request-layout{
+    grid-template-columns:1fr!important;
+  }
+  .app-shell:not(.admin-shell) .v490-advisor-card{
+    max-width:760px!important;
+    width:100%!important;
+    margin:0 auto!important;
+  }
+  .app-shell:not(.admin-shell) .v490-advisor-art{
+    max-width:390px!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+}
+
+@media (max-width:900px){
+  .app-shell:not(.admin-shell) .v490-request-section{
+    padding:20px 13px!important;
+    border-radius:22px!important;
+  }
+  .app-shell:not(.admin-shell) .v490-request-heading h2{
+    font-size:29px!important;
+  }
+  .app-shell:not(.admin-shell) .v490-request-card{
+    min-height:390px!important;
+    border-radius:20px!important;
+  }
+  .app-shell:not(.admin-shell) .v490-advisor-card{
+    padding:22px 18px 18px!important;
+    border-radius:20px!important;
+  }
+  .app-shell:not(.admin-shell) .v490-advisor-head h3{
+    font-size:27px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV492PremiumRequestRedesign,{once:true});
+  }else{
+    installV492PremiumRequestRedesign();
+  }
+})();
+
+;(()=>{
+  const installV493SketchRequestStyle=()=>{
+    if(document.getElementById('v493-sketch-request-style')) return;
+
+    const style=document.createElement('style');
+    style.id='v493-sketch-request-style';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v493 — SOFT SKETCH REQUEST SECTION
+   Visual-only override. No functionality or markup changed.
+   ========================================================= */
+
+.app-shell:not(.admin-shell) .v490-request-section{
+  padding:54px 38px 42px!important;
+  border:1px solid #eee5d2!important;
+  border-radius:30px!important;
+  background:
+    radial-gradient(circle at 8% 8%,rgba(221,185,96,.07),transparent 23%),
+    radial-gradient(circle at 92% 10%,rgba(21,100,77,.055),transparent 25%),
+    linear-gradient(180deg,#fffefb 0%,#fffdf8 100%)!important;
+  box-shadow:0 22px 55px rgba(38,48,43,.07)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-section:before{
+  height:4px!important;
+  background:linear-gradient(90deg,#0c654d 0 35%,#d8ad45 35% 65%,#0c654d 65% 100%)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-section:after{
+  display:none!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-layout{
+  grid-template-columns:minmax(0,3.1fr) minmax(320px,1fr)!important;
+  gap:28px!important;
+  align-items:stretch!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-heading{
+  margin-bottom:34px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-heading>span{
+  background:transparent!important;
+  border:0!important;
+  padding:0!important;
+  color:#b28a2c!important;
+  font-size:10px!important;
+  letter-spacing:1.6px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-heading h2{
+  color:#183d33!important;
+  font-size:clamp(33px,3vw,46px)!important;
+  font-weight:800!important;
+  letter-spacing:-.5px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-heading p{
+  color:#8a8f8c!important;
+  font-size:12px!important;
+  max-width:650px!important;
+}
+
+/* Three sketch option cards */
+.app-shell:not(.admin-shell) .v490-request-cards{
+  gap:16px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-card{
+  min-height:430px!important;
+  padding:16px 16px 66px!important;
+  border:1px solid #eadfca!important;
+  border-radius:20px!important;
+  background:#fff!important;
+  box-shadow:0 8px 22px rgba(61,63,58,.045)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-card:before,
+.app-shell:not(.admin-shell) .v490-request-card:after{
+  display:none!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-card:hover,
+.app-shell:not(.admin-shell) .v490-request-card.selected{
+  transform:translateY(-5px)!important;
+  border-color:#d9bd76!important;
+  box-shadow:0 14px 30px rgba(57,62,58,.075)!important;
+}
+
+/* Sketch illustration panel */
+.app-shell:not(.admin-shell) .v490-request-art{
+  margin:0 0 24px!important;
+  aspect-ratio:1.34/1!important;
+  border:0!important;
+  border-radius:18px!important;
+  background:
+    radial-gradient(circle at 82% 18%,rgba(224,177,81,.17),transparent 24%),
+    radial-gradient(circle at 20% 82%,rgba(170,122,73,.055),transparent 28%),
+    linear-gradient(180deg,#fff8e7 0%,#fbf0d7 100%)!important;
+  box-shadow:inset 0 0 0 1px rgba(213,187,129,.14)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-art:after{
+  display:none!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-art svg{
+  transform:scale(.92)!important;
+  filter:saturate(.78) contrast(.96) sepia(.04)!important;
+  opacity:.96!important;
+}
+
+/* Soften SVGs into editorial sketch palette */
+.app-shell:not(.admin-shell) .v490-request-art svg [fill="#075b47"],
+.app-shell:not(.admin-shell) .v490-request-art svg [fill="#0d654a"],
+.app-shell:not(.admin-shell) .v490-request-art svg [fill="#0c5b43"]{
+  fill:#1a6855!important;
+}
+.app-shell:not(.admin-shell) .v490-request-art svg [stroke="#075b47"],
+.app-shell:not(.admin-shell) .v490-request-art svg [stroke="#0d654a"],
+.app-shell:not(.admin-shell) .v490-request-art svg [stroke="#0c5b43"]{
+  stroke:#1a6855!important;
+}
+
+.app-shell:not(.admin-shell) .v490-card-copy h3{
+  color:#173e34!important;
+  font-size:19px!important;
+  font-weight:800!important;
+  margin-bottom:9px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-card-copy p{
+  color:#8a8f8c!important;
+  font-size:11.3px!important;
+  line-height:1.7!important;
+  max-width:240px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-card-arrow{
+  width:38px!important;
+  height:38px!important;
+  min-width:38px!important;
+  min-height:38px!important;
+  bottom:18px!important;
+  background:#f6fbf8!important;
+  border:1px solid #dcebe5!important;
+  color:#0b6a50!important;
+  box-shadow:none!important;
+}
+
+.app-shell:not(.admin-shell) .v490-request-card:hover .v490-card-arrow{
+  background:#edf7f2!important;
+  color:#0b6a50!important;
+  border-color:#c9e1d7!important;
+}
+
+/* Advisor card now light cream, sketch-style */
+.app-shell:not(.admin-shell) .v490-advisor-card{
+  padding:30px 24px 24px!important;
+  border:1px solid #ead8ad!important;
+  border-radius:22px!important;
+  background:
+    radial-gradient(circle at 84% 17%,rgba(224,177,81,.12),transparent 24%),
+    linear-gradient(180deg,#fff7e8 0%,#fbf0d8 100%)!important;
+  box-shadow:0 10px 26px rgba(88,70,35,.06)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-card:before{
+  height:4px!important;
+  background:linear-gradient(90deg,#c89f36,#ecd27e,#c89f36)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-card:after{
+  display:none!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-head>span{
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  color:#b08626!important;
+  font-size:9.5px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-head h3{
+  color:#173e34!important;
+  font-size:30px!important;
+  font-weight:800!important;
+  text-shadow:none!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-head p{
+  color:#8a7d66!important;
+  font-size:11.2px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-art{
+  margin:24px 0 28px!important;
+  aspect-ratio:1.34/1!important;
+  border:0!important;
+  border-radius:18px!important;
+  background:
+    radial-gradient(circle at 80% 18%,rgba(215,164,59,.15),transparent 25%),
+    linear-gradient(180deg,#fff8e8 0%,#f4e4bc 100%)!important;
+  box-shadow:inset 0 0 0 1px rgba(198,160,77,.13)!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-art:after{
+  display:none!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-art svg{
+  transform:scale(.93)!important;
+  filter:saturate(.72) sepia(.05)!important;
+  opacity:.95!important;
+}
+
+/* Advisor CTA: deep maroon-green bridge, clean reference feel */
+.app-shell:not(.admin-shell) .v490-advisor-button{
+  min-height:54px!important;
+  border:0!important;
+  border-radius:14px!important;
+  background:linear-gradient(180deg,#0c684f 0%,#07513e 100%)!important;
+  color:#fff!important;
+  box-shadow:0 8px 18px rgba(7,81,62,.15)!important;
+  font-size:12.5px!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-button span{
+  color:#fff!important;
+}
+
+.app-shell:not(.admin-shell) .v490-advisor-button:hover{
+  transform:translateY(-2px)!important;
+  box-shadow:0 12px 22px rgba(7,81,62,.20)!important;
+}
+
+/* Tablet/mobile */
+@media(max-width:1150px){
+  .app-shell:not(.admin-shell) .v490-request-section{
+    padding:34px 24px!important;
+  }
+  .app-shell:not(.admin-shell) .v490-request-layout{
+    grid-template-columns:1fr!important;
+  }
+  .app-shell:not(.admin-shell) .v490-advisor-card{
+    max-width:760px!important;
+    width:100%!important;
+    margin:auto!important;
+  }
+}
+
+@media(max-width:900px){
+  .app-shell:not(.admin-shell) .v490-request-section{
+    padding:22px 14px!important;
+    border-radius:22px!important;
+  }
+  .app-shell:not(.admin-shell) .v490-request-heading h2{
+    font-size:29px!important;
+  }
+  .app-shell:not(.admin-shell) .v490-request-card{
+    min-height:390px!important;
+  }
+  .app-shell:not(.admin-shell) .v490-advisor-head h3{
+    font-size:27px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV493SketchRequestStyle,{once:true});
+  }else{
+    installV493SketchRequestStyle();
+  }
+})();
+
+;(()=>{
+  const installV494ProminentWhatsapp=()=>{
+    if(document.getElementById('v494-prominent-whatsapp')) return;
+
+    const style=document.createElement('style');
+    style.id='v494-prominent-whatsapp';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v494 — PROMINENT FLOATING WHATSAPP BUTTON
+   Visual-only. Existing WhatsApp click/open behavior unchanged.
+   ========================================================= */
+
+.app-shell:not(.admin-shell) .floating-whatsapp{
+  z-index:9500!important;
+}
+
+.app-shell:not(.admin-shell) .floating-whatsapp-trigger{
+  position:relative!important;
+  min-width:178px!important;
+  min-height:58px!important;
+  padding:7px 18px 7px 9px!important;
+  gap:10px!important;
+  border:2px solid rgba(255,255,255,.92)!important;
+  border-radius:999px!important;
+  background:
+    linear-gradient(180deg,#169f75 0%,#08785a 100%)!important;
+  color:#fff!important;
+  font-size:14px!important;
+  font-weight:900!important;
+  letter-spacing:.1px!important;
+  box-shadow:
+    0 13px 30px rgba(4,91,66,.28),
+    0 3px 8px rgba(4,91,66,.16),
+    inset 0 1px 0 rgba(255,255,255,.24)!important;
+  transform:translateZ(0)!important;
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    background .18s ease!important;
+  isolation:isolate!important;
+}
+
+html[dir="rtl"] .app-shell:not(.admin-shell) .floating-whatsapp-trigger{
+  padding:7px 9px 7px 18px!important;
+}
+
+.app-shell:not(.admin-shell) .floating-whatsapp-trigger:before{
+  content:""!important;
+  position:absolute!important;
+  inset:-6px!important;
+  border:2px solid rgba(37,211,102,.22)!important;
+  border-radius:999px!important;
+  pointer-events:none!important;
+  z-index:-1!important;
+  animation:v494-wa-pulse 2.4s ease-out infinite!important;
+}
+
+.app-shell:not(.admin-shell) .floating-whatsapp-trigger:hover{
+  transform:translateY(-3px) scale(1.025)!important;
+  background:
+    linear-gradient(180deg,#19aa7d 0%,#076f53 100%)!important;
+  box-shadow:
+    0 17px 34px rgba(4,91,66,.34),
+    0 4px 10px rgba(4,91,66,.18),
+    inset 0 1px 0 rgba(255,255,255,.28)!important;
+}
+
+.app-shell:not(.admin-shell) .floating-whatsapp-trigger:active{
+  transform:translateY(-1px) scale(.99)!important;
+}
+
+.app-shell:not(.admin-shell) .floating-whatsapp-trigger-icon{
+  width:40px!important;
+  height:40px!important;
+  min-width:40px!important;
+  min-height:40px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:50%!important;
+  background:#25D366!important;
+  box-shadow:
+    0 4px 11px rgba(0,78,48,.22),
+    inset 0 0 0 2px rgba(255,255,255,.28)!important;
+}
+
+.app-shell:not(.admin-shell) .floating-whatsapp-trigger-icon svg{
+  width:34px!important;
+  height:34px!important;
+  display:block!important;
+}
+
+.app-shell:not(.admin-shell) .floating-whatsapp-trigger>span:not(.floating-whatsapp-trigger-icon){
+  color:#fff!important;
+  font-size:14px!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.12)!important;
+}
+
+.app-shell:not(.admin-shell) .floating-whatsapp-trigger>i{
+  width:8px!important;
+  height:8px!important;
+  min-width:8px!important;
+  min-height:8px!important;
+  border-radius:50%!important;
+  background:#83f3ad!important;
+  box-shadow:0 0 0 4px rgba(131,243,173,.14)!important;
+}
+
+@keyframes v494-wa-pulse{
+  0%{
+    transform:scale(.98);
+    opacity:.75;
+  }
+  65%{
+    transform:scale(1.09);
+    opacity:0;
+  }
+  100%{
+    transform:scale(1.09);
+    opacity:0;
+  }
+}
+
+@media(max-width:900px){
+  .app-shell:not(.admin-shell) .floating-whatsapp-trigger{
+    min-width:158px!important;
+    min-height:54px!important;
+    padding:6px 15px 6px 8px!important;
+    font-size:13px!important;
+  }
+
+  html[dir="rtl"] .app-shell:not(.admin-shell) .floating-whatsapp-trigger{
+    padding:6px 8px 6px 15px!important;
+  }
+
+  .app-shell:not(.admin-shell) .floating-whatsapp-trigger-icon{
+    width:37px!important;
+    height:37px!important;
+    min-width:37px!important;
+    min-height:37px!important;
+  }
+
+  .app-shell:not(.admin-shell) .floating-whatsapp-trigger-icon svg{
+    width:31px!important;
+    height:31px!important;
+  }
+
+  .app-shell:not(.admin-shell) .floating-whatsapp-trigger>span:not(.floating-whatsapp-trigger-icon){
+    font-size:13px!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .app-shell:not(.admin-shell) .floating-whatsapp-trigger:before{
+    animation:none!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV494ProminentWhatsapp,{once:true});
+  }else{
+    installV494ProminentWhatsapp();
+  }
+})();
+
+;(()=>{
+  const installV495FaqArrowRefine=()=>{
+    if(document.getElementById('v495-faq-arrow-refine')) return;
+
+    const style=document.createElement('style');
+    style.id='v495-faq-arrow-refine';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v495 — FAQ ARROW REFINEMENT
+   Visual-only. Existing <details>/<summary> behavior unchanged.
+   ========================================================= */
+
+.app-shell:not(.admin-shell) .v500-faq-grid summary:after{
+  content:"⌄"!important;
+  width:36px!important;
+  height:36px!important;
+  min-width:36px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:50%!important;
+  border:1.5px solid rgba(204,165,65,.72)!important;
+  background:
+    linear-gradient(180deg,#0e684f 0%,#07513e 100%)!important;
+  color:#f5d777!important;
+  font-size:17px!important;
+  font-weight:900!important;
+  line-height:1!important;
+  box-shadow:
+    0 7px 16px rgba(7,81,62,.15),
+    inset 0 1px 0 rgba(255,255,255,.16)!important;
+  transform:rotate(0deg)!important;
+  transition:
+    transform .22s ease,
+    background .22s ease,
+    color .22s ease,
+    box-shadow .22s ease!important;
+}
+
+.app-shell:not(.admin-shell) .v500-faq-grid details:hover summary:after{
+  background:
+    linear-gradient(180deg,#13775a 0%,#086149 100%)!important;
+  color:#ffe69a!important;
+  box-shadow:
+    0 9px 20px rgba(7,81,62,.20),
+    inset 0 1px 0 rgba(255,255,255,.20)!important;
+}
+
+.app-shell:not(.admin-shell) .v500-faq-grid details[open] summary:after{
+  transform:rotate(180deg)!important;
+  background:
+    linear-gradient(180deg,#d7ad43 0%,#bd8c1f 100%)!important;
+  color:#083f32!important;
+  border-color:#d9b24d!important;
+  box-shadow:
+    0 8px 18px rgba(146,104,18,.18),
+    inset 0 1px 0 rgba(255,255,255,.28)!important;
+}
+
+.app-shell:not(.admin-shell) .v500-faq-grid summary{
+  transition:
+    background .18s ease,
+    border-color .18s ease,
+    color .18s ease!important;
+}
+
+.app-shell:not(.admin-shell) .v500-faq-grid details:hover summary{
+  background:#fffdf8!important;
+}
+
+@media(max-width:900px){
+  .app-shell:not(.admin-shell) .v500-faq-grid summary:after{
+    width:32px!important;
+    height:32px!important;
+    min-width:32px!important;
+    font-size:15px!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .app-shell:not(.admin-shell) .v500-faq-grid summary:after{
+    transition:none!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV495FaqArrowRefine,{once:true});
+  }else{
+    installV495FaqArrowRefine();
+  }
+})();
+
+;(()=>{
+  const installV496FaqSingleOpen=()=>{
+    if(document.documentElement.dataset.v496FaqSingleOpen==='1') return;
+    document.documentElement.dataset.v496FaqSingleOpen='1';
+
+    const bindFaq=()=>{
+      const grids=document.querySelectorAll('.v500-faq-grid');
+      grids.forEach(grid=>{
+        if(grid.dataset.singleOpenBound==='1') return;
+        grid.dataset.singleOpenBound='1';
+
+        const items=[...grid.querySelectorAll('details')];
+        items.forEach(item=>{
+          item.addEventListener('toggle',()=>{
+            if(!item.open) return;
+            items.forEach(other=>{
+              if(other!==item && other.open) other.open=false;
+            });
+          });
+        });
+      });
+    };
+
+    if(document.readyState==='loading'){
+      document.addEventListener('DOMContentLoaded',bindFaq,{once:true});
+    }else{
+      bindFaq();
+    }
+
+    const observer=new MutationObserver(bindFaq);
+    observer.observe(document.body||document.documentElement,{childList:true,subtree:true});
+  };
+
+  installV496FaqSingleOpen();
+})();
+
+;(()=>{
+  const installV497FaqNoStretch=()=>{
+    if(document.getElementById('v497-faq-no-stretch')) return;
+
+    const style=document.createElement('style');
+    style.id='v497-faq-no-stretch';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v497 — FAQ SINGLE OPEN + NO GRID STRETCH
+   Prevents the opposite FAQ card in the same grid row
+   from visually expanding when one item is opened.
+   ========================================================= */
+
+.app-shell:not(.admin-shell) .v500-faq-grid{
+  align-items:start!important;
+}
+
+.app-shell:not(.admin-shell) .v500-faq-grid details{
+  align-self:start!important;
+  height:auto!important;
+  min-height:0!important;
+}
+
+.app-shell:not(.admin-shell) .v500-faq-grid summary{
+  min-height:58px!important;
+  box-sizing:border-box!important;
+}
+
+.app-shell:not(.admin-shell) .v500-faq-grid details:not([open]){
+  height:auto!important;
+}
+
+.app-shell:not(.admin-shell) .v500-faq-grid details[open]{
+  height:auto!important;
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV497FaqNoStretch,{once:true});
+  }else{
+    installV497FaqNoStretch();
+  }
+})();
+
+;(()=>{
+  const installV498LargerLivestockCards=()=>{
+    if(document.getElementById('v498-livestock-cards-larger')) return;
+
+    const style=document.createElement('style');
+    style.id='v498-livestock-cards-larger';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v498 — SLIGHTLY LARGER LIVESTOCK CARDS
+   Desktop visual sizing only. No markup/functionality changes.
+   ========================================================= */
+
+@media(min-width:901px){
+  .app-shell:not(.admin-shell) .ref-categories{
+    width:min(1560px,calc(100% - 48px))!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-categories .category-row{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:22px!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-categories .category-name-button{
+    width:84%!important;
+    min-height:48px!important;
+    font-size:19px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV498LargerLivestockCards,{once:true});
+  }else{
+    installV498LargerLivestockCards();
+  }
+})();
+
+;(()=>{
+  const installV499HeaderLocationPopupStyle=()=>{
+    if(document.getElementById('v499-header-location-popup-style'))return;
+    const style=document.createElement('style');
+    style.id='v499-header-location-popup-style';
+    style.textContent=`
+body.delivery-location-modal-open{overflow:hidden!important}
+
+.delivery-location-modal{
+  position:fixed!important;
+  inset:0!important;
+  z-index:20000!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:24px!important;
+  opacity:0!important;
+  pointer-events:none!important;
+  transition:opacity .18s ease!important;
+}
+.delivery-location-modal.is-open{opacity:1!important;pointer-events:auto!important}
+
+.delivery-location-backdrop{
+  position:absolute!important;
+  inset:0!important;
+  background:rgba(24,34,43,.52)!important;
+  backdrop-filter:blur(3px)!important;
+  -webkit-backdrop-filter:blur(3px)!important;
+}
+
+.delivery-location-dialog{
+  position:relative!important;
+  z-index:1!important;
+  width:min(760px,calc(100vw - 42px))!important;
+  max-height:min(760px,calc(100vh - 44px))!important;
+  overflow:auto!important;
+  box-sizing:border-box!important;
+  padding:34px 34px 24px!important;
+  border:1px solid rgba(220,224,226,.92)!important;
+  border-radius:20px!important;
+  background:#fff!important;
+  box-shadow:0 28px 80px rgba(15,28,38,.30)!important;
+  transform:translateY(12px) scale(.985)!important;
+  transition:transform .18s ease!important;
+}
+.delivery-location-modal.is-open .delivery-location-dialog{
+  transform:translateY(0) scale(1)!important;
+}
+
+.delivery-location-close{
+  position:absolute!important;
+  top:18px!important;
+  left:18px!important;
+  width:38px!important;
+  height:38px!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:transparent!important;
+  color:#e45d5d!important;
+  font-size:28px!important;
+  line-height:1!important;
+  cursor:pointer!important;
+  display:grid!important;
+  place-items:center!important;
+  transition:background .16s ease,transform .16s ease!important;
+}
+.delivery-location-close:hover{background:#fff1f1!important;transform:rotate(4deg)!important}
+html[dir="ltr"] .delivery-location-close{left:auto!important;right:18px!important}
+
+.delivery-location-current{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:18px!important;
+  padding:0 58px 24px 0!important;
+  border-bottom:1px solid #edf0ef!important;
+}
+html[dir="ltr"] .delivery-location-current{padding:0 0 24px 58px!important}
+
+.delivery-location-store-icon{
+  width:72px!important;
+  height:72px!important;
+  min-width:72px!important;
+  border:1px solid #dfe4e2!important;
+  border-radius:50%!important;
+  display:grid!important;
+  place-items:center!important;
+  color:#0b5f49!important;
+  background:linear-gradient(180deg,#fff,#f8fbfa)!important;
+}
+.delivery-location-store-icon svg{width:38px!important;height:38px!important}
+
+.delivery-location-current small{
+  display:block!important;
+  color:#929b97!important;
+  font-size:14px!important;
+  font-weight:700!important;
+  margin-bottom:4px!important;
+}
+.delivery-location-current h2{
+  margin:0!important;
+  color:#183d34!important;
+  font-size:24px!important;
+  line-height:1.25!important;
+  font-weight:900!important;
+}
+
+.delivery-location-body{padding:24px 0 8px!important}
+.delivery-location-body h3{
+  margin:0 0 5px!important;
+  color:#183d34!important;
+  font-size:18px!important;
+  font-weight:900!important;
+}
+.delivery-location-body p{
+  margin:0 0 18px!important;
+  color:#8a938f!important;
+  font-size:12.5px!important;
+  line-height:1.6!important;
+}
+
+.delivery-location-list{
+  display:grid!important;
+  gap:4px!important;
+  max-height:330px!important;
+  overflow:auto!important;
+  padding:2px 2px 2px 8px!important;
+}
+html[dir="ltr"] .delivery-location-list{padding:2px 8px 2px 2px!important}
+
+.delivery-location-option{
+  display:flex!important;
+  align-items:center!important;
+  gap:13px!important;
+  min-height:54px!important;
+  padding:9px 10px!important;
+  border:1px solid transparent!important;
+  border-radius:12px!important;
+  cursor:pointer!important;
+  transition:background .15s ease,border-color .15s ease!important;
+}
+.delivery-location-option:hover{background:#f8fbfa!important}
+.delivery-location-option.selected{
+  background:#f3faf7!important;
+  border-color:#d7ebe2!important;
+}
+.delivery-location-option input{
+  position:absolute!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+
+.delivery-location-radio{
+  width:21px!important;
+  height:21px!important;
+  min-width:21px!important;
+  border:1.8px solid #8a9892!important;
+  border-radius:50%!important;
+  position:relative!important;
+  background:#fff!important;
+  box-sizing:border-box!important;
+}
+.delivery-location-option.selected .delivery-location-radio{
+  border-color:#1776ff!important;
+  box-shadow:0 0 0 3px rgba(23,118,255,.08)!important;
+}
+.delivery-location-option.selected .delivery-location-radio:after{
+  content:""!important;
+  position:absolute!important;
+  inset:4px!important;
+  border-radius:50%!important;
+  background:#1776ff!important;
+}
+
+.delivery-location-option-copy{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:2px!important;
+  min-width:0!important;
+}
+.delivery-location-option-copy b{
+  color:#36433e!important;
+  font-size:15px!important;
+  font-weight:800!important;
+}
+.delivery-location-option-copy small{
+  color:#9aa29f!important;
+  font-size:11px!important;
+}
+
+.delivery-location-confirm{
+  width:100%!important;
+  min-height:54px!important;
+  margin-top:18px!important;
+  border:0!important;
+  border-radius:12px!important;
+  padding:0 20px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:14px!important;
+  background:linear-gradient(180deg,#0d664f 0%,#07503e 100%)!important;
+  color:#fff!important;
+  font-size:15px!important;
+  font-weight:900!important;
+  cursor:pointer!important;
+  box-shadow:0 10px 22px rgba(7,80,62,.16)!important;
+  transition:transform .16s ease,box-shadow .16s ease!important;
+}
+.delivery-location-confirm:hover{
+  transform:translateY(-1px)!important;
+  box-shadow:0 13px 26px rgba(7,80,62,.22)!important;
+}
+
+@media(max-width:700px){
+  .delivery-location-modal{padding:12px!important;align-items:end!important}
+  .delivery-location-dialog{
+    width:100%!important;
+    max-height:88vh!important;
+    border-radius:22px 22px 12px 12px!important;
+    padding:28px 18px 18px!important;
+  }
+  .delivery-location-current{
+    gap:12px!important;
+    padding-bottom:18px!important;
+  }
+  .delivery-location-store-icon{
+    width:58px!important;
+    height:58px!important;
+    min-width:58px!important;
+  }
+  .delivery-location-store-icon svg{width:31px!important;height:31px!important}
+  .delivery-location-current h2{font-size:20px!important}
+  .delivery-location-list{max-height:42vh!important}
+  .delivery-location-option{min-height:50px!important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .delivery-location-modal,
+  .delivery-location-dialog,
+  .delivery-location-close,
+  .delivery-location-confirm{transition:none!important}
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV499HeaderLocationPopupStyle,{once:true});
+  }else{
+    installV499HeaderLocationPopupStyle();
+  }
+})();
+
+;(()=>{
+  const installV500PremiumHeaderIcons=()=>{
+    if(document.getElementById('v500-premium-header-icons')) return;
+
+    const style=document.createElement('style');
+    style.id='v500-premium-header-icons';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v500 — PREMIUM HEADER ICONS
+   Visual-only enhancement. Existing click/navigation logic untouched.
+   ========================================================= */
+
+@media(min-width:901px){
+
+  /* Main navigation icon treatment */
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav button,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav button{
+    position:relative!important;
+    isolation:isolate!important;
+    transition:color .18s ease,transform .18s ease,background .18s ease!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav button::before,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav button::before{
+    content:""!important;
+    position:absolute!important;
+    top:6px!important;
+    left:50%!important;
+    width:38px!important;
+    height:38px!important;
+    transform:translateX(-50%)!important;
+    border-radius:13px!important;
+    border:1px solid rgba(255,255,255,.10)!important;
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.075) 0%,rgba(255,255,255,.035) 100%)!important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.06),
+      0 5px 12px rgba(1,39,29,.10)!important;
+    z-index:-1!important;
+    transition:
+      transform .18s ease,
+      border-color .18s ease,
+      background .18s ease,
+      box-shadow .18s ease!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav .nav-icon,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav .nav-icon{
+    width:22px!important;
+    height:22px!important;
+    min-width:22px!important;
+    min-height:22px!important;
+    color:#f4faf7!important;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,.12))!important;
+    transition:color .18s ease,transform .18s ease,filter .18s ease!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav button:hover::before,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav button:hover::before{
+    transform:translateX(-50%) translateY(-2px)!important;
+    border-color:rgba(237,199,93,.34)!important;
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.12) 0%,rgba(255,255,255,.055) 100%)!important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.10),
+      0 7px 16px rgba(1,39,29,.16)!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav button:hover .nav-icon,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav button:hover .nav-icon{
+    color:#f3cf6a!important;
+    transform:translateY(-1px) scale(1.04)!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav button.active::before,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav button.active::before{
+    border-color:rgba(237,193,70,.88)!important;
+    background:
+      linear-gradient(180deg,rgba(224,177,53,.22) 0%,rgba(224,177,53,.09) 100%)!important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,241,184,.20),
+      0 0 0 1px rgba(222,174,48,.08),
+      0 8px 18px rgba(0,35,26,.15)!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav button.active .nav-icon,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav button.active .nav-icon{
+    color:#f1c84f!important;
+    filter:drop-shadow(0 2px 4px rgba(0,0,0,.16))!important;
+  }
+
+  /* Quick action buttons — consistent premium family */
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-action,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-action,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock>.top-search,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock>.top-search{
+    border-radius:14px!important;
+    border:1px solid rgba(255,255,255,.16)!important;
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.105) 0%,rgba(255,255,255,.055) 100%)!important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.08),
+      0 6px 14px rgba(1,38,29,.10)!important;
+    transition:
+      transform .17s ease,
+      border-color .17s ease,
+      background .17s ease,
+      box-shadow .17s ease!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-action:hover,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-action:hover,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock>.top-search:hover,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock>.top-search:hover{
+    transform:translateY(-2px)!important;
+    border-color:rgba(231,187,66,.64)!important;
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.145) 0%,rgba(255,255,255,.075) 100%)!important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.12),
+      0 9px 19px rgba(1,38,29,.16)!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .action-icon,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .action-icon{
+    width:22px!important;
+    height:22px!important;
+    min-width:22px!important;
+    min-height:22px!important;
+    color:#f7fbf9!important;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,.10))!important;
+    transition:color .17s ease,transform .17s ease!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-action:hover .action-icon,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-action:hover .action-icon{
+    color:#f2cb58!important;
+    transform:scale(1.06)!important;
+  }
+
+  /* Notification keeps its light emphasis, but more refined */
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-bell,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-bell{
+    background:linear-gradient(180deg,#ffffff 0%,#f3f8f6 100%)!important;
+    border-color:rgba(255,255,255,.95)!important;
+    color:#0b5b47!important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.95),
+      0 6px 15px rgba(0,45,33,.14)!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-bell .action-icon,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-bell .action-icon{
+    color:#0b5b47!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-bell:hover,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-bell:hover{
+    border-color:#e2b94d!important;
+    background:linear-gradient(180deg,#fffdf8 0%,#f7f2df 100%)!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-bell i,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-bell i{
+    width:9px!important;
+    height:9px!important;
+    top:5px!important;
+    right:5px!important;
+    background:#e84646!important;
+    border:2px solid #fff!important;
+    box-shadow:0 0 0 2px rgba(232,70,70,.12)!important;
+  }
+
+  /* Language gets a premium gold treatment */
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-language,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-language{
+    border-color:rgba(225,180,54,.62)!important;
+    background:
+      linear-gradient(180deg,rgba(214,169,46,.12) 0%,rgba(255,255,255,.045) 100%)!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .top-language .lang-code,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .top-language .lang-code{
+    color:#f2ca55!important;
+    font-size:11.5px!important;
+    font-weight:950!important;
+    letter-spacing:.35px!important;
+    text-shadow:0 1px 2px rgba(0,0,0,.14)!important;
+  }
+
+  /* Bag/cart action gets matching gold edge */
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-cart,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-cart{
+    border-color:rgba(225,180,54,.62)!important;
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.095) 0%,rgba(255,255,255,.045) 100%)!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-cart>b,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-cart>b,
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav .cart-nav>b,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav .cart-nav>b{
+    background:#e7b93f!important;
+    color:#083e31!important;
+    border:2px solid #fff!important;
+    box-shadow:0 4px 10px rgba(0,0,0,.14)!important;
+    font-weight:950!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .ref-customer-header .desktop-main-nav button,
+  .ref-customer-header .desktop-main-nav button::before,
+  .ref-customer-header .desktop-main-nav .nav-icon,
+  .ref-customer-header .premium-action-dock .top-action,
+  .ref-customer-header .premium-action-dock .action-icon{
+    transition:none!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV500PremiumHeaderIcons,{once:true});
+  }else{
+    installV500PremiumHeaderIcons();
+  }
+})();
+
+;(()=>{
+  const installV501WebAppHeaderMode=()=>{
+    if(document.getElementById('v501-web-app-header-mode')) return;
+
+    const style=document.createElement('style');
+    style.id='v501-web-app-header-mode';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v501 — WEBSITE / INSTALLED APP HEADER MODE
+   Browser desktop: clean text navigation, no main-nav icons.
+   Installed PWA/standalone: existing icon navigation is restored.
+   Utility actions (search/bell/language/bag) remain unchanged.
+   ========================================================= */
+
+/* DESKTOP WEBSITE / NORMAL BROWSER */
+@media (min-width:901px) and (display-mode: browser){
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav .nav-icon,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav .nav-icon{
+    display:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav button::before,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav button::before{
+    display:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav button,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav button{
+    min-height:54px!important;
+    padding:0 24px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:0!important;
+    border-radius:13px!important;
+    background:transparent!important;
+    border:1px solid transparent!important;
+    box-shadow:none!important;
+    color:#f4faf7!important;
+    font-size:13px!important;
+    font-weight:850!important;
+    line-height:1!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav button:hover,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav button:hover{
+    transform:translateY(-1px)!important;
+    color:#f2cb58!important;
+    background:rgba(255,255,255,.055)!important;
+    border-color:rgba(255,255,255,.08)!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav button.active,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav button.active{
+    color:#f2cb58!important;
+    background:rgba(224,177,53,.10)!important;
+    border-color:rgba(224,177,53,.72)!important;
+    box-shadow:inset 0 -2px 0 #e4b63f!important;
+  }
+
+  /* keep any cart quantity badge visible even though the cart nav icon is hidden */
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav .cart-nav>b,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav .cart-nav>b{
+    display:inline-grid!important;
+    position:absolute!important;
+    top:5px!important;
+    right:8px!important;
+  }
+}
+
+/* INSTALLED APP / PWA STANDALONE
+   Restore the existing visual icon navigation. */
+@media (display-mode: standalone){
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav .nav-icon,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav .nav-icon{
+    display:inline-flex!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav button::before,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav button::before{
+    display:block!important;
+  }
+}
+
+/* iOS installed PWA fallback class added below */
+html.ass-installed-app .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav .nav-icon,
+html.ass-installed-app .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav .nav-icon{
+  display:inline-flex!important;
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+
+    /* iOS Safari PWA does not always expose display-mode reliably. */
+    const installed=window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator.standalone===true;
+    document.documentElement.classList.toggle('ass-installed-app',Boolean(installed));
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV501WebAppHeaderMode,{once:true});
+  }else{
+    installV501WebAppHeaderMode();
+  }
+})();
+
+;(()=>{
+  const installV502WebsiteVsInstalledNavigation=()=>{
+    if(document.getElementById('v502-website-vs-installed-navigation')) return;
+
+    const style=document.createElement('style');
+    style.id='v502-website-vs-installed-navigation';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v502 — WEBSITE vs INSTALLED APP NAVIGATION
+   Normal browser: no app navigation menu.
+   Installed mobile PWA/app: fixed bottom navigation.
+   Existing buttons/routes remain in the DOM and unchanged.
+   ========================================================= */
+
+/* Default safety: bottom app navigation is not a website element. */
+.app-shell:not(.admin-shell) .bottom-nav{
+  display:none!important;
+}
+
+/* ---------------- WEBSITE / NORMAL BROWSER ---------------- */
+@media (display-mode: browser){
+
+  /* Hide complete app-style main navigation on the website. */
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav{
+    display:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .bottom-nav{
+    display:none!important;
+  }
+
+  /* Collapse the desktop header from 3 zones to 2 clean website zones. */
+  @media (min-width:901px){
+    html[dir="ltr"] .app-shell:not(.admin-shell) .ref-customer-header,
+    html[dir="ltr"] .app-shell:has(.v405-home-ui) .ref-customer-header{
+      grid-template-columns:max-content 1fr max-content!important;
+      grid-template-areas:"brand . actions"!important;
+    }
+
+    html[dir="rtl"] .app-shell:not(.admin-shell) .ref-customer-header,
+    html[dir="rtl"] .app-shell:has(.v405-home-ui) .ref-customer-header{
+      grid-template-columns:max-content 1fr max-content!important;
+      grid-template-areas:"actions . brand"!important;
+    }
+
+    .app-shell:not(.admin-shell) .ref-customer-header .customer-brand,
+    .app-shell:has(.v405-home-ui) .ref-customer-header .customer-brand{
+      grid-area:brand!important;
+    }
+
+    .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock,
+    .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock{
+      grid-area:actions!important;
+    }
+  }
+}
+
+/* ---------------- INSTALLED MOBILE APP / PWA ---------------- */
+@media (max-width:900px) and (display-mode: standalone){
+
+  /* Top app navigation is not needed on phones; navigation lives at bottom. */
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav{
+    display:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .bottom-nav{
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    width:100%!important;
+    height:70px!important;
+    min-height:70px!important;
+    margin:0!important;
+    padding:
+      7px max(8px,env(safe-area-inset-right))
+      calc(7px + env(safe-area-inset-bottom))
+      max(8px,env(safe-area-inset-left))!important;
+    display:grid!important;
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    align-items:center!important;
+    gap:2px!important;
+    background:rgba(255,255,255,.985)!important;
+    border-top:1px solid #dfe9e4!important;
+    box-shadow:0 -10px 28px rgba(8,60,44,.11)!important;
+    z-index:10000!important;
+    direction:ltr!important;
+  }
+
+  .app-shell:not(.admin-shell) .screen{
+    padding-bottom:calc(82px + env(safe-area-inset-bottom))!important;
+  }
+
+  .app-shell:not(.admin-shell) .bottom-nav button{
+    position:relative!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:4px!important;
+    width:100%!important;
+    min-width:0!important;
+    height:54px!important;
+    min-height:54px!important;
+    margin:0!important;
+    padding:4px 2px!important;
+    border:0!important;
+    border-radius:12px!important;
+    background:transparent!important;
+    color:#294b41!important;
+  }
+
+  .app-shell:not(.admin-shell) .bottom-nav button.active{
+    color:#006a50!important;
+    background:#f1f8f5!important;
+  }
+
+  .app-shell:not(.admin-shell) .bottom-nav .nav-icon{
+    display:inline-flex!important;
+    width:22px!important;
+    height:22px!important;
+    min-width:22px!important;
+    min-height:22px!important;
+  }
+
+  .app-shell:not(.admin-shell) .bottom-nav small{
+    display:block!important;
+    max-width:100%!important;
+    font-size:9px!important;
+    font-weight:800!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  .app-shell:not(.admin-shell) .bottom-nav .cart-nav>b{
+    display:grid!important;
+  }
+
+  /* Keep floating WhatsApp above the installed-app bottom bar. */
+  .app-shell:not(.admin-shell) .floating-whatsapp,
+  .app-shell:not(.admin-shell) .contact-float,
+  .app-shell:not(.admin-shell) .whatsapp-float{
+    bottom:calc(84px + env(safe-area-inset-bottom))!important;
+  }
+}
+
+/* ---------------- iOS installed PWA fallback ----------------
+   navigator.standalone is converted to this class by v501. */
+@media (max-width:900px){
+  html.ass-installed-app .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav,
+  html.ass-installed-app .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav{
+    display:none!important;
+  }
+
+  html.ass-installed-app .app-shell:not(.admin-shell) .bottom-nav{
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    width:100%!important;
+    min-height:70px!important;
+    display:grid!important;
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    align-items:center!important;
+    gap:2px!important;
+    padding:
+      7px max(8px,env(safe-area-inset-right))
+      calc(7px + env(safe-area-inset-bottom))
+      max(8px,env(safe-area-inset-left))!important;
+    background:rgba(255,255,255,.985)!important;
+    border-top:1px solid #dfe9e4!important;
+    box-shadow:0 -10px 28px rgba(8,60,44,.11)!important;
+    z-index:10000!important;
+    direction:ltr!important;
+  }
+
+  html.ass-installed-app .app-shell:not(.admin-shell) .screen{
+    padding-bottom:calc(82px + env(safe-area-inset-bottom))!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+
+    const installed =
+      window.matchMedia?.('(display-mode: standalone)')?.matches ||
+      window.navigator.standalone === true;
+
+    document.documentElement.classList.toggle('ass-installed-app',Boolean(installed));
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV502WebsiteVsInstalledNavigation,{once:true});
+  }else{
+    installV502WebsiteVsInstalledNavigation();
+  }
+})();
+
+;(()=>{
+  const installV503MobilePreviewBottomNav=()=>{
+    if(document.getElementById('v503-mobile-preview-bottom-nav')) return;
+
+    const style=document.createElement('style');
+    style.id='v503-mobile-preview-bottom-nav';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v503 — MOBILE PREVIEW + INSTALLED APP BOTTOM NAV
+   Desktop browser: app navigation stays hidden.
+   Mobile browser preview AND installed PWA: bottom nav is visible.
+   ========================================================= */
+
+@media(max-width:900px){
+
+  /* Never show the desktop/app nav row at the top on mobile. */
+  .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .desktop-main-nav{
+    display:none!important;
+  }
+
+  /* Show existing bottom navigation in normal mobile browser preview too. */
+  .app-shell:not(.admin-shell) .bottom-nav{
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    width:100%!important;
+    min-height:70px!important;
+    height:auto!important;
+    margin:0!important;
+    padding:
+      7px max(8px,env(safe-area-inset-right))
+      calc(7px + env(safe-area-inset-bottom))
+      max(8px,env(safe-area-inset-left))!important;
+    display:grid!important;
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    align-items:center!important;
+    gap:2px!important;
+    background:rgba(255,255,255,.985)!important;
+    border-top:1px solid #dfe9e4!important;
+    box-shadow:0 -10px 28px rgba(8,60,44,.11)!important;
+    z-index:10000!important;
+    direction:ltr!important;
+  }
+
+  .app-shell:not(.admin-shell) .screen{
+    padding-bottom:calc(84px + env(safe-area-inset-bottom))!important;
+  }
+
+  .app-shell:not(.admin-shell) .bottom-nav button{
+    position:relative!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:4px!important;
+    width:100%!important;
+    min-width:0!important;
+    height:54px!important;
+    min-height:54px!important;
+    margin:0!important;
+    padding:4px 2px!important;
+    border:0!important;
+    border-radius:12px!important;
+    background:transparent!important;
+    color:#294b41!important;
+  }
+
+  .app-shell:not(.admin-shell) .bottom-nav button.active{
+    color:#006a50!important;
+    background:#f1f8f5!important;
+  }
+
+  .app-shell:not(.admin-shell) .bottom-nav .nav-icon{
+    display:inline-flex!important;
+    width:22px!important;
+    height:22px!important;
+    min-width:22px!important;
+    min-height:22px!important;
+  }
+
+  .app-shell:not(.admin-shell) .bottom-nav small{
+    display:block!important;
+    max-width:100%!important;
+    font-size:9px!important;
+    font-weight:800!important;
+    line-height:1!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+
+  .app-shell:not(.admin-shell) .bottom-nav .cart-nav>b{
+    display:grid!important;
+  }
+
+  /* Keep WhatsApp above the fixed bottom nav. */
+  .app-shell:not(.admin-shell) .floating-whatsapp,
+  .app-shell:not(.admin-shell) .contact-float,
+  .app-shell:not(.admin-shell) .whatsapp-float{
+    bottom:calc(88px + env(safe-area-inset-bottom))!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV503MobilePreviewBottomNav,{once:true});
+  }else{
+    installV503MobilePreviewBottomNav();
+  }
+})();
+
+;(()=>{
+  const installAssAlHalaalBrowserIcon=()=>{
+    const href='assets/favicon-ass-al-halaal.png?v=1';
+    document.querySelectorAll('link[rel~="icon"],link[rel="shortcut icon"]').forEach(el=>el.remove());
+
+    const icon=document.createElement('link');
+    icon.rel='icon';
+    icon.type='image/png';
+    icon.sizes='512x512';
+    icon.href=href;
+    document.head.appendChild(icon);
+
+    const shortcut=document.createElement('link');
+    shortcut.rel='shortcut icon';
+    shortcut.type='image/png';
+    shortcut.href=href;
+    document.head.appendChild(shortcut);
+
+    let apple=document.querySelector('link[rel="apple-touch-icon"]');
+    if(!apple){
+      apple=document.createElement('link');
+      apple.rel='apple-touch-icon';
+      document.head.appendChild(apple);
+    }
+    apple.href=href;
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installAssAlHalaalBrowserIcon,{once:true});
+  }else{
+    installAssAlHalaalBrowserIcon();
+  }
+})();
+
+;(()=>{
+  const installOriginalLogoWhiteCircleFavicon=()=>{
+    const originalLogo='assets/ass-al-halaal-logo-v135.png';
+
+    const applyIcon=(href)=>{
+      document.querySelectorAll('link[rel~="icon"],link[rel="shortcut icon"]').forEach(el=>el.remove());
+
+      const icon=document.createElement('link');
+      icon.rel='icon';
+      icon.type='image/png';
+      icon.href=href;
+      document.head.appendChild(icon);
+
+      const shortcut=document.createElement('link');
+      shortcut.rel='shortcut icon';
+      shortcut.type='image/png';
+      shortcut.href=href;
+      document.head.appendChild(shortcut);
+
+      let apple=document.querySelector('link[rel="apple-touch-icon"]');
+      if(!apple){
+        apple=document.createElement('link');
+        apple.rel='apple-touch-icon';
+        document.head.appendChild(apple);
+      }
+      apple.href=href;
+    };
+
+    const img=new Image();
+    img.onload=()=>{
+      try{
+        const size=512;
+        const canvas=document.createElement('canvas');
+        canvas.width=size;
+        canvas.height=size;
+        const ctx=canvas.getContext('2d');
+
+        ctx.clearRect(0,0,size,size);
+
+        /* White circular badge only — original logo pixels remain untouched. */
+        ctx.beginPath();
+        ctx.arc(size/2,size/2,238,0,Math.PI*2);
+        ctx.fillStyle='#ffffff';
+        ctx.fill();
+
+        /* Very subtle neutral edge so the white circle stays visible on light tabs. */
+        ctx.lineWidth=8;
+        ctx.strokeStyle='rgba(15,61,49,.16)';
+        ctx.stroke();
+
+        const padding=78;
+        const maxW=size-padding*2;
+        const maxH=size-padding*2;
+
+        const ratio=Math.min(maxW/img.naturalWidth,maxH/img.naturalHeight);
+        const w=img.naturalWidth*ratio;
+        const h=img.naturalHeight*ratio;
+        const x=(size-w)/2;
+        const y=(size-h)/2;
+
+        /* Draw the original asset exactly as-is: no recolor, filter or tint. */
+        ctx.drawImage(img,x,y,w,h);
+
+        applyIcon(canvas.toDataURL('image/png'));
+      }catch(err){
+        applyIcon(originalLogo);
+      }
+    };
+
+    img.onerror=()=>applyIcon(originalLogo);
+    img.src=originalLogo+'?favicon-original-circle=2';
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installOriginalLogoWhiteCircleFavicon,{once:true});
+  }else{
+    installOriginalLogoWhiteCircleFavicon();
+  }
+})();
+
+;(()=>{
+  const installProminentOriginalAssAlHalaalFavicon=()=>{
+    const originalLogo='assets/ass-al-halaal-logo-colored.png';
+
+    const setFavicon=(href)=>{
+      document.querySelectorAll('link[rel~="icon"],link[rel="shortcut icon"]').forEach(el=>el.remove());
+
+      const icon=document.createElement('link');
+      icon.rel='icon';
+      icon.type='image/png';
+      icon.sizes='512x512';
+      icon.href=href;
+      document.head.appendChild(icon);
+
+      const shortcut=document.createElement('link');
+      shortcut.rel='shortcut icon';
+      shortcut.type='image/png';
+      shortcut.href=href;
+      document.head.appendChild(shortcut);
+
+      let apple=document.querySelector('link[rel="apple-touch-icon"]');
+      if(!apple){
+        apple=document.createElement('link');
+        apple.rel='apple-touch-icon';
+        document.head.appendChild(apple);
+      }
+      apple.href=href;
+    };
+
+    const img=new Image();
+
+    img.onload=()=>{
+      try{
+        /* First render original asset so transparent/empty margins can be trimmed. */
+        const source=document.createElement('canvas');
+        source.width=img.naturalWidth;
+        source.height=img.naturalHeight;
+        const sctx=source.getContext('2d',{willReadFrequently:true});
+        sctx.drawImage(img,0,0);
+
+        const pixels=sctx.getImageData(0,0,source.width,source.height);
+        const data=pixels.data;
+        let minX=source.width, minY=source.height, maxX=-1, maxY=-1;
+
+        /* Use transparency where available. For opaque assets, ignore near-white outer background. */
+        const cornerIndex=0;
+        const bgR=data[cornerIndex], bgG=data[cornerIndex+1], bgB=data[cornerIndex+2], bgA=data[cornerIndex+3];
+        const cornerIsLight=bgA>220 && bgR>235 && bgG>235 && bgB>235;
+
+        for(let y=0;y<source.height;y++){
+          for(let x=0;x<source.width;x++){
+            const i=(y*source.width+x)*4;
+            const r=data[i], g=data[i+1], b=data[i+2], a=data[i+3];
+
+            let content=a>22;
+            if(content && cornerIsLight){
+              const diff=Math.abs(r-bgR)+Math.abs(g-bgG)+Math.abs(b-bgB);
+              content=diff>38 || a<245;
+            }
+
+            if(content){
+              if(x<minX)minX=x;
+              if(y<minY)minY=y;
+              if(x>maxX)maxX=x;
+              if(y>maxY)maxY=y;
+            }
+          }
+        }
+
+        if(maxX<minX || maxY<minY){
+          minX=0; minY=0; maxX=source.width-1; maxY=source.height-1;
+        }
+
+        const cropW=maxX-minX+1;
+        const cropH=maxY-minY+1;
+
+        /* Create the final favicon with a strong white circular badge. */
+        const size=512;
+        const canvas=document.createElement('canvas');
+        canvas.width=size;
+        canvas.height=size;
+        const ctx=canvas.getContext('2d');
+
+        ctx.clearRect(0,0,size,size);
+
+        /* Soft outer shadow helps the white badge stay visible in both light/dark tabs. */
+        ctx.save();
+        ctx.shadowColor='rgba(0,55,42,.24)';
+        ctx.shadowBlur=18;
+        ctx.shadowOffsetY=4;
+        ctx.beginPath();
+        ctx.arc(256,256,238,0,Math.PI*2);
+        ctx.fillStyle='#ffffff';
+        ctx.fill();
+        ctx.restore();
+
+        ctx.beginPath();
+        ctx.arc(256,256,238,0,Math.PI*2);
+        ctx.lineWidth=10;
+        ctx.strokeStyle='#0b654d';
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(256,256,224,0,Math.PI*2);
+        ctx.lineWidth=4;
+        ctx.strokeStyle='#d7ad45';
+        ctx.stroke();
+
+        /* Make the original logo much larger inside the circle. */
+        const maxW=408;
+        const maxH=396;
+        const ratio=Math.min(maxW/cropW,maxH/cropH);
+        const w=cropW*ratio;
+        const h=cropH*ratio;
+        const x=(size-w)/2;
+        const y=(size-h)/2;
+
+        ctx.drawImage(
+          source,
+          minX,minY,cropW,cropH,
+          x,y,w,h
+        );
+
+        setFavicon(canvas.toDataURL('image/png'));
+      }catch(err){
+        setFavicon(originalLogo);
+      }
+    };
+
+    img.onerror=()=>setFavicon(originalLogo);
+    img.src=originalLogo+'?favicon-prominent=3';
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installProminentOriginalAssAlHalaalFavicon,{once:true});
+  }else{
+    installProminentOriginalAssAlHalaalFavicon();
+  }
+})();
+
+;(()=>{
+  const installV509StandardNumberBoxes=()=>{
+    if(document.getElementById('v509-standard-number-boxes')) return;
+
+    const style=document.createElement('style');
+    style.id='v509-standard-number-boxes';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v509 — STANDARD DETAIL NUMBER BOXES
+   All 01–04 step boxes use one consistent dark-gold style.
+   ========================================================= */
+
+.standard-detail-overlay .standard-mini-articles article > span{
+  width:44px!important;
+  height:44px!important;
+  min-width:44px!important;
+  min-height:44px!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:12px!important;
+  border:1px solid #9b6910!important;
+  background:
+    linear-gradient(180deg,#b98722 0%,#9f6d12 100%)!important;
+  color:#ffffff!important;
+  font-size:13px!important;
+  font-weight:900!important;
+  line-height:1!important;
+  letter-spacing:.02em!important;
+  box-shadow:
+    0 7px 15px rgba(126,86,13,.18),
+    inset 0 1px 0 rgba(255,255,255,.20)!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.18)!important;
+}
+
+/* Keep the exact same numbering style in every standards theme. */
+.standard-detail-green .standard-mini-articles article > span,
+.standard-detail-blue .standard-mini-articles article > span,
+.standard-detail-gold .standard-mini-articles article > span,
+.standard-detail-purple .standard-mini-articles article > span{
+  background:
+    linear-gradient(180deg,#b98722 0%,#9f6d12 100%)!important;
+  border-color:#9b6910!important;
+  color:#ffffff!important;
+}
+
+@media(max-width:700px){
+  .standard-detail-overlay .standard-mini-articles article > span{
+    width:40px!important;
+    height:40px!important;
+    min-width:40px!important;
+    min-height:40px!important;
+    border-radius:11px!important;
+    font-size:12px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV509StandardNumberBoxes,{once:true});
+  }else{
+    installV509StandardNumberBoxes();
+  }
+})();
+
+;(()=>{
+  const installV510LoginButtonGap=()=>{
+    if(document.getElementById('v510-login-button-gap')) return;
+
+    const style=document.createElement('style');
+    style.id='v510-login-button-gap';
+    style.textContent=`
+/* Ass Al Halaal v510 — Login/Create Account spacing only */
+.simple-auth-switch[data-auth-show="register"]{
+  margin-top:14px!important;
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV510LoginButtonGap,{once:true});
+  }else{
+    installV510LoginButtonGap();
+  }
+})();
+
+;(()=>{
+  const installV511CustomerAccountPremium=()=>{
+    if(document.getElementById('v511-customer-account-premium')) return;
+
+    const style=document.createElement('style');
+    style.id='v511-customer-account-premium';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v511 — PREMIUM CUSTOMER ACCOUNT
+   Visual-only redesign. Existing profile/update/order/logout logic unchanged.
+   ========================================================= */
+
+.app-shell:not(.admin-shell) .signed-customer-card{
+  width:min(1120px,calc(100% - 40px))!important;
+  margin:28px auto 72px!important;
+  padding:22px!important;
+  border:1px solid #e4e7e2!important;
+  border-radius:28px!important;
+  background:
+    radial-gradient(circle at 92% 4%,rgba(215,173,69,.08),transparent 24%),
+    linear-gradient(180deg,#fffefa 0%,#ffffff 100%)!important;
+  box-shadow:
+    0 24px 60px rgba(18,49,39,.10),
+    inset 0 1px 0 rgba(255,255,255,.95)!important;
+  overflow:hidden!important;
+}
+
+/* Profile hero */
+.app-shell:not(.admin-shell) .signed-customer-hero{
+  position:relative!important;
+  min-height:150px!important;
+  display:grid!important;
+  grid-template-columns:88px minmax(0,1fr) auto!important;
+  align-items:center!important;
+  gap:22px!important;
+  padding:26px 28px!important;
+  border:1px solid rgba(230,188,73,.34)!important;
+  border-radius:22px!important;
+  background:
+    radial-gradient(circle at 88% 18%,rgba(239,204,105,.14),transparent 26%),
+    linear-gradient(135deg,#0d674f 0%,#07513f 58%,#043b2f 100%)!important;
+  box-shadow:
+    0 18px 34px rgba(4,65,49,.18),
+    inset 0 1px 0 rgba(255,255,255,.10)!important;
+  overflow:hidden!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-hero:after{
+  content:""!important;
+  position:absolute!important;
+  width:180px!important;
+  height:180px!important;
+  right:-72px!important;
+  bottom:-98px!important;
+  border-radius:50%!important;
+  border:1px solid rgba(255,255,255,.08)!important;
+  box-shadow:
+    0 0 0 26px rgba(255,255,255,.025),
+    0 0 0 58px rgba(216,173,63,.018)!important;
+  pointer-events:none!important;
+}
+
+html[dir="rtl"] .app-shell:not(.admin-shell) .signed-customer-hero:after{
+  right:auto!important;
+  left:-72px!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-hero img{
+  position:relative!important;
+  z-index:1!important;
+  width:82px!important;
+  height:82px!important;
+  min-width:82px!important;
+  max-width:82px!important;
+  object-fit:contain!important;
+  padding:9px!important;
+  border-radius:22px!important;
+  background:rgba(255,255,255,.10)!important;
+  border:1px solid rgba(255,255,255,.22)!important;
+  box-shadow:
+    0 10px 24px rgba(0,0,0,.16),
+    inset 0 1px 0 rgba(255,255,255,.10)!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-hero>div{
+  position:relative!important;
+  z-index:1!important;
+  min-width:0!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-hero>div small{
+  display:inline-flex!important;
+  align-items:center!important;
+  min-height:24px!important;
+  padding:0 9px!important;
+  margin-bottom:8px!important;
+  border-radius:999px!important;
+  background:rgba(235,192,74,.14)!important;
+  border:1px solid rgba(235,192,74,.30)!important;
+  color:#f1cc62!important;
+  font-size:10px!important;
+  font-weight:900!important;
+  letter-spacing:1.2px!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-hero h2{
+  margin:0 0 6px!important;
+  color:#ffffff!important;
+  font-size:clamp(24px,2.2vw,34px)!important;
+  font-weight:900!important;
+  line-height:1.08!important;
+  letter-spacing:-.45px!important;
+  text-shadow:0 2px 10px rgba(0,0,0,.12)!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-hero p{
+  margin:0!important;
+  color:rgba(255,255,255,.76)!important;
+  font-size:13px!important;
+  line-height:1.45!important;
+  overflow-wrap:anywhere!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-hero>span{
+  position:relative!important;
+  z-index:1!important;
+  min-width:82px!important;
+  min-height:34px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:0 14px!important;
+  border-radius:999px!important;
+  background:linear-gradient(180deg,#f0cb67 0%,#d9a62e 100%)!important;
+  border:1px solid #f4d77e!important;
+  color:#073f32!important;
+  font-size:11px!important;
+  font-weight:950!important;
+  box-shadow:
+    0 8px 18px rgba(0,0,0,.16),
+    inset 0 1px 0 rgba(255,255,255,.34)!important;
+}
+
+/* Profile form panel */
+.app-shell:not(.admin-shell) .customer-profile-form{
+  margin-top:20px!important;
+  padding:22px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto!important;
+  gap:16px!important;
+  align-items:end!important;
+  border:1px solid #e3e9e5!important;
+  border-radius:20px!important;
+  background:
+    linear-gradient(180deg,#fbfdfc 0%,#f7faf8 100%)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.92)!important;
+}
+
+.app-shell:not(.admin-shell) .customer-profile-form label{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:8px!important;
+  color:#315247!important;
+  font-size:12px!important;
+  font-weight:850!important;
+}
+
+.app-shell:not(.admin-shell) .customer-profile-form input{
+  width:100%!important;
+  height:54px!important;
+  padding:0 15px!important;
+  border:1px solid #d6e1dc!important;
+  border-radius:14px!important;
+  background:#ffffff!important;
+  color:#173f34!important;
+  font-size:14px!important;
+  font-weight:650!important;
+  outline:none!important;
+  box-shadow:
+    inset 0 1px 2px rgba(15,52,41,.03),
+    0 3px 8px rgba(16,52,41,.025)!important;
+  transition:border-color .16s ease,box-shadow .16s ease!important;
+}
+
+.app-shell:not(.admin-shell) .customer-profile-form input:focus{
+  border-color:#c89c2c!important;
+  box-shadow:
+    0 0 0 4px rgba(211,166,48,.10),
+    inset 0 1px 2px rgba(15,52,41,.03)!important;
+}
+
+.app-shell:not(.admin-shell) .customer-profile-form button[type="submit"]{
+  height:54px!important;
+  min-width:188px!important;
+  padding:0 22px!important;
+  border:1px solid #0b684f!important;
+  border-radius:14px!important;
+  background:
+    linear-gradient(180deg,#0e6d53 0%,#07513e 100%)!important;
+  color:#fff!important;
+  font-size:13px!important;
+  font-weight:900!important;
+  box-shadow:
+    0 10px 20px rgba(7,81,62,.16),
+    inset 0 1px 0 rgba(255,255,255,.12)!important;
+  transition:transform .16s ease,box-shadow .16s ease!important;
+}
+
+.app-shell:not(.admin-shell) .customer-profile-form button[type="submit"]:hover{
+  transform:translateY(-2px)!important;
+  box-shadow:
+    0 14px 24px rgba(7,81,62,.22),
+    inset 0 1px 0 rgba(255,255,255,.14)!important;
+}
+
+/* Bottom actions */
+.app-shell:not(.admin-shell) .customer-account-actions{
+  margin-top:18px!important;
+  display:grid!important;
+  grid-template-columns:1.25fr .75fr!important;
+  gap:14px!important;
+}
+
+.app-shell:not(.admin-shell) .customer-account-actions button{
+  min-height:54px!important;
+  border-radius:14px!important;
+  font-size:13px!important;
+  font-weight:900!important;
+  transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease!important;
+}
+
+.app-shell:not(.admin-shell) .customer-account-actions .primary-block{
+  border:1px solid #073f32!important;
+  background:
+    linear-gradient(180deg,#073f32 0%,#032e25 100%)!important;
+  color:#fff!important;
+  box-shadow:
+    0 10px 20px rgba(3,47,37,.13),
+    inset 0 1px 0 rgba(255,255,255,.08)!important;
+}
+
+.app-shell:not(.admin-shell) .customer-account-actions .primary-block:before{
+  content:"⌁"!important;
+  margin-inline-end:8px!important;
+  color:#efc95a!important;
+  font-size:16px!important;
+}
+
+.app-shell:not(.admin-shell) .customer-account-actions .secondary-block{
+  border:1px solid #d9e3df!important;
+  background:#f5f8f7!important;
+  color:#24483d!important;
+  box-shadow:0 6px 14px rgba(20,58,46,.05)!important;
+}
+
+.app-shell:not(.admin-shell) .customer-account-actions .secondary-block:before{
+  content:"↪"!important;
+  margin-inline-end:8px!important;
+  color:#a97c18!important;
+  font-size:15px!important;
+}
+
+.app-shell:not(.admin-shell) .customer-account-actions button:hover{
+  transform:translateY(-2px)!important;
+}
+
+/* Account page heading refinement */
+.app-shell:not(.admin-shell) .customer-page-head{
+  width:min(1320px,calc(100% - 48px))!important;
+  margin:26px auto 10px!important;
+}
+
+.app-shell:not(.admin-shell) .customer-page-head>div small{
+  color:#b58217!important;
+  letter-spacing:1.55px!important;
+  font-weight:900!important;
+}
+
+.app-shell:not(.admin-shell) .customer-page-head h1{
+  color:#173f34!important;
+  font-size:clamp(32px,3vw,48px)!important;
+  letter-spacing:-.75px!important;
+}
+
+/* Responsive */
+@media(max-width:900px){
+  .app-shell:not(.admin-shell) .signed-customer-card{
+    width:calc(100% - 24px)!important;
+    margin:18px auto 92px!important;
+    padding:14px!important;
+    border-radius:22px!important;
+  }
+
+  .app-shell:not(.admin-shell) .signed-customer-hero{
+    grid-template-columns:66px minmax(0,1fr)!important;
+    gap:14px!important;
+    padding:20px!important;
+    min-height:130px!important;
+  }
+
+  .app-shell:not(.admin-shell) .signed-customer-hero img{
+    width:62px!important;
+    height:62px!important;
+    min-width:62px!important;
+    max-width:62px!important;
+    padding:7px!important;
+    border-radius:17px!important;
+  }
+
+  .app-shell:not(.admin-shell) .signed-customer-hero>span{
+    grid-column:1/-1!important;
+    justify-self:start!important;
+    min-height:30px!important;
+  }
+
+  .app-shell:not(.admin-shell) .customer-profile-form{
+    grid-template-columns:1fr!important;
+    padding:16px!important;
+  }
+
+  .app-shell:not(.admin-shell) .customer-profile-form button[type="submit"]{
+    width:100%!important;
+    min-width:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .customer-account-actions{
+    grid-template-columns:1fr!important;
+  }
+
+  .app-shell:not(.admin-shell) .customer-page-head{
+    width:calc(100% - 24px)!important;
+    margin-top:18px!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .customer-profile-form input,
+  .customer-profile-form button,
+  .customer-account-actions button{
+    transition:none!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV511CustomerAccountPremium,{once:true});
+  }else{
+    installV511CustomerAccountPremium();
+  }
+})();
+
+;(()=>{
+  const installV512FullCustomerProfile=()=>{
+    if(document.getElementById('v512-full-customer-profile')) return;
+    const style=document.createElement('style');
+    style.id='v512-full-customer-profile';
+    style.textContent=`
+/* Ass Al Halaal v512 — Full customer profile details + edit */
+.app-shell:not(.admin-shell) .customer-profile-hero{
+  grid-template-columns:96px minmax(0,1fr) auto!important;
+}
+.customer-avatar-wrap{position:relative!important;z-index:1!important;width:88px!important;height:88px!important}
+.app-shell:not(.admin-shell) .customer-avatar-wrap>img{
+  width:88px!important;height:88px!important;min-width:88px!important;max-width:88px!important;
+  border-radius:50%!important;object-fit:cover!important;padding:5px!important;background:#fff!important;
+  border:3px solid rgba(238,199,91,.88)!important;box-shadow:0 10px 24px rgba(0,0,0,.18)!important;
+}
+.customer-avatar-status{
+  position:absolute!important;right:0!important;bottom:2px!important;width:26px!important;height:26px!important;
+  display:grid!important;place-items:center!important;border-radius:50%!important;background:#e4b73e!important;
+  color:#073f32!important;border:3px solid #07513f!important;font-weight:950!important;font-size:12px!important;
+}
+.customer-provider-badge{white-space:nowrap!important}
+
+.customer-profile-summary{
+  margin-top:20px!important;padding:24px!important;border:1px solid #e2e8e5!important;border-radius:20px!important;
+  background:linear-gradient(180deg,#fbfdfc 0%,#f6faf8 100%)!important;
+}
+.customer-profile-summary-head{
+  display:flex!important;align-items:center!important;justify-content:space-between!important;gap:20px!important;margin-bottom:20px!important;
+}
+.customer-profile-summary-head small,.customer-profile-edit-head small{
+  display:block!important;color:#b27d13!important;font-size:10px!important;font-weight:950!important;letter-spacing:1.4px!important;margin-bottom:5px!important;
+}
+.customer-profile-summary-head h3,.customer-profile-edit-head h3{
+  margin:0!important;color:#173f34!important;font-size:22px!important;font-weight:950!important;
+}
+.customer-profile-summary-head p{
+  margin:6px 0 0!important;color:#7c8d87!important;font-size:12px!important;line-height:1.5!important;
+}
+.customer-edit-profile-btn{
+  min-height:44px!important;padding:0 18px!important;border:1px solid #d5aa40!important;border-radius:12px!important;
+  background:linear-gradient(180deg,#f4d46f,#dfb139)!important;color:#083f32!important;font-size:12px!important;font-weight:950!important;
+  box-shadow:0 8px 18px rgba(150,107,20,.14)!important;cursor:pointer!important;
+}
+.customer-edit-profile-btn span{font-size:15px!important;margin-inline-end:7px!important}
+
+.customer-profile-detail-grid{
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px!important;
+}
+.customer-profile-detail-grid article{
+  min-height:92px!important;padding:15px!important;display:flex!important;align-items:center!important;gap:13px!important;
+  border:1px solid #e1e8e4!important;border-radius:16px!important;background:#fff!important;
+  box-shadow:0 5px 14px rgba(20,55,44,.035)!important;
+}
+.customer-detail-icon{
+  width:42px!important;height:42px!important;min-width:42px!important;display:grid!important;place-items:center!important;
+  border-radius:13px!important;background:#edf7f2!important;border:1px solid #d2e7dd!important;color:#0b6a50!important;
+  font-size:14px!important;font-weight:950!important;
+}
+.customer-profile-detail-grid article small{
+  display:block!important;margin-bottom:5px!important;color:#7e8d88!important;font-size:10px!important;font-weight:800!important;
+}
+.customer-profile-detail-grid article strong{
+  display:block!important;color:#173f34!important;font-size:13px!important;font-weight:950!important;overflow-wrap:anywhere!important;
+}
+
+.customer-profile-edit-panel{
+  margin-top:20px!important;padding:24px!important;display:block!important;border:1px solid #e1e8e4!important;border-radius:20px!important;
+  background:linear-gradient(180deg,#fffdf8 0%,#f8faf8 100%)!important;
+}
+.customer-profile-edit-panel[hidden],.customer-profile-summary[hidden]{display:none!important}
+.customer-profile-edit-head{
+  display:flex!important;justify-content:space-between!important;align-items:center!important;gap:18px!important;margin-bottom:20px!important;
+}
+.customer-edit-close{
+  width:38px!important;height:38px!important;border-radius:50%!important;border:1px solid #dce5e1!important;background:#fff!important;
+  color:#315247!important;font-size:22px!important;cursor:pointer!important;
+}
+
+.customer-photo-editor{
+  display:flex!important;align-items:center!important;gap:18px!important;padding:18px!important;margin-bottom:18px!important;
+  border:1px solid #e1e8e4!important;border-radius:17px!important;background:#fff!important;
+}
+.customer-photo-preview{width:86px!important;height:86px!important;min-width:86px!important}
+.customer-photo-preview img{
+  width:86px!important;height:86px!important;object-fit:cover!important;border-radius:50%!important;border:3px solid #e1b847!important;padding:4px!important;background:#fff!important;
+}
+.customer-photo-copy{display:flex!important;flex-direction:column!important;gap:5px!important}
+.customer-photo-copy strong{color:#173f34!important;font-size:14px!important;font-weight:950!important}
+.customer-photo-copy>span{color:#7c8d87!important;font-size:11px!important}
+.customer-photo-actions{display:flex!important;gap:8px!important;margin-top:5px!important}
+.customer-photo-actions button{
+  min-height:34px!important;padding:0 12px!important;border-radius:10px!important;border:1px solid #d8e2de!important;background:#f6f9f8!important;
+  color:#315247!important;font-size:11px!important;font-weight:850!important;cursor:pointer!important;
+}
+#customer-change-photo{background:#edf7f2!important;border-color:#cfe5db!important;color:#075b46!important}
+
+.customer-edit-fields{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:15px!important;
+}
+.customer-edit-fields label{
+  display:flex!important;flex-direction:column!important;gap:8px!important;color:#315247!important;font-size:12px!important;font-weight:850!important;
+}
+.customer-edit-fields input,.customer-edit-fields select{
+  width:100%!important;height:52px!important;padding:0 14px!important;border:1px solid #d6e1dc!important;border-radius:13px!important;
+  background:#fff!important;color:#173f34!important;font-size:13px!important;font-weight:650!important;outline:none!important;
+}
+.customer-edit-fields input:focus,.customer-edit-fields select:focus{
+  border-color:#c89c2c!important;box-shadow:0 0 0 4px rgba(211,166,48,.10)!important;
+}
+.customer-edit-fields input[readonly]{background:#f3f6f5!important;color:#6f7f79!important}
+.customer-edit-fields label>small{color:#8b9893!important;font-size:9.5px!important;font-weight:600!important;line-height:1.4!important}
+
+.customer-profile-edit-actions{
+  display:flex!important;justify-content:flex-end!important;gap:10px!important;margin-top:20px!important;
+}
+.customer-profile-edit-actions button{
+  min-height:46px!important;min-width:145px!important;padding:0 18px!important;border-radius:12px!important;font-size:12px!important;font-weight:950!important;cursor:pointer!important;
+}
+.customer-edit-cancel{border:1px solid #dbe4e0!important;background:#f5f8f7!important;color:#315247!important}
+.customer-edit-save{
+  border:1px solid #0b684f!important;background:linear-gradient(180deg,#0e6d53,#07513e)!important;color:#fff!important;
+  box-shadow:0 9px 18px rgba(7,81,62,.16)!important;
+}
+
+@media(max-width:900px){
+  .app-shell:not(.admin-shell) .customer-profile-hero{grid-template-columns:76px minmax(0,1fr)!important}
+  .customer-provider-badge{grid-column:1/-1!important;justify-self:start!important}
+  .customer-profile-summary{padding:17px!important}
+  .customer-profile-summary-head{align-items:flex-start!important;flex-direction:column!important}
+  .customer-edit-profile-btn{width:100%!important}
+  .customer-profile-detail-grid{grid-template-columns:1fr!important}
+  .customer-profile-edit-panel{padding:16px!important}
+  .customer-photo-editor{align-items:flex-start!important}
+  .customer-edit-fields{grid-template-columns:1fr!important}
+  .customer-profile-edit-actions{display:grid!important;grid-template-columns:1fr 1fr!important}
+  .customer-profile-edit-actions button{min-width:0!important}
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installV512FullCustomerProfile,{once:true});
+  else installV512FullCustomerProfile();
+})();
+
+;(()=>{
+  const installV513CustomerProfileDecentFix=()=>{
+    if(document.getElementById('v513-customer-profile-decent-fix')) return;
+
+    const style=document.createElement('style');
+    style.id='v513-customer-profile-decent-fix';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v513 — CUSTOMER PROFILE DECENT LAYOUT FIX
+   Fixes edit-panel visibility and presents a cleaner profile UI.
+   ========================================================= */
+
+/* CRITICAL: hidden state must beat older account-form display rules */
+.app-shell:not(.admin-shell) .signed-customer-card .customer-profile-edit-panel[hidden],
+.app-shell:not(.admin-shell) .signed-customer-card .customer-profile-summary[hidden]{
+  display:none!important;
+}
+
+/* Main account card */
+.app-shell:not(.admin-shell) .signed-customer-card{
+  width:min(1040px,calc(100% - 42px))!important;
+  padding:20px!important;
+  border-radius:24px!important;
+  background:#fff!important;
+  border:1px solid #e5e9e6!important;
+  box-shadow:0 18px 48px rgba(26,55,45,.09)!important;
+}
+
+/* Profile hero - simple and decent */
+.app-shell:not(.admin-shell) .signed-customer-card .customer-profile-hero{
+  min-height:128px!important;
+  padding:22px 24px!important;
+  grid-template-columns:82px minmax(0,1fr) auto!important;
+  gap:18px!important;
+  border-radius:18px!important;
+  border:1px solid rgba(224,181,62,.28)!important;
+  background:linear-gradient(135deg,#0d684f 0%,#07523f 64%,#064634 100%)!important;
+  box-shadow:none!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-profile-hero:after{
+  opacity:.35!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-avatar-wrap{
+  width:72px!important;
+  height:72px!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-avatar-wrap>img{
+  width:72px!important;
+  height:72px!important;
+  min-width:72px!important;
+  max-width:72px!important;
+  padding:3px!important;
+  border-width:2px!important;
+  box-shadow:none!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-avatar-status{
+  width:22px!important;
+  height:22px!important;
+  right:-1px!important;
+  bottom:0!important;
+  border-width:2px!important;
+  font-size:10px!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-hero-copy small{
+  padding:0!important;
+  min-height:0!important;
+  margin-bottom:6px!important;
+  border:0!important;
+  background:transparent!important;
+  color:#efc85c!important;
+  letter-spacing:1.2px!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-hero-copy h2{
+  font-size:28px!important;
+  margin-bottom:5px!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-hero-copy p{
+  font-size:12px!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-provider-badge{
+  min-width:auto!important;
+  min-height:32px!important;
+  padding:0 14px!important;
+  border-radius:999px!important;
+  background:#edc14e!important;
+  border:0!important;
+  color:#173e33!important;
+  box-shadow:none!important;
+  font-size:10px!important;
+}
+
+/* Profile details */
+.app-shell:not(.admin-shell) .signed-customer-card .customer-profile-summary{
+  margin-top:18px!important;
+  padding:20px!important;
+  border-radius:18px!important;
+  background:#fbfcfb!important;
+  border:1px solid #e1e7e3!important;
+  box-shadow:none!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-profile-summary-head{
+  margin-bottom:16px!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-profile-summary-head h3{
+  font-size:20px!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-profile-summary-head p{
+  font-size:11px!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-edit-profile-btn{
+  min-height:40px!important;
+  padding:0 15px!important;
+  border-radius:10px!important;
+  background:#e9ba3e!important;
+  border:1px solid #d9a826!important;
+  color:#123d32!important;
+  box-shadow:none!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-profile-detail-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:10px!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-profile-detail-grid article{
+  min-height:82px!important;
+  padding:13px!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  border:1px solid #e3e9e5!important;
+  box-shadow:none!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-detail-icon{
+  width:36px!important;
+  height:36px!important;
+  min-width:36px!important;
+  border-radius:10px!important;
+  background:#eef7f3!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-profile-detail-grid article small{
+  font-size:9.5px!important;
+  margin-bottom:4px!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-profile-detail-grid article strong{
+  font-size:12.5px!important;
+}
+
+/* Edit mode - clean card */
+.app-shell:not(.admin-shell) .signed-customer-card .customer-profile-form.customer-profile-edit-panel{
+  display:block!important;
+  grid-template-columns:none!important;
+  margin-top:18px!important;
+  padding:22px!important;
+  border-radius:18px!important;
+  background:#fbfcfb!important;
+  border:1px solid #e1e7e3!important;
+  box-shadow:none!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-profile-edit-panel[hidden]{
+  display:none!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-profile-edit-head{
+  margin-bottom:18px!important;
+  padding-bottom:14px!important;
+  border-bottom:1px solid #e7ece9!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-profile-edit-head h3{
+  font-size:20px!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-edit-close{
+  width:34px!important;
+  height:34px!important;
+  min-width:34px!important;
+  border-radius:10px!important;
+  font-size:19px!important;
+  box-shadow:none!important;
+}
+
+/* Photo row */
+.app-shell:not(.admin-shell) .signed-customer-card .customer-photo-editor{
+  display:grid!important;
+  grid-template-columns:76px minmax(0,1fr)!important;
+  gap:16px!important;
+  align-items:center!important;
+  margin:0 0 18px!important;
+  padding:16px!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  border:1px solid #e3e9e5!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-photo-preview,
+.app-shell:not(.admin-shell) .signed-customer-card .customer-photo-preview img{
+  width:68px!important;
+  height:68px!important;
+  min-width:68px!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-photo-preview img{
+  padding:3px!important;
+  border-width:2px!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-photo-copy{
+  gap:4px!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-photo-actions{
+  margin-top:7px!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-photo-actions button{
+  min-height:32px!important;
+  padding:0 11px!important;
+  border-radius:8px!important;
+}
+
+/* Fields */
+.app-shell:not(.admin-shell) .signed-customer-card .customer-edit-fields{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:14px!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-edit-fields label{
+  gap:7px!important;
+  font-size:11px!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-edit-fields input,
+.app-shell:not(.admin-shell) .signed-customer-card .customer-edit-fields select{
+  height:48px!important;
+  border-radius:11px!important;
+  padding:0 13px!important;
+  font-size:12.5px!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-profile-edit-actions{
+  margin-top:18px!important;
+  padding-top:16px!important;
+  border-top:1px solid #e7ece9!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-profile-edit-actions button{
+  min-height:44px!important;
+  min-width:130px!important;
+  border-radius:10px!important;
+}
+
+/* Account action buttons */
+.app-shell:not(.admin-shell) .signed-customer-card .customer-account-actions{
+  margin-top:16px!important;
+  gap:10px!important;
+}
+
+.app-shell:not(.admin-shell) .signed-customer-card .customer-account-actions button{
+  min-height:48px!important;
+  border-radius:11px!important;
+}
+
+/* Mobile */
+@media(max-width:900px){
+  .app-shell:not(.admin-shell) .signed-customer-card{
+    width:calc(100% - 20px)!important;
+    padding:12px!important;
+    border-radius:18px!important;
+  }
+
+  .app-shell:not(.admin-shell) .signed-customer-card .customer-profile-hero{
+    grid-template-columns:66px minmax(0,1fr)!important;
+    padding:18px!important;
+    gap:12px!important;
+  }
+
+  .app-shell:not(.admin-shell) .signed-customer-card .customer-avatar-wrap,
+  .app-shell:not(.admin-shell) .signed-customer-card .customer-avatar-wrap>img{
+    width:62px!important;
+    height:62px!important;
+    min-width:62px!important;
+    max-width:62px!important;
+  }
+
+  .app-shell:not(.admin-shell) .signed-customer-card .customer-profile-detail-grid{
+    grid-template-columns:1fr!important;
+  }
+
+  .app-shell:not(.admin-shell) .signed-customer-card .customer-profile-summary{
+    padding:15px!important;
+  }
+
+  .app-shell:not(.admin-shell) .signed-customer-card .customer-profile-summary-head{
+    flex-direction:column!important;
+    align-items:stretch!important;
+  }
+
+  .app-shell:not(.admin-shell) .signed-customer-card .customer-edit-profile-btn{
+    width:100%!important;
+  }
+
+  .app-shell:not(.admin-shell) .signed-customer-card .customer-profile-form.customer-profile-edit-panel{
+    padding:15px!important;
+  }
+
+  .app-shell:not(.admin-shell) .signed-customer-card .customer-photo-editor{
+    grid-template-columns:62px minmax(0,1fr)!important;
+    padding:13px!important;
+  }
+
+  .app-shell:not(.admin-shell) .signed-customer-card .customer-photo-preview,
+  .app-shell:not(.admin-shell) .signed-customer-card .customer-photo-preview img{
+    width:56px!important;
+    height:56px!important;
+    min-width:56px!important;
+  }
+
+  .app-shell:not(.admin-shell) .signed-customer-card .customer-edit-fields{
+    grid-template-columns:1fr!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV513CustomerProfileDecentFix,{once:true});
+  }else{
+    installV513CustomerProfileDecentFix();
+  }
+})();
+
+;(()=>{
+  const installV514MobileBrandGreenFixed=()=>{
+    if(document.getElementById('v514-mobile-brand-green-fixed')) return;
+
+    const style=document.createElement('style');
+    style.id='v514-mobile-brand-green-fixed';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v514 — MOBILE BRAND NAME GREEN FIX
+   Only changes the visible mobile wordmark color/readability.
+   ========================================================= */
+
+@media(max-width:900px){
+  .ref-customer-header .mobile-brand-wordmark,
+  .app-shell:not(.admin-shell) .ref-customer-header .mobile-brand-wordmark,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .mobile-brand-wordmark{
+    opacity:1!important;
+    visibility:visible!important;
+    z-index:80!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong,
+  .app-shell:not(.admin-shell) .ref-customer-header .mobile-brand-wordmark strong,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .mobile-brand-wordmark strong{
+    color:#0b5f49!important;
+    opacity:1!important;
+    visibility:visible!important;
+    text-shadow:none!important;
+    font-weight:900!important;
+  }
+}
+
+@media(max-width:410px){
+  .ref-customer-header .mobile-brand-wordmark strong{
+    color:#0b5f49!important;
+  }
+}
+
+@media(max-width:370px){
+  .ref-customer-header .mobile-brand-wordmark strong{
+    color:#0b5f49!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV514MobileBrandGreenFixed,{once:true});
+  }else{
+    installV514MobileBrandGreenFixed();
+  }
+})();
+
+;(()=>{
+  const installV515MobileHeaderCleanPremium=()=>{
+    if(document.getElementById('v515-mobile-header-clean-premium')) return;
+
+    const style=document.createElement('style');
+    style.id='v515-mobile-header-clean-premium';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v515 — CLEAN PREMIUM MOBILE HEADER
+   Fixes broken brand/alt-text glitch and refines action icons.
+   ========================================================= */
+
+@media(max-width:900px){
+
+  /* Kill every older pseudo wordmark so no duplicate/glitch can appear. */
+  .app-shell:not(.admin-shell) .ref-customer-header::after,
+  .app-shell:has(.v405-home-ui) .ref-customer-header::after,
+  .ref-customer-header::after{
+    content:none!important;
+    display:none!important;
+  }
+
+  /* Clean 3-zone mobile header: Logo | Wordmark | Actions */
+  .app-shell:not(.admin-shell) .ref-customer-header,
+  .app-shell:has(.v405-home-ui) .ref-customer-header,
+  .ref-customer-header{
+    direction:ltr!important;
+    display:grid!important;
+    grid-template-columns:44px minmax(0,1fr) max-content!important;
+    grid-template-areas:"brand mobilebrand actions"!important;
+    align-items:center!important;
+    column-gap:10px!important;
+    min-height:74px!important;
+    height:74px!important;
+    padding:0 12px!important;
+    overflow:visible!important;
+    background:#ffffff!important;
+    border-bottom:1px solid #e7ece9!important;
+    box-shadow:0 8px 20px rgba(18,55,43,.07)!important;
+  }
+
+  /* Left logo zone — never show broken img/alt text. */
+  .ref-customer-header .customer-brand{
+    grid-area:brand!important;
+    width:44px!important;
+    min-width:44px!important;
+    max-width:44px!important;
+    height:44px!important;
+    display:block!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+    position:relative!important;
+    z-index:5!important;
+  }
+
+  .ref-customer-header .customer-brand .ref-location-pill{
+    display:none!important;
+  }
+
+  .ref-customer-header .customer-logo{
+    width:44px!important;
+    min-width:44px!important;
+    max-width:44px!important;
+    height:44px!important;
+    min-height:44px!important;
+    margin:0!important;
+    padding:0!important;
+    border:1px solid #dfe8e4!important;
+    border-radius:13px!important;
+    background:
+      #ffffff url('assets/ass-al-halaal-logo-colored.png') center/35px 35px no-repeat!important;
+    box-shadow:0 5px 12px rgba(11,95,73,.09)!important;
+    overflow:hidden!important;
+  }
+
+  /* Hide the old white/missing image and hidden text completely. */
+  .ref-customer-header .customer-logo img,
+  .ref-customer-header .customer-logo span{
+    display:none!important;
+    visibility:hidden!important;
+    opacity:0!important;
+  }
+
+  /* Clean brand wordmark */
+  .ref-customer-header .mobile-brand-wordmark{
+    grid-area:mobilebrand!important;
+    position:relative!important;
+    inset:auto!important;
+    transform:none!important;
+    display:flex!important;
+    align-items:flex-start!important;
+    justify-content:center!important;
+    width:100%!important;
+    min-width:0!important;
+    height:44px!important;
+    padding:0!important;
+    margin:0!important;
+    overflow:hidden!important;
+    z-index:6!important;
+    pointer-events:none!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    display:block!important;
+    width:auto!important;
+    max-width:100%!important;
+    margin:0!important;
+    padding:0 0 7px!important;
+    color:#0b5f49!important;
+    font-family:Arial,sans-serif!important;
+    font-size:16px!important;
+    line-height:1.05!important;
+    font-weight:900!important;
+    letter-spacing:.2px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    text-align:left!important;
+    text-shadow:none!important;
+    border-bottom:2px solid #ddb03d!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark:after{
+    content:none!important;
+    display:none!important;
+  }
+
+  /* Action dock: no large green slab, only individual premium buttons. */
+  .ref-customer-header .premium-action-dock{
+    grid-area:actions!important;
+    position:relative!important;
+    z-index:8!important;
+    display:grid!important;
+    grid-template-columns:repeat(4,38px)!important;
+    align-items:center!important;
+    justify-content:end!important;
+    width:auto!important;
+    min-width:0!important;
+    max-width:none!important;
+    gap:6px!important;
+    padding:0!important;
+    margin:0!important;
+    background:transparent!important;
+    border:0!important;
+    box-shadow:none!important;
+    direction:ltr!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-action,
+  .ref-customer-header .premium-action-dock>.top-search,
+  .ref-customer-header .premium-action-dock .top-bell,
+  .ref-customer-header .premium-action-dock .top-language,
+  .ref-customer-header .premium-action-dock .top-cart{
+    width:38px!important;
+    min-width:38px!important;
+    max-width:38px!important;
+    height:38px!important;
+    min-height:38px!important;
+    max-height:38px!important;
+    padding:0!important;
+    margin:0!important;
+    border-radius:12px!important;
+    display:grid!important;
+    place-items:center!important;
+    box-sizing:border-box!important;
+    transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease!important;
+  }
+
+  /* Search */
+  .ref-customer-header .premium-action-dock .top-search{
+    background:#eef7f3!important;
+    border:1px solid #cfe4db!important;
+    color:#0b654d!important;
+    box-shadow:0 4px 10px rgba(11,95,73,.08)!important;
+  }
+
+  /* Notification */
+  .ref-customer-header .premium-action-dock .top-bell{
+    background:#ffffff!important;
+    border:1px solid #d7e3de!important;
+    color:#0b654d!important;
+    box-shadow:0 4px 10px rgba(11,95,73,.09)!important;
+  }
+
+  /* Language */
+  .ref-customer-header .premium-action-dock .top-language{
+    background:#fff8e5!important;
+    border:1px solid #dcb243!important;
+    color:#8c6815!important;
+    box-shadow:0 4px 10px rgba(151,111,24,.08)!important;
+  }
+
+  .ref-customer-header .top-language .lang-code{
+    color:#9b7316!important;
+    font-size:10.5px!important;
+    font-weight:950!important;
+    letter-spacing:.15px!important;
+  }
+
+  /* Bag/cart */
+  .ref-customer-header .premium-action-dock .top-cart{
+    background:#eef7f3!important;
+    border:1px solid #cfe4db!important;
+    color:#0b654d!important;
+    box-shadow:0 4px 10px rgba(11,95,73,.08)!important;
+  }
+
+  .ref-customer-header .premium-action-dock .action-icon{
+    width:18px!important;
+    height:18px!important;
+    min-width:18px!important;
+    min-height:18px!important;
+    background-color:#0b654d!important;
+    color:#0b654d!important;
+  }
+
+  .ref-customer-header .premium-action-dock .action-icon svg{
+    width:18px!important;
+    height:18px!important;
+    color:#0b654d!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-bell i{
+    top:3px!important;
+    right:3px!important;
+    width:7px!important;
+    height:7px!important;
+    border:2px solid #fff!important;
+    background:#e34b4b!important;
+    box-shadow:0 0 0 1px rgba(227,75,75,.12)!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-action:hover{
+    transform:translateY(-1px)!important;
+    border-color:#d2aa3d!important;
+    box-shadow:0 7px 14px rgba(14,68,52,.12)!important;
+  }
+
+  .ref-customer-header .top-search-copy{
+    display:none!important;
+  }
+}
+
+/* Narrow phones */
+@media(max-width:410px){
+  .app-shell:not(.admin-shell) .ref-customer-header,
+  .app-shell:has(.v405-home-ui) .ref-customer-header,
+  .ref-customer-header{
+    grid-template-columns:40px minmax(0,1fr) max-content!important;
+    column-gap:7px!important;
+    padding:0 8px!important;
+  }
+
+  .ref-customer-header .customer-brand,
+  .ref-customer-header .customer-logo{
+    width:40px!important;
+    min-width:40px!important;
+    max-width:40px!important;
+    height:40px!important;
+    min-height:40px!important;
+  }
+
+  .ref-customer-header .customer-logo{
+    background-size:32px 32px!important;
+    border-radius:11px!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    font-size:14px!important;
+    padding-bottom:6px!important;
+  }
+
+  .ref-customer-header .premium-action-dock{
+    grid-template-columns:repeat(4,34px)!important;
+    gap:5px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-action,
+  .ref-customer-header .premium-action-dock>.top-search,
+  .ref-customer-header .premium-action-dock .top-bell,
+  .ref-customer-header .premium-action-dock .top-language,
+  .ref-customer-header .premium-action-dock .top-cart{
+    width:34px!important;
+    min-width:34px!important;
+    max-width:34px!important;
+    height:34px!important;
+    min-height:34px!important;
+    max-height:34px!important;
+    border-radius:10px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .action-icon,
+  .ref-customer-header .premium-action-dock .action-icon svg{
+    width:16px!important;
+    height:16px!important;
+    min-width:16px!important;
+    min-height:16px!important;
+  }
+
+  .ref-customer-header .top-language .lang-code{
+    font-size:9.5px!important;
+  }
+}
+
+@media(max-width:365px){
+  .ref-customer-header .mobile-brand-wordmark strong{
+    font-size:12.5px!important;
+  }
+
+  .ref-customer-header .premium-action-dock{
+    grid-template-columns:repeat(4,31px)!important;
+    gap:4px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-action,
+  .ref-customer-header .premium-action-dock>.top-search,
+  .ref-customer-header .premium-action-dock .top-bell,
+  .ref-customer-header .premium-action-dock .top-language,
+  .ref-customer-header .premium-action-dock .top-cart{
+    width:31px!important;
+    min-width:31px!important;
+    max-width:31px!important;
+    height:31px!important;
+    min-height:31px!important;
+    max-height:31px!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .ref-customer-header .premium-action-dock .top-action{
+    transition:none!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV515MobileHeaderCleanPremium,{once:true});
+  }else{
+    installV515MobileHeaderCleanPremium();
+  }
+})();
+
+;(()=>{
+  const installV516MobileHeaderLogoIconsRefined=()=>{
+    if(document.getElementById('v516-mobile-header-logo-icons-refined')) return;
+
+    const style=document.createElement('style');
+    style.id='v516-mobile-header-logo-icons-refined';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v516 — MOBILE BRAND LOGO + ICON REFINEMENT
+   ========================================================= */
+
+@media(max-width:900px){
+
+  /* Remove the older duplicate/empty desktop brand block on mobile. */
+  .app-shell:not(.admin-shell) .ref-customer-header .customer-brand,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .customer-brand{
+    display:none!important;
+  }
+
+  /* Two clean zones: Brand | Actions */
+  .app-shell:not(.admin-shell) .ref-customer-header,
+  .app-shell:has(.v405-home-ui) .ref-customer-header,
+  .ref-customer-header{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    grid-template-areas:"mobilebrand actions"!important;
+    align-items:center!important;
+    gap:10px!important;
+    min-height:72px!important;
+    height:72px!important;
+    padding:0 12px!important;
+    background:#ffffff!important;
+    border-bottom:1px solid #e6ece8!important;
+    box-shadow:0 7px 18px rgba(15,60,46,.07)!important;
+    overflow:visible!important;
+  }
+
+  /* Brand block: actual logo + clean name */
+  .ref-customer-header .mobile-brand-wordmark{
+    grid-area:mobilebrand!important;
+    position:static!important;
+    inset:auto!important;
+    transform:none!important;
+    width:max-content!important;
+    max-width:100%!important;
+    min-width:0!important;
+    height:50px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:9px!important;
+    padding:0!important;
+    margin:0!important;
+    border:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    cursor:pointer!important;
+    overflow:visible!important;
+    pointer-events:auto!important;
+    direction:ltr!important;
+  }
+
+  .ref-customer-header .mobile-brand-logo{
+    width:42px!important;
+    height:42px!important;
+    min-width:42px!important;
+    display:grid!important;
+    place-items:center!important;
+    border-radius:50%!important;
+    background:#ffffff!important;
+    border:2px solid #deb33e!important;
+    box-shadow:
+      0 5px 12px rgba(12,79,59,.10),
+      inset 0 0 0 2px #f8f4e8!important;
+    overflow:hidden!important;
+  }
+
+  .ref-customer-header .mobile-brand-logo img{
+    display:block!important;
+    width:36px!important;
+    height:36px!important;
+    object-fit:contain!important;
+    opacity:1!important;
+    visibility:visible!important;
+    filter:none!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    display:block!important;
+    max-width:150px!important;
+    padding:0 0 5px!important;
+    margin:0!important;
+    color:#0b5f49!important;
+    font-family:Arial,sans-serif!important;
+    font-size:15.5px!important;
+    line-height:1!important;
+    font-weight:900!important;
+    letter-spacing:.15px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    border-bottom:2px solid #ddb03d!important;
+    text-shadow:none!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark::before,
+  .ref-customer-header .mobile-brand-wordmark::after{
+    content:none!important;
+    display:none!important;
+  }
+
+  /* Premium action group - transparent dock, individual buttons only */
+  .ref-customer-header .premium-action-dock{
+    grid-area:actions!important;
+    position:static!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-end!important;
+    gap:6px!important;
+    width:auto!important;
+    padding:0!important;
+    margin:0!important;
+    background:transparent!important;
+    border:0!important;
+    box-shadow:none!important;
+    direction:ltr!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-action,
+  .ref-customer-header .premium-action-dock>.top-search,
+  .ref-customer-header .premium-action-dock .top-bell,
+  .ref-customer-header .premium-action-dock .top-language,
+  .ref-customer-header .premium-action-dock .top-cart{
+    position:relative!important;
+    width:38px!important;
+    min-width:38px!important;
+    max-width:38px!important;
+    height:38px!important;
+    min-height:38px!important;
+    max-height:38px!important;
+    padding:0!important;
+    margin:0!important;
+    display:grid!important;
+    place-items:center!important;
+    border-radius:12px!important;
+    box-sizing:border-box!important;
+    overflow:visible!important;
+    transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease!important;
+  }
+
+  /* Search */
+  .ref-customer-header .premium-action-dock .top-search{
+    background:#f4f9f7!important;
+    border:1px solid #d4e5de!important;
+    color:#0b624b!important;
+    box-shadow:0 4px 10px rgba(11,96,73,.07)!important;
+  }
+
+  /* Bell */
+  .ref-customer-header .premium-action-dock .top-bell{
+    background:#ffffff!important;
+    border:1px solid #d7e4df!important;
+    color:#0b624b!important;
+    box-shadow:0 4px 11px rgba(11,96,73,.08)!important;
+  }
+
+  /* Language */
+  .ref-customer-header .premium-action-dock .top-language{
+    background:linear-gradient(180deg,#fff8e4 0%,#fdf3d5 100%)!important;
+    border:1px solid #d8aa32!important;
+    color:#8d6814!important;
+    box-shadow:0 4px 10px rgba(157,116,24,.08)!important;
+  }
+
+  /* Cart / bag */
+  .ref-customer-header .premium-action-dock .top-cart{
+    background:#f4f9f7!important;
+    border:1px solid #d4e5de!important;
+    color:#0b624b!important;
+    box-shadow:0 4px 10px rgba(11,96,73,.07)!important;
+  }
+
+  /* Critical: remove the old green square behind inline SVG icons. */
+  .ref-customer-header .premium-action-dock .action-icon{
+    width:20px!important;
+    height:20px!important;
+    min-width:20px!important;
+    min-height:20px!important;
+    display:grid!important;
+    place-items:center!important;
+    padding:0!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    background-color:transparent!important;
+    box-shadow:none!important;
+    color:#0b624b!important;
+    filter:none!important;
+  }
+
+  .ref-customer-header .premium-action-dock .action-icon svg{
+    display:block!important;
+    width:19px!important;
+    height:19px!important;
+    stroke:#0b624b!important;
+    color:#0b624b!important;
+    fill:none!important;
+    background:transparent!important;
+  }
+
+  .ref-customer-header .top-search-copy{
+    display:none!important;
+  }
+
+  .ref-customer-header .top-language .lang-code{
+    display:block!important;
+    color:#8d6814!important;
+    font-size:10px!important;
+    line-height:1!important;
+    font-weight:950!important;
+    letter-spacing:.15px!important;
+    text-shadow:none!important;
+  }
+
+  /* Notification dot */
+  .ref-customer-header .premium-action-dock .top-bell i{
+    position:absolute!important;
+    top:3px!important;
+    right:3px!important;
+    width:7px!important;
+    height:7px!important;
+    border-radius:50%!important;
+    background:#e84b4b!important;
+    border:2px solid #fff!important;
+    box-shadow:0 0 0 1px rgba(232,75,75,.12)!important;
+  }
+
+  /* Cart count badge */
+  .ref-customer-header .premium-action-dock .top-cart>b{
+    position:absolute!important;
+    top:-5px!important;
+    right:-4px!important;
+    min-width:17px!important;
+    height:17px!important;
+    padding:0 4px!important;
+    display:grid!important;
+    place-items:center!important;
+    border-radius:999px!important;
+    background:#dfb23b!important;
+    border:2px solid #fff!important;
+    color:#083f32!important;
+    font-size:8px!important;
+    font-weight:950!important;
+    line-height:1!important;
+    box-shadow:0 3px 8px rgba(0,0,0,.12)!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-action:active{
+    transform:scale(.96)!important;
+  }
+}
+
+/* Smaller phones */
+@media(max-width:410px){
+  .app-shell:not(.admin-shell) .ref-customer-header,
+  .app-shell:has(.v405-home-ui) .ref-customer-header,
+  .ref-customer-header{
+    gap:7px!important;
+    padding:0 8px!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark{
+    gap:7px!important;
+  }
+
+  .ref-customer-header .mobile-brand-logo{
+    width:36px!important;
+    height:36px!important;
+    min-width:36px!important;
+  }
+
+  .ref-customer-header .mobile-brand-logo img{
+    width:31px!important;
+    height:31px!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    max-width:105px!important;
+    font-size:13.5px!important;
+  }
+
+  .ref-customer-header .premium-action-dock{
+    gap:4px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-action,
+  .ref-customer-header .premium-action-dock>.top-search,
+  .ref-customer-header .premium-action-dock .top-bell,
+  .ref-customer-header .premium-action-dock .top-language,
+  .ref-customer-header .premium-action-dock .top-cart{
+    width:34px!important;
+    min-width:34px!important;
+    max-width:34px!important;
+    height:34px!important;
+    min-height:34px!important;
+    max-height:34px!important;
+    border-radius:10px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .action-icon,
+  .ref-customer-header .premium-action-dock .action-icon svg{
+    width:17px!important;
+    height:17px!important;
+    min-width:17px!important;
+    min-height:17px!important;
+  }
+
+  .ref-customer-header .top-language .lang-code{
+    font-size:9px!important;
+  }
+}
+
+@media(max-width:365px){
+  .ref-customer-header .mobile-brand-logo{
+    width:32px!important;
+    height:32px!important;
+    min-width:32px!important;
+  }
+
+  .ref-customer-header .mobile-brand-logo img{
+    width:28px!important;
+    height:28px!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    max-width:82px!important;
+    font-size:12px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-action,
+  .ref-customer-header .premium-action-dock>.top-search,
+  .ref-customer-header .premium-action-dock .top-bell,
+  .ref-customer-header .premium-action-dock .top-language,
+  .ref-customer-header .premium-action-dock .top-cart{
+    width:31px!important;
+    min-width:31px!important;
+    max-width:31px!important;
+    height:31px!important;
+    min-height:31px!important;
+    max-height:31px!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .ref-customer-header .premium-action-dock .top-action{
+    transition:none!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV516MobileHeaderLogoIconsRefined,{once:true});
+  }else{
+    installV516MobileHeaderLogoIconsRefined();
+  }
+})();
+
+;(()=>{
+  const installV517AdaptiveMobileBrand=()=>{
+    if(document.getElementById('v517-adaptive-mobile-brand')) return;
+
+    const style=document.createElement('style');
+    style.id='v517-adaptive-mobile-brand';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v517 — MOBILE BRAND POSITION + AUTO CONTRAST
+   Logo stays at far left, brand name stays beside it.
+   JS below detects the rendered header background and sets
+   white text on dark backgrounds / green text on light ones.
+   ========================================================= */
+
+@media(max-width:900px){
+  .ref-customer-header{
+    --mobile-brand-text:#0b5f49;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark{
+    grid-area:mobilebrand!important;
+    justify-self:start!important;
+    align-self:center!important;
+    position:relative!important;
+    inset:auto!important;
+    transform:none!important;
+    width:auto!important;
+    max-width:min(230px,100%)!important;
+    min-width:0!important;
+    height:54px!important;
+    display:grid!important;
+    grid-template-columns:50px minmax(0,max-content)!important;
+    align-items:center!important;
+    justify-content:start!important;
+    column-gap:10px!important;
+    padding:0!important;
+    margin:0!important;
+    overflow:visible!important;
+    background:transparent!important;
+    border:0!important;
+    box-shadow:none!important;
+    direction:ltr!important;
+    text-align:left!important;
+  }
+
+  .ref-customer-header .mobile-brand-logo{
+    grid-column:1!important;
+    width:50px!important;
+    height:50px!important;
+    min-width:50px!important;
+    min-height:50px!important;
+    max-width:50px!important;
+    max-height:50px!important;
+    display:grid!important;
+    place-items:center!important;
+    margin:0!important;
+    padding:3px!important;
+    border-radius:50%!important;
+    background:#fff!important;
+    border:2px solid #dfb33f!important;
+    box-shadow:0 5px 14px rgba(7,65,49,.14)!important;
+    overflow:hidden!important;
+    box-sizing:border-box!important;
+  }
+
+  .ref-customer-header .mobile-brand-logo img{
+    display:block!important;
+    width:42px!important;
+    height:42px!important;
+    min-width:42px!important;
+    max-width:42px!important;
+    object-fit:contain!important;
+    margin:0!important;
+    padding:0!important;
+    filter:none!important;
+    opacity:1!important;
+    visibility:visible!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    grid-column:2!important;
+    align-self:center!important;
+    display:inline-block!important;
+    width:max-content!important;
+    max-width:155px!important;
+    margin:0!important;
+    padding:0 0 5px!important;
+    color:var(--mobile-brand-text)!important;
+    font-family:Arial,sans-serif!important;
+    font-size:15.5px!important;
+    line-height:1!important;
+    font-weight:900!important;
+    letter-spacing:.15px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    border-bottom:2px solid #ddb03d!important;
+    text-shadow:none!important;
+  }
+
+  /* Make sure older rules cannot stack logo above the name. */
+  .ref-customer-header .mobile-brand-wordmark > *{
+    position:static!important;
+    transform:none!important;
+  }
+}
+
+@media(max-width:410px){
+  .ref-customer-header .mobile-brand-wordmark{
+    grid-template-columns:44px minmax(0,max-content)!important;
+    column-gap:7px!important;
+    height:48px!important;
+    max-width:175px!important;
+  }
+
+  .ref-customer-header .mobile-brand-logo{
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
+    max-width:44px!important;
+    max-height:44px!important;
+  }
+
+  .ref-customer-header .mobile-brand-logo img{
+    width:37px!important;
+    height:37px!important;
+    min-width:37px!important;
+    max-width:37px!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    max-width:115px!important;
+    font-size:13.5px!important;
+  }
+}
+
+@media(max-width:365px){
+  .ref-customer-header .mobile-brand-wordmark{
+    grid-template-columns:40px minmax(0,max-content)!important;
+    column-gap:6px!important;
+    max-width:145px!important;
+  }
+
+  .ref-customer-header .mobile-brand-logo{
+    width:40px!important;
+    height:40px!important;
+    min-width:40px!important;
+    min-height:40px!important;
+    max-width:40px!important;
+    max-height:40px!important;
+  }
+
+  .ref-customer-header .mobile-brand-logo img{
+    width:34px!important;
+    height:34px!important;
+    min-width:34px!important;
+    max-width:34px!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    max-width:96px!important;
+    font-size:12.5px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+
+    const rgbFrom=(value)=>{
+      const m=String(value||'').match(/rgba?\(\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)/i);
+      return m ? [Number(m[1]),Number(m[2]),Number(m[3])] : null;
+    };
+
+    const relativeLuminance=([r,g,b])=>{
+      const conv=v=>{
+        v/=255;
+        return v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4);
+      };
+      return 0.2126*conv(r)+0.7152*conv(g)+0.0722*conv(b);
+    };
+
+    const detectedHeaderRgb=(header)=>{
+      let el=header;
+      while(el && el!==document.documentElement){
+        const cs=getComputedStyle(el);
+        const bgImage=cs.backgroundImage;
+        if(bgImage && bgImage!=='none'){
+          const rgb=rgbFrom(bgImage);
+          if(rgb)return rgb;
+        }
+        const bg=cs.backgroundColor;
+        const rgba=String(bg||'').match(/rgba?\(([^)]+)\)/i);
+        if(rgba){
+          const parts=rgba[1].split(',').map(v=>Number.parseFloat(v.trim()));
+          const alpha=parts.length>3 ? parts[3] : 1;
+          if(alpha>0.08){
+            const rgb=rgbFrom(bg);
+            if(rgb)return rgb;
+          }
+        }
+        el=el.parentElement;
+      }
+      return [255,255,255];
+    };
+
+    const syncBrandContrast=()=>{
+      document.querySelectorAll('.ref-customer-header').forEach(header=>{
+        const rgb=detectedHeaderRgb(header);
+        const dark=relativeLuminance(rgb)<0.42;
+        header.style.setProperty('--mobile-brand-text',dark?'#ffffff':'#0b5f49');
+        header.dataset.mobileBrandTone=dark?'dark':'light';
+      });
+    };
+
+    let raf=0;
+    const schedule=()=>{
+      cancelAnimationFrame(raf);
+      raf=requestAnimationFrame(syncBrandContrast);
+    };
+
+    syncBrandContrast();
+    window.addEventListener('resize',schedule,{passive:true});
+    window.addEventListener('hashchange',schedule);
+
+    const observer=new MutationObserver(schedule);
+    observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','style','dir']});
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV517AdaptiveMobileBrand,{once:true});
+  }else{
+    installV517AdaptiveMobileBrand();
+  }
+})();
+
+;(()=>{
+  const installV518MobileHeaderFinalRefine=()=>{
+    if(document.getElementById('v518-mobile-header-final-refine')) return;
+
+    const style=document.createElement('style');
+    style.id='v518-mobile-header-final-refine';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v518 — MOBILE HEADER FINAL REFINEMENT
+   Home: white brand name on dark green.
+   Light pages: green brand name.
+   Full logo remains readable, including Arabic name.
+   Clean, uniform action buttons.
+   ========================================================= */
+
+@media(max-width:900px){
+
+  /* Header layout */
+  .app-shell:not(.admin-shell) .ref-customer-header,
+  .app-shell:has(.v405-home-ui) .ref-customer-header{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    grid-template-areas:"mobilebrand actions"!important;
+    align-items:center!important;
+    gap:10px!important;
+    min-height:76px!important;
+    height:76px!important;
+    padding:0 12px!important;
+    overflow:visible!important;
+  }
+
+  /* Brand block */
+  .ref-customer-header .mobile-brand-wordmark{
+    grid-area:mobilebrand!important;
+    justify-self:start!important;
+    width:auto!important;
+    max-width:220px!important;
+    height:60px!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:10px!important;
+    padding:0!important;
+    margin:0!important;
+    border:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    overflow:visible!important;
+    direction:ltr!important;
+  }
+
+  /* Bigger logo so Arabic brand name inside the artwork remains legible */
+  .ref-customer-header .mobile-brand-logo{
+    width:56px!important;
+    height:56px!important;
+    min-width:56px!important;
+    min-height:56px!important;
+    max-width:56px!important;
+    max-height:56px!important;
+    display:grid!important;
+    place-items:center!important;
+    padding:2px!important;
+    margin:0!important;
+    border-radius:50%!important;
+    background:#ffffff!important;
+    border:2px solid #dfb43f!important;
+    box-shadow:0 5px 14px rgba(8,65,49,.15)!important;
+    overflow:hidden!important;
+    box-sizing:border-box!important;
+  }
+
+  .ref-customer-header .mobile-brand-logo img{
+    display:block!important;
+    width:50px!important;
+    height:50px!important;
+    min-width:50px!important;
+    max-width:50px!important;
+    object-fit:contain!important;
+    object-position:center!important;
+    margin:0!important;
+    padding:0!important;
+    opacity:1!important;
+    visibility:visible!important;
+    filter:none!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    display:block!important;
+    max-width:145px!important;
+    margin:0!important;
+    padding:0 0 5px!important;
+    font-family:Arial,sans-serif!important;
+    font-size:15px!important;
+    line-height:1!important;
+    font-weight:900!important;
+    letter-spacing:.15px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    border-bottom:2px solid #ddb03d!important;
+    text-shadow:none!important;
+  }
+
+  /* LIGHT PAGES */
+  .app-shell:not(:has(.v405-home-ui)) .ref-customer-header .mobile-brand-wordmark strong{
+    color:#0b5f49!important;
+  }
+
+  /* HOME PAGE / DARK GREEN HEADER */
+  .app-shell:has(.v405-home-ui) .ref-customer-header .mobile-brand-wordmark strong{
+    color:#ffffff!important;
+  }
+
+  /* Actions dock */
+  .ref-customer-header .premium-action-dock{
+    grid-area:actions!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-end!important;
+    gap:6px!important;
+    width:auto!important;
+    padding:0!important;
+    margin:0!important;
+    background:transparent!important;
+    border:0!important;
+    box-shadow:none!important;
+    direction:ltr!important;
+  }
+
+  /* Uniform, clean action buttons */
+  .ref-customer-header .premium-action-dock .top-action,
+  .ref-customer-header .premium-action-dock>.top-search,
+  .ref-customer-header .premium-action-dock .top-bell,
+  .ref-customer-header .premium-action-dock .top-cart{
+    position:relative!important;
+    width:38px!important;
+    min-width:38px!important;
+    max-width:38px!important;
+    height:38px!important;
+    min-height:38px!important;
+    max-height:38px!important;
+    display:grid!important;
+    place-items:center!important;
+    padding:0!important;
+    margin:0!important;
+    border-radius:12px!important;
+    background:#ffffff!important;
+    border:1px solid #d9e5e0!important;
+    color:#0b624b!important;
+    box-shadow:0 4px 11px rgba(7,67,50,.10)!important;
+    box-sizing:border-box!important;
+    overflow:visible!important;
+  }
+
+  /* Language gets a subtle gold identity */
+  .ref-customer-header .premium-action-dock .top-language{
+    width:38px!important;
+    min-width:38px!important;
+    max-width:38px!important;
+    height:38px!important;
+    min-height:38px!important;
+    max-height:38px!important;
+    display:grid!important;
+    place-items:center!important;
+    padding:0!important;
+    margin:0!important;
+    border-radius:12px!important;
+    background:#fff7de!important;
+    border:1px solid #d9ad37!important;
+    color:#8e6814!important;
+    box-shadow:0 4px 11px rgba(143,104,20,.09)!important;
+  }
+
+  /* Use mask icons cleanly; remove square artifacts */
+  .ref-customer-header .premium-action-dock .action-icon{
+    width:18px!important;
+    height:18px!important;
+    min-width:18px!important;
+    min-height:18px!important;
+    display:block!important;
+    padding:0!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background-color:#0b624b!important;
+    box-shadow:none!important;
+    filter:none!important;
+    -webkit-mask-repeat:no-repeat!important;
+    mask-repeat:no-repeat!important;
+    -webkit-mask-position:center!important;
+    mask-position:center!important;
+    -webkit-mask-size:18px 18px!important;
+    mask-size:18px 18px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-search .action-icon{
+    -webkit-mask-image:url('assets/header-icons/search.svg')!important;
+    mask-image:url('assets/header-icons/search.svg')!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-bell .action-icon{
+    -webkit-mask-image:url('assets/header-icons/bell.svg')!important;
+    mask-image:url('assets/header-icons/bell.svg')!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-cart .action-icon{
+    -webkit-mask-image:url('assets/header-icons/bag.svg')!important;
+    mask-image:url('assets/header-icons/bag.svg')!important;
+  }
+
+  /* Hide inline SVG underneath the mask to avoid double icons */
+  .ref-customer-header .premium-action-dock .action-icon svg{
+    display:none!important;
+  }
+
+  .ref-customer-header .top-search-copy{
+    display:none!important;
+  }
+
+  .ref-customer-header .top-language .lang-code{
+    display:block!important;
+    color:#8e6814!important;
+    font-size:10px!important;
+    line-height:1!important;
+    font-weight:950!important;
+    letter-spacing:.2px!important;
+    text-shadow:none!important;
+  }
+
+  /* Notification dot */
+  .ref-customer-header .premium-action-dock .top-bell i{
+    position:absolute!important;
+    top:3px!important;
+    right:3px!important;
+    width:7px!important;
+    height:7px!important;
+    border-radius:50%!important;
+    background:#e64a4a!important;
+    border:2px solid #ffffff!important;
+    box-shadow:0 0 0 1px rgba(230,74,74,.10)!important;
+  }
+
+  /* Cart count */
+  .ref-customer-header .premium-action-dock .top-cart>b{
+    position:absolute!important;
+    top:-5px!important;
+    right:-5px!important;
+    min-width:17px!important;
+    height:17px!important;
+    padding:0 4px!important;
+    display:grid!important;
+    place-items:center!important;
+    border-radius:999px!important;
+    background:#dfb23b!important;
+    border:2px solid #ffffff!important;
+    color:#083f32!important;
+    font-size:8px!important;
+    font-weight:950!important;
+    line-height:1!important;
+  }
+}
+
+/* Mid-size phones */
+@media(max-width:410px){
+  .app-shell:not(.admin-shell) .ref-customer-header,
+  .app-shell:has(.v405-home-ui) .ref-customer-header{
+    gap:7px!important;
+    padding:0 8px!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark{
+    max-width:180px!important;
+    gap:7px!important;
+  }
+
+  .ref-customer-header .mobile-brand-logo{
+    width:50px!important;
+    height:50px!important;
+    min-width:50px!important;
+    min-height:50px!important;
+    max-width:50px!important;
+    max-height:50px!important;
+  }
+
+  .ref-customer-header .mobile-brand-logo img{
+    width:45px!important;
+    height:45px!important;
+    min-width:45px!important;
+    max-width:45px!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    max-width:112px!important;
+    font-size:13.5px!important;
+  }
+
+  .ref-customer-header .premium-action-dock{
+    gap:4px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-action,
+  .ref-customer-header .premium-action-dock>.top-search,
+  .ref-customer-header .premium-action-dock .top-bell,
+  .ref-customer-header .premium-action-dock .top-language,
+  .ref-customer-header .premium-action-dock .top-cart{
+    width:34px!important;
+    min-width:34px!important;
+    max-width:34px!important;
+    height:34px!important;
+    min-height:34px!important;
+    max-height:34px!important;
+    border-radius:10px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .action-icon{
+    width:16px!important;
+    height:16px!important;
+    min-width:16px!important;
+    min-height:16px!important;
+    -webkit-mask-size:16px 16px!important;
+    mask-size:16px 16px!important;
+  }
+}
+
+/* Very small phones */
+@media(max-width:365px){
+  .ref-customer-header .mobile-brand-logo{
+    width:46px!important;
+    height:46px!important;
+    min-width:46px!important;
+    min-height:46px!important;
+    max-width:46px!important;
+    max-height:46px!important;
+  }
+
+  .ref-customer-header .mobile-brand-logo img{
+    width:41px!important;
+    height:41px!important;
+    min-width:41px!important;
+    max-width:41px!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    max-width:90px!important;
+    font-size:12px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-action,
+  .ref-customer-header .premium-action-dock>.top-search,
+  .ref-customer-header .premium-action-dock .top-bell,
+  .ref-customer-header .premium-action-dock .top-language,
+  .ref-customer-header .premium-action-dock .top-cart{
+    width:31px!important;
+    min-width:31px!important;
+    max-width:31px!important;
+    height:31px!important;
+    min-height:31px!important;
+    max-height:31px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV518MobileHeaderFinalRefine,{once:true});
+  }else{
+    installV518MobileHeaderFinalRefine();
+  }
+})();
+
+;(()=>{
+  const installV519MobileHeaderFinal=()=>{
+    if(document.getElementById('v519-mobile-header-final')) return;
+
+    const style=document.createElement('style');
+    style.id='v519-mobile-header-final';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v519 — FINAL MOBILE BRAND + ACTION ICONS
+   - Full original logo, including Arabic name, visible in circle
+   - Home brand name white; light-page brand name green
+   - Uses existing inline SVG icons (no external masks)
+   ========================================================= */
+
+@media(max-width:900px){
+
+  .app-shell:not(.admin-shell) .ref-customer-header,
+  .app-shell:has(.v405-home-ui) .ref-customer-header{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto!important;
+    grid-template-areas:"mobilebrand actions"!important;
+    align-items:center!important;
+    column-gap:8px!important;
+    min-height:78px!important;
+    height:78px!important;
+    padding:0 10px!important;
+    overflow:visible!important;
+  }
+
+  /* Brand: logo at far left, name directly beside it */
+  .ref-customer-header .mobile-brand-wordmark{
+    grid-area:mobilebrand!important;
+    justify-self:start!important;
+    position:static!important;
+    inset:auto!important;
+    transform:none!important;
+    width:auto!important;
+    max-width:220px!important;
+    min-width:0!important;
+    height:64px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:8px!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    overflow:visible!important;
+    direction:ltr!important;
+  }
+
+  .ref-customer-header .mobile-brand-logo{
+    width:62px!important;
+    height:62px!important;
+    min-width:62px!important;
+    max-width:62px!important;
+    min-height:62px!important;
+    max-height:62px!important;
+    display:grid!important;
+    place-items:center!important;
+    padding:2px!important;
+    margin:0!important;
+    border-radius:50%!important;
+    box-sizing:border-box!important;
+    background:#ffffff!important;
+    border:2px solid #d9ac35!important;
+    box-shadow:0 4px 12px rgba(0,43,32,.16)!important;
+    overflow:hidden!important;
+  }
+
+  .ref-customer-header .mobile-brand-logo img{
+    display:block!important;
+    width:57px!important;
+    height:57px!important;
+    min-width:57px!important;
+    max-width:57px!important;
+    object-fit:contain!important;
+    object-position:center!important;
+    margin:0!important;
+    padding:0!important;
+    opacity:1!important;
+    visibility:visible!important;
+    filter:none!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    display:block!important;
+    width:auto!important;
+    max-width:138px!important;
+    margin:0!important;
+    padding:0 0 5px!important;
+    font-family:Arial,sans-serif!important;
+    font-size:15px!important;
+    line-height:1!important;
+    font-weight:900!important;
+    letter-spacing:.15px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    border-bottom:2px solid #d9ac35!important;
+    text-shadow:none!important;
+  }
+
+  /* Explicit page-state color; no background guessing */
+  .ref-customer-header .mobile-brand-wordmark.is-home-brand strong{
+    color:#ffffff!important;
+  }
+  .ref-customer-header .mobile-brand-wordmark.is-light-brand strong{
+    color:#0b5f49!important;
+  }
+
+  /* Clean action group */
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock{
+    grid-area:actions!important;
+    position:static!important;
+    width:auto!important;
+    min-width:0!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-end!important;
+    gap:5px!important;
+    padding:0!important;
+    margin:0!important;
+    border:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    direction:ltr!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-action,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock>.top-search,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-bell,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-language,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-cart,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-action{
+    position:relative!important;
+    width:39px!important;
+    min-width:39px!important;
+    max-width:39px!important;
+    height:39px!important;
+    min-height:39px!important;
+    max-height:39px!important;
+    display:grid!important;
+    place-items:center!important;
+    padding:0!important;
+    margin:0!important;
+    box-sizing:border-box!important;
+    border-radius:11px!important;
+    border:1px solid #d8e5df!important;
+    background:#ffffff!important;
+    color:#0b624b!important;
+    box-shadow:0 3px 9px rgba(4,72,53,.09)!important;
+    overflow:visible!important;
+  }
+
+  /* Language button remains subtly gold */
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-language,
+  .app-shell:has(.v405-home-ui) .ref-customer-header .premium-action-dock .top-language{
+    background:#fff7df!important;
+    border-color:#d7ab36!important;
+    color:#896511!important;
+  }
+
+  /* IMPORTANT: use the inline SVGs already in customerIcon() */
+  .ref-customer-header .premium-action-dock .action-icon{
+    width:19px!important;
+    height:19px!important;
+    min-width:19px!important;
+    min-height:19px!important;
+    display:grid!important;
+    place-items:center!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:none!important;
+    background-color:transparent!important;
+    box-shadow:none!important;
+    filter:none!important;
+    color:#0b624b!important;
+    -webkit-mask:none!important;
+    mask:none!important;
+    -webkit-mask-image:none!important;
+    mask-image:none!important;
+  }
+
+  .ref-customer-header .premium-action-dock .action-icon svg{
+    display:block!important;
+    width:19px!important;
+    height:19px!important;
+    min-width:19px!important;
+    min-height:19px!important;
+    color:#0b624b!important;
+    stroke:#0b624b!important;
+    fill:none!important;
+    background:transparent!important;
+    overflow:visible!important;
+  }
+
+  .ref-customer-header .premium-action-dock .action-icon svg *{
+    stroke:currentColor!important;
+  }
+
+  .ref-customer-header .top-search-copy{
+    display:none!important;
+  }
+
+  .ref-customer-header .top-language .lang-code{
+    display:block!important;
+    color:#896511!important;
+    font-size:10px!important;
+    line-height:1!important;
+    font-weight:950!important;
+    letter-spacing:.2px!important;
+    text-shadow:none!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-bell i{
+    position:absolute!important;
+    top:3px!important;
+    right:3px!important;
+    width:7px!important;
+    height:7px!important;
+    border-radius:50%!important;
+    background:#e54b4b!important;
+    border:2px solid #fff!important;
+    box-shadow:none!important;
+  }
+
+  .ref-customer-header .premium-action-dock .top-cart>b{
+    position:absolute!important;
+    top:-5px!important;
+    right:-5px!important;
+    min-width:17px!important;
+    height:17px!important;
+    padding:0 4px!important;
+    display:grid!important;
+    place-items:center!important;
+    border-radius:999px!important;
+    background:#ddb03a!important;
+    border:2px solid #fff!important;
+    color:#083f32!important;
+    font-size:8px!important;
+    line-height:1!important;
+    font-weight:950!important;
+  }
+}
+
+/* 400px-class phones */
+@media(max-width:410px){
+  .app-shell:not(.admin-shell) .ref-customer-header,
+  .app-shell:has(.v405-home-ui) .ref-customer-header{
+    padding:0 7px!important;
+    column-gap:5px!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark{
+    max-width:180px!important;
+    gap:6px!important;
+  }
+
+  .ref-customer-header .mobile-brand-logo{
+    width:54px!important;
+    height:54px!important;
+    min-width:54px!important;
+    max-width:54px!important;
+    min-height:54px!important;
+    max-height:54px!important;
+  }
+
+  .ref-customer-header .mobile-brand-logo img{
+    width:50px!important;
+    height:50px!important;
+    min-width:50px!important;
+    max-width:50px!important;
+  }
+
+  .ref-customer-header .mobile-brand-wordmark strong{
+    max-width:108px!important;
+    font-size:13px!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock{
+    gap:4px!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-action,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock>.top-search,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-bell,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-language,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-cart{
+    width:34px!important;
+    min-width:34px!important;
+    max-width:34px!important;
+    height:34px!important;
+    min-height:34px!important;
+    max-height:34px!important;
+    border-radius:10px!important;
+  }
+
+  .ref-customer-header .premium-action-dock .action-icon,
+  .ref-customer-header .premium-action-dock .action-icon svg{
+    width:16px!important;
+    height:16px!important;
+    min-width:16px!important;
+    min-height:16px!important;
+  }
+
+  .ref-customer-header .top-language .lang-code{
+    font-size:9px!important;
+  }
+}
+
+/* Very narrow devices */
+@media(max-width:365px){
+  .ref-customer-header .mobile-brand-logo{
+    width:48px!important;
+    height:48px!important;
+    min-width:48px!important;
+    max-width:48px!important;
+    min-height:48px!important;
+    max-height:48px!important;
+  }
+  .ref-customer-header .mobile-brand-logo img{
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    max-width:44px!important;
+  }
+  .ref-customer-header .mobile-brand-wordmark strong{
+    max-width:82px!important;
+    font-size:11.5px!important;
+  }
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-action,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock>.top-search,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-bell,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-language,
+  .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-cart{
+    width:31px!important;
+    min-width:31px!important;
+    max-width:31px!important;
+    height:31px!important;
+    min-height:31px!important;
+    max-height:31px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV519MobileHeaderFinal,{once:true});
+  }else{
+    installV519MobileHeaderFinal();
+  }
+})();
+
+;(()=>{
+  const installV520ReferenceMobileLayout=()=>{
+    if(document.getElementById('v520-reference-mobile-layout')) return;
+    const style=document.createElement('style');
+    style.id='v520-reference-mobile-layout';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v520 — REFERENCE-STYLE MOBILE WEBSITE HEADER
+   Desktop remains untouched.
+   ========================================================= */
+
+.mobile-reference-header{display:none!important}
+
+@media(max-width:900px){
+
+  /* Hide the previous mobile header internals; use the new reference header */
+  .ref-customer-header>.customer-brand,
+  .ref-customer-header>.mobile-brand-wordmark,
+  .ref-customer-header>.desktop-main-nav,
+  .ref-customer-header>.premium-action-dock{
+    display:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-customer-header{
+    display:block!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    padding:0!important;
+    margin:0!important;
+    background:#fff!important;
+    border:0!important;
+    box-shadow:0 1px 0 #ecefec!important;
+    overflow:visible!important;
+  }
+
+  .mobile-reference-header{
+    display:block!important;
+    width:100%!important;
+    background:#fff!important;
+    color:#112d26!important;
+  }
+
+  /* Thin utility strip like the reference mobile website */
+  .mobile-reference-topbar{
+    min-height:34px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:10px!important;
+    padding:0 14px!important;
+    border-bottom:1px solid #edf0ee!important;
+    background:#fff!important;
+    direction:ltr!important;
+  }
+
+  .mobile-ref-phone,
+  .mobile-ref-location{
+    min-width:0!important;
+    height:34px!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:5px!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+    color:#173d32!important;
+    font-size:10px!important;
+    font-weight:750!important;
+    text-decoration:none!important;
+  }
+
+  .mobile-ref-phone span{
+    font-size:15px!important;
+    line-height:1!important;
+    transform:rotate(-42deg)!important;
+    color:#173d32!important;
+  }
+
+  .mobile-ref-phone b{
+    font-size:9.5px!important;
+    font-weight:700!important;
+    white-space:nowrap!important;
+  }
+
+  .mobile-ref-location{
+    margin-inline-start:auto!important;
+    cursor:pointer!important;
+  }
+
+  .mobile-ref-location span{
+    display:block!important;
+    max-width:190px!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+
+  .mobile-ref-location i{
+    font-style:normal!important;
+    color:#0b624b!important;
+    font-size:15px!important;
+  }
+
+  /* Main icon row */
+  .mobile-reference-mainbar{
+    position:relative!important;
+    min-height:70px!important;
+    display:grid!important;
+    grid-template-columns:1fr auto 1fr!important;
+    align-items:center!important;
+    gap:6px!important;
+    padding:5px 12px 7px!important;
+    background:#fff!important;
+  }
+
+  .mobile-ref-actions{
+    display:flex!important;
+    align-items:center!important;
+    gap:2px!important;
+  }
+
+  .mobile-ref-actions-left{justify-content:flex-start!important}
+  .mobile-ref-actions-right{justify-content:flex-end!important}
+
+  .mobile-ref-actions button{
+    position:relative!important;
+    width:36px!important;
+    min-width:36px!important;
+    height:36px!important;
+    min-height:36px!important;
+    display:grid!important;
+    place-items:center!important;
+    padding:0!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:50%!important;
+    background:transparent!important;
+    color:#092e25!important;
+    box-shadow:none!important;
+    cursor:pointer!important;
+  }
+
+  .mobile-ref-actions button>span{
+    width:21px!important;
+    height:21px!important;
+    display:grid!important;
+    place-items:center!important;
+  }
+
+  .mobile-ref-actions button svg{
+    width:21px!important;
+    height:21px!important;
+    stroke:currentColor!important;
+  }
+
+  .mobile-ref-actions button:hover,
+  .mobile-ref-actions button:focus-visible{
+    background:#f2f7f5!important;
+  }
+
+  .mobile-ref-actions-left button:first-child>b{
+    position:absolute!important;
+    top:-3px!important;
+    right:-2px!important;
+    min-width:18px!important;
+    height:18px!important;
+    padding:0 4px!important;
+    display:grid!important;
+    place-items:center!important;
+    border-radius:99px!important;
+    background:#e62d2d!important;
+    color:#fff!important;
+    border:2px solid #fff!important;
+    font-size:9px!important;
+    font-weight:900!important;
+    line-height:1!important;
+  }
+
+  #mobile-top-bell>i{
+    position:absolute!important;
+    top:4px!important;
+    right:5px!important;
+    width:6px!important;
+    height:6px!important;
+    border-radius:50%!important;
+    background:#e64b4b!important;
+    border:1.5px solid #fff!important;
+  }
+
+  /* Centered Ass Al Halaal brand */
+  .mobile-ref-brand{
+    min-width:100px!important;
+    max-width:126px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:6px!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+    color:#0a5c47!important;
+    cursor:pointer!important;
+  }
+
+  .mobile-ref-brand img{
+    width:47px!important;
+    height:47px!important;
+    object-fit:contain!important;
+    display:block!important;
+  }
+
+  .mobile-ref-brand strong{
+    display:block!important;
+    max-width:68px!important;
+    color:#0a5c47!important;
+    font-family:Arial,sans-serif!important;
+    font-size:11.5px!important;
+    line-height:1.05!important;
+    font-weight:900!important;
+    text-align:left!important;
+    white-space:normal!important;
+  }
+
+  .mobile-ref-language{
+    width:34px!important;
+    min-width:34px!important;
+    height:30px!important;
+    min-height:30px!important;
+    border-radius:9px!important;
+    border:1px solid #d8ad3b!important;
+    background:#fff8e5!important;
+  }
+
+  .mobile-ref-language b{
+    color:#9a7218!important;
+    font-size:9px!important;
+    font-weight:950!important;
+    line-height:1!important;
+  }
+
+  /* Reference mobile page doesn't use the extra coverage strip */
+  .app-shell:not(.admin-shell) .announcement.ref-announcement{
+    display:none!important;
+  }
+
+  /* Hero begins immediately under the white header, edge-to-edge */
+  .app-shell:not(.admin-shell) .screen:has(.hero-slider){
+    padding-top:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .hero-slider.v94-hero-slider{
+    width:100vw!important;
+    max-width:none!important;
+    margin-left:calc(50% - 50vw)!important;
+    margin-right:calc(50% - 50vw)!important;
+    margin-top:0!important;
+    border-radius:0!important;
+    border-left:0!important;
+    border-right:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .hero-slider .quality-hero{
+    border-radius:0!important;
+    min-height:calc(100svh - 174px)!important;
+  }
+
+  /* More compact hero copy like the reference */
+  .app-shell:not(.admin-shell) .hero-slider .hero-copy{
+    width:min(100%,420px)!important;
+    margin:auto!important;
+    padding:28px 18px 24px!important;
+  }
+
+  .app-shell:not(.admin-shell) .hero-slider .luxury-hero-title{
+    font-size:clamp(34px,10vw,48px)!important;
+    line-height:1.03!important;
+  }
+
+  .app-shell:not(.admin-shell) .hero-slider .hero-slider-arrow{
+    width:38px!important;
+    height:38px!important;
+  }
+
+  /* Keep the rest of page comfortably inset */
+  .app-shell:not(.admin-shell) .district-card,
+  .app-shell:not(.admin-shell) .ref-categories,
+  .app-shell:not(.admin-shell) .ref-collection,
+  .app-shell:not(.admin-shell) #request-fit{
+    width:calc(100% - 24px)!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+}
+
+@media(max-width:390px){
+  .mobile-reference-topbar{padding:0 9px!important}
+  .mobile-ref-phone b{display:none!important}
+  .mobile-ref-location span{max-width:165px!important}
+
+  .mobile-reference-mainbar{
+    padding-inline:7px!important;
+    gap:3px!important;
+  }
+
+  .mobile-ref-actions button{
+    width:32px!important;
+    min-width:32px!important;
+    height:32px!important;
+    min-height:32px!important;
+  }
+
+  .mobile-ref-actions button>span,
+  .mobile-ref-actions button svg{
+    width:19px!important;
+    height:19px!important;
+  }
+
+  .mobile-ref-brand{
+    min-width:88px!important;
+    max-width:104px!important;
+    gap:4px!important;
+  }
+
+  .mobile-ref-brand img{
+    width:42px!important;
+    height:42px!important;
+  }
+
+  .mobile-ref-brand strong{
+    max-width:57px!important;
+    font-size:10.5px!important;
+  }
+
+  .mobile-ref-language{
+    width:31px!important;
+    min-width:31px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV520ReferenceMobileLayout,{once:true});
+  }else{
+    installV520ReferenceMobileLayout();
+  }
+})();
+
+;(()=>{
+  const installV521RemoveMobileTopIcons=()=>{
+    if(document.getElementById('v521-remove-mobile-top-icons')) return;
+
+    const style=document.createElement('style');
+    style.id='v521-remove-mobile-top-icons';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v521 — REMOVE MOBILE TOP ACTION ICONS
+   Bottom navigation remains untouched.
+   ========================================================= */
+
+@media(max-width:900px){
+
+  /* Remove the top action icons completely on mobile */
+  .mobile-reference-mainbar .mobile-ref-actions,
+  .ref-customer-header .premium-action-dock{
+    display:none!important;
+  }
+
+  /* Keep the mobile brand clean and centered */
+  .mobile-reference-mainbar{
+    grid-template-columns:1fr!important;
+    place-items:center!important;
+    min-height:68px!important;
+    padding:6px 12px!important;
+  }
+
+  .mobile-ref-brand{
+    justify-self:center!important;
+    margin:0 auto!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV521RemoveMobileTopIcons,{once:true});
+  }else{
+    installV521RemoveMobileTopIcons();
+  }
+})();
+
+;(()=>{
+  const installV522RemoveOnlyDuplicateMobileDock=()=>{
+    if(document.getElementById('v522-remove-only-duplicate-mobile-dock')) return;
+
+    const style=document.createElement('style');
+    style.id='v522-remove-only-duplicate-mobile-dock';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v522 — REMOVE ONLY DUPLICATE MOBILE ICON ROW
+   Keep the new reference-style mobile header icons untouched.
+   ========================================================= */
+
+@media(max-width:900px){
+  /* Hide only the OLD duplicate action dock rendered outside
+     the new .mobile-reference-header. */
+  .app-shell:not(.admin-shell) .ref-customer-header > .premium-action-dock,
+  .app-shell:has(.v405-home-ui) .ref-customer-header > .premium-action-dock,
+  .ref-customer-header > .premium-action-dock{
+    display:none!important;
+    visibility:hidden!important;
+    opacity:0!important;
+    pointer-events:none!important;
+    width:0!important;
+    min-width:0!important;
+    max-width:0!important;
+    height:0!important;
+    min-height:0!important;
+    max-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+  }
+
+  /* Explicitly preserve the NEW reference-header icons. */
+  .ref-customer-header .mobile-reference-header .mobile-ref-actions{
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV522RemoveOnlyDuplicateMobileDock,{once:true});
+  }else{
+    installV522RemoveOnlyDuplicateMobileDock();
+  }
+})();
+
+;(()=>{
+  const installV523BalancedCompactMobileHeader=()=>{
+    if(document.getElementById('v523-balanced-compact-mobile-header')) return;
+
+    const style=document.createElement('style');
+    style.id='v523-balanced-compact-mobile-header';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v523 — BALANCED COMPACT MOBILE HEADER
+   Left: Cart / Search / Bell
+   Center: Larger Ass Al Halaal logo
+   Right: Account / Language
+   ========================================================= */
+
+@media(max-width:900px){
+
+  /* Keep the white header compact */
+  .mobile-reference-header{
+    display:block!important;
+    width:100%!important;
+    background:#fff!important;
+  }
+
+  .mobile-reference-topbar{
+    min-height:30px!important;
+    height:30px!important;
+    padding:0 12px!important;
+  }
+
+  .mobile-ref-phone,
+  .mobile-ref-location{
+    height:30px!important;
+    font-size:9.5px!important;
+  }
+
+  /* Critical override: restore a true 3-column row */
+  .mobile-reference-mainbar{
+    min-height:62px!important;
+    height:62px!important;
+    display:grid!important;
+    grid-template-columns:minmax(88px,1fr) auto minmax(70px,1fr)!important;
+    grid-template-areas:"left brand right"!important;
+    align-items:center!important;
+    justify-items:stretch!important;
+    gap:6px!important;
+    padding:4px 10px 5px!important;
+    background:#fff!important;
+  }
+
+  .mobile-reference-mainbar .mobile-ref-actions-left{
+    grid-area:left!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:3px!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+  }
+
+  .mobile-reference-mainbar .mobile-ref-actions-right{
+    grid-area:right!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-end!important;
+    gap:4px!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+  }
+
+  /* Center logo only; its artwork already includes Arabic brand text */
+  .mobile-reference-mainbar .mobile-ref-brand{
+    grid-area:brand!important;
+    justify-self:center!important;
+    align-self:center!important;
+    width:60px!important;
+    min-width:60px!important;
+    max-width:60px!important;
+    height:56px!important;
+    min-height:56px!important;
+    display:grid!important;
+    place-items:center!important;
+    padding:0!important;
+    margin:0!important;
+    border:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    overflow:visible!important;
+  }
+
+  .mobile-reference-mainbar .mobile-ref-brand img{
+    display:block!important;
+    width:56px!important;
+    height:56px!important;
+    object-fit:contain!important;
+    object-position:center!important;
+    margin:0!important;
+    padding:0!important;
+    filter:none!important;
+  }
+
+  .mobile-reference-mainbar .mobile-ref-brand strong{
+    display:none!important;
+  }
+
+  /* Minimal icon treatment, like a clean mobile commerce header */
+  .mobile-reference-mainbar .mobile-ref-actions button{
+    position:relative!important;
+    width:34px!important;
+    min-width:34px!important;
+    max-width:34px!important;
+    height:34px!important;
+    min-height:34px!important;
+    max-height:34px!important;
+    display:grid!important;
+    place-items:center!important;
+    padding:0!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:50%!important;
+    background:transparent!important;
+    color:#0c3e32!important;
+    box-shadow:none!important;
+  }
+
+  .mobile-reference-mainbar .mobile-ref-actions button>span{
+    width:20px!important;
+    height:20px!important;
+    display:grid!important;
+    place-items:center!important;
+  }
+
+  .mobile-reference-mainbar .mobile-ref-actions button svg{
+    display:block!important;
+    width:20px!important;
+    height:20px!important;
+    stroke:currentColor!important;
+    color:#0c3e32!important;
+    fill:none!important;
+  }
+
+  .mobile-reference-mainbar .mobile-ref-actions button:hover,
+  .mobile-reference-mainbar .mobile-ref-actions button:focus-visible{
+    background:#f1f7f4!important;
+  }
+
+  .mobile-reference-mainbar .mobile-ref-language{
+    width:32px!important;
+    min-width:32px!important;
+    max-width:32px!important;
+    height:28px!important;
+    min-height:28px!important;
+    max-height:28px!important;
+    border:1px solid #d9b24a!important;
+    border-radius:8px!important;
+    background:#fff8e7!important;
+  }
+
+  .mobile-reference-mainbar .mobile-ref-language b{
+    color:#9a741c!important;
+    font-size:9px!important;
+    font-weight:950!important;
+  }
+
+  /* Keep notification dot and cart count tidy */
+  .mobile-reference-mainbar #mobile-top-bell>i{
+    top:3px!important;
+    right:4px!important;
+    width:6px!important;
+    height:6px!important;
+  }
+
+  .mobile-reference-mainbar #mobile-header-cart>b{
+    top:-2px!important;
+    right:-1px!important;
+    min-width:16px!important;
+    height:16px!important;
+    font-size:8px!important;
+  }
+
+  /* Remove any legacy duplicate mobile header pieces */
+  .ref-customer-header > .mobile-brand-wordmark,
+  .ref-customer-header > .premium-action-dock,
+  .ref-customer-header > .customer-brand{
+    display:none!important;
+  }
+}
+
+@media(max-width:390px){
+  .mobile-reference-mainbar{
+    grid-template-columns:minmax(82px,1fr) 54px minmax(62px,1fr)!important;
+    gap:3px!important;
+    padding-inline:7px!important;
+  }
+
+  .mobile-reference-mainbar .mobile-ref-brand{
+    width:54px!important;
+    min-width:54px!important;
+    max-width:54px!important;
+    height:52px!important;
+    min-height:52px!important;
+  }
+
+  .mobile-reference-mainbar .mobile-ref-brand img{
+    width:52px!important;
+    height:52px!important;
+  }
+
+  .mobile-reference-mainbar .mobile-ref-actions-left{
+    gap:1px!important;
+  }
+
+  .mobile-reference-mainbar .mobile-ref-actions button{
+    width:30px!important;
+    min-width:30px!important;
+    max-width:30px!important;
+    height:30px!important;
+    min-height:30px!important;
+    max-height:30px!important;
+  }
+
+  .mobile-reference-mainbar .mobile-ref-actions button>span,
+  .mobile-reference-mainbar .mobile-ref-actions button svg{
+    width:18px!important;
+    height:18px!important;
+  }
+
+  .mobile-reference-mainbar .mobile-ref-language{
+    width:29px!important;
+    min-width:29px!important;
+    max-width:29px!important;
+    height:27px!important;
+    min-height:27px!important;
+    max-height:27px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV523BalancedCompactMobileHeader,{once:true});
+  }else{
+    installV523BalancedCompactMobileHeader();
+  }
+})();
+
+;(()=>{
+  const installV524MobileHeaderFullWhite=()=>{
+    if(document.getElementById('v524-mobile-header-full-white')) return;
+
+    const style=document.createElement('style');
+    style.id='v524-mobile-header-full-white';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v524 — MOBILE HEADER FULL-WIDTH WHITE
+   Removes green side strips around the mobile header only.
+   ========================================================= */
+
+@media(max-width:900px){
+
+  .app-shell:not(.admin-shell) .ref-customer-header,
+  .app-shell:has(.v405-home-ui) .ref-customer-header,
+  .ref-customer-header{
+    width:100vw!important;
+    max-width:100vw!important;
+    margin-left:calc(50% - 50vw)!important;
+    margin-right:calc(50% - 50vw)!important;
+    padding-left:0!important;
+    padding-right:0!important;
+    background:#ffffff!important;
+    border-left:0!important;
+    border-right:0!important;
+    border-radius:0!important;
+    overflow:visible!important;
+  }
+
+  .ref-customer-header .mobile-reference-header,
+  .ref-customer-header .mobile-reference-topbar,
+  .ref-customer-header .mobile-reference-mainbar{
+    width:100%!important;
+    max-width:100%!important;
+    margin-left:0!important;
+    margin-right:0!important;
+    background:#ffffff!important;
+    border-left:0!important;
+    border-right:0!important;
+    border-radius:0!important;
+    box-sizing:border-box!important;
+  }
+
+  /* Ensure no parent green bleed is visible beside the white header */
+  .app-shell:not(.admin-shell){
+    overflow-x:hidden!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV524MobileHeaderFullWhite,{once:true});
+  }else{
+    installV524MobileHeaderFullWhite();
+  }
+})();
+
+;(()=>{
+  const installV525ProfessionalFullWhiteHeader=()=>{
+    if(document.getElementById('v525-professional-full-white-header')) return;
+
+    const style=document.createElement('style');
+    style.id='v525-professional-full-white-header';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v525 — PROFESSIONAL FULL-WIDTH MOBILE HEADER
+   Removes all green bleed around the white header area.
+   Keeps the current mobile header content and functionality.
+   ========================================================= */
+
+@media(max-width:900px){
+
+  /* Header itself must occupy the entire mobile shell width */
+  .app-shell:not(.admin-shell) .ref-customer-header,
+  .app-shell:has(.v405-home-ui) .ref-customer-header,
+  .ref-customer-header{
+    position:relative!important;
+    left:0!important;
+    right:0!important;
+    transform:none!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:100%!important;
+    margin:0!important;
+    padding:0!important;
+    box-sizing:border-box!important;
+    background:#ffffff!important;
+    border:0!important;
+    border-bottom:1px solid #e4e9e6!important;
+    border-radius:0!important;
+    box-shadow:0 7px 20px rgba(15,55,43,.08)!important;
+    overflow:visible!important;
+  }
+
+  /* Remove any inherited green strip/background directly around header */
+  .app-shell:not(.admin-shell){
+    background:#ffffff!important;
+    overflow-x:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) > .ref-customer-header,
+  .app-shell:not(.admin-shell) > header.ref-customer-header{
+    background:#ffffff!important;
+  }
+
+  /* New reference mobile header must also be true edge-to-edge white */
+  .ref-customer-header .mobile-reference-header{
+    position:relative!important;
+    left:0!important;
+    right:0!important;
+    width:100%!important;
+    max-width:100%!important;
+    margin:0!important;
+    padding:0!important;
+    background:#ffffff!important;
+    box-sizing:border-box!important;
+    border:0!important;
+    border-radius:0!important;
+    overflow:hidden!important;
+  }
+
+  .ref-customer-header .mobile-reference-topbar{
+    width:100%!important;
+    max-width:100%!important;
+    min-height:30px!important;
+    height:30px!important;
+    margin:0!important;
+    padding:0 14px!important;
+    box-sizing:border-box!important;
+    background:#ffffff!important;
+    border:0!important;
+    border-bottom:1px solid #edf1ef!important;
+    border-radius:0!important;
+  }
+
+  .ref-customer-header .mobile-reference-mainbar{
+    width:100%!important;
+    max-width:100%!important;
+    min-height:62px!important;
+    height:62px!important;
+    margin:0!important;
+    padding:4px 12px 5px!important;
+    box-sizing:border-box!important;
+    background:#ffffff!important;
+    border:0!important;
+    border-radius:0!important;
+  }
+
+  /* Make the whole white block read as one professional component */
+  .ref-customer-header .mobile-reference-topbar,
+  .ref-customer-header .mobile-reference-mainbar{
+    outline:0!important;
+  }
+
+  /* Prevent any old dark-green header layer from peeking through */
+  .ref-customer-header::before,
+  .ref-customer-header::after,
+  .mobile-reference-header::before,
+  .mobile-reference-header::after{
+    content:none!important;
+    display:none!important;
+  }
+
+  /* Keep current icon/logo placement untouched */
+  .mobile-reference-mainbar .mobile-ref-actions-left{
+    justify-content:flex-start!important;
+  }
+  .mobile-reference-mainbar .mobile-ref-actions-right{
+    justify-content:flex-end!important;
+  }
+  .mobile-reference-mainbar .mobile-ref-brand{
+    justify-self:center!important;
+  }
+}
+
+@media(max-width:390px){
+  .ref-customer-header .mobile-reference-topbar{
+    padding-inline:10px!important;
+  }
+  .ref-customer-header .mobile-reference-mainbar{
+    padding-inline:8px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV525ProfessionalFullWhiteHeader,{once:true});
+  }else{
+    installV525ProfessionalFullWhiteHeader();
+  }
+})();
+
+;(()=>{
+  const installV526MobileHeroCenteredBalanced=()=>{
+    if(document.getElementById('v526-mobile-hero-centered-balanced')) return;
+
+    const style=document.createElement('style');
+    style.id='v526-mobile-hero-centered-balanced';
+    style.textContent=`
+/* =========================================================
+   Ass Al Halaal v526 — MOBILE HERO CENTER + MARGIN FIX
+   Removes old 100vw/negative-margin pull and keeps the hero
+   perfectly centered with equal spacing on both sides.
+   ========================================================= */
+
+@media(max-width:900px){
+
+  /* Keep the content viewport stable */
+  .app-shell:not(.admin-shell){
+    width:100%!important;
+    max-width:100%!important;
+    overflow-x:hidden!important;
+  }
+
+  .app-shell:not(.admin-shell) .screen{
+    width:100%!important;
+    max-width:100%!important;
+    margin:0!important;
+    box-sizing:border-box!important;
+  }
+
+  /* Home screen: remove inherited horizontal offsets */
+  .app-shell:not(.admin-shell) .screen:has(.hero-slider){
+    padding-left:0!important;
+    padding-right:0!important;
+    margin-left:0!important;
+    margin-right:0!important;
+    overflow-x:hidden!important;
+  }
+
+  /* TRUE centered hero — equal left/right margins */
+  .app-shell:not(.admin-shell) .hero-slider,
+  .app-shell:not(.admin-shell) .hero-slider.v94-hero-slider{
+    position:relative!important;
+    left:auto!important;
+    right:auto!important;
+    transform:none!important;
+
+    width:calc(100% - 24px)!important;
+    max-width:calc(100% - 24px)!important;
+    min-width:0!important;
+
+    margin:14px auto 0!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+
+    border-radius:0!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+  }
+
+  /* Remove the old viewport-pull rules completely */
+  .app-shell:not(.admin-shell) .hero-slider.v94-hero-slider{
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+
+  /* Hero inner panel must follow the centered parent exactly */
+  .app-shell:not(.admin-shell) .hero-slider .quality-hero,
+  .app-shell:not(.admin-shell) .hero-slider .hero-slide{
+    width:100%!important;
+    max-width:100%!important;
+    margin:0!important;
+    left:0!important;
+    right:0!important;
+    transform:none!important;
+    box-sizing:border-box!important;
+  }
+
+  /* Keep arrows inside the visible centered panel */
+  .app-shell:not(.admin-shell) .hero-slider .hero-slider-arrow{
+    z-index:8!important;
+  }
+
+  .app-shell:not(.admin-shell) .hero-slider .hero-slider-arrow.prev,
+  .app-shell:not(.admin-shell) .hero-slider .hero-slider-arrow[data-dir="-1"]{
+    left:8px!important;
+  }
+
+  .app-shell:not(.admin-shell) .hero-slider .hero-slider-arrow.next,
+  .app-shell:not(.admin-shell) .hero-slider .hero-slider-arrow[data-dir="1"]{
+    right:8px!important;
+  }
+
+  /* Better vertical rhythm under the compact header */
+  .app-shell:not(.admin-shell) .ref-customer-header + .screen,
+  .app-shell:not(.admin-shell) .ref-customer-header ~ .screen{
+    padding-top:0!important;
+  }
+
+  /* Keep all subsequent main home sections centered too */
+  .app-shell:not(.admin-shell) .district-card,
+  .app-shell:not(.admin-shell) .ref-categories,
+  .app-shell:not(.admin-shell) .ref-collection,
+  .app-shell:not(.admin-shell) #request-fit{
+    width:calc(100% - 24px)!important;
+    max-width:calc(100% - 24px)!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+    box-sizing:border-box!important;
+  }
+
+  /* Prevent floating WhatsApp from creating horizontal overflow */
+  .app-shell:not(.admin-shell) .floating-whatsapp,
+  .app-shell:not(.admin-shell) .contact-float,
+  .app-shell:not(.admin-shell) .whatsapp-float{
+    max-width:calc(100vw - 24px)!important;
+  }
+}
+
+/* Narrow phones: keep smaller but still equal margins */
+@media(max-width:390px){
+  .app-shell:not(.admin-shell) .hero-slider,
+  .app-shell:not(.admin-shell) .hero-slider.v94-hero-slider{
+    width:calc(100% - 16px)!important;
+    max-width:calc(100% - 16px)!important;
+    margin-top:10px!important;
+  }
+
+  .app-shell:not(.admin-shell) .district-card,
+  .app-shell:not(.admin-shell) .ref-categories,
+  .app-shell:not(.admin-shell) .ref-collection,
+  .app-shell:not(.admin-shell) #request-fit{
+    width:calc(100% - 16px)!important;
+    max-width:calc(100% - 16px)!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV526MobileHeroCenteredBalanced,{once:true});
+  }else{
+    installV526MobileHeroCenteredBalanced();
+  }
+})();
+
+
