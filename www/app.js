@@ -29568,4 +29568,523 @@ function setupV527MobileProductCarousel(){
   },{passive:true});
 })();
 
+/* =========================================================
+   Ass Al Halaal v528 — RELIABLE MOBILE POINTER SWIPE
+   + SMOOTH PREMIUM CAROUSEL ARROWS
+   ========================================================= */
+
+function setupV528MobileCarousel(){
+  if(!window.matchMedia('(max-width: 900px)').matches)return;
+
+  const shell=document.querySelector('#collection.ref-collection .v485-product-carousel-shell');
+  const track=shell?.querySelector('#products.ref-products.v485-product-carousel-track');
+  if(!shell || !track)return;
+
+  track.classList.add('v528-pointer-carousel');
+
+  const cards=()=>[...track.querySelectorAll(':scope > .product-card')];
+  const maxScroll=()=>Math.max(0,track.scrollWidth-track.clientWidth);
+
+  const centerLeft=(card)=>{
+    if(!card)return 0;
+    const value=card.offsetLeft+(card.offsetWidth/2)-(track.clientWidth/2);
+    return Math.max(0,Math.min(maxScroll(),value));
+  };
+
+  const nearestIndex=()=>{
+    const list=cards();
+    if(!list.length)return 0;
+
+    const viewportCenter=track.scrollLeft+(track.clientWidth/2);
+    let best=0;
+    let bestDistance=Infinity;
+
+    list.forEach((card,index)=>{
+      const cardCenter=card.offsetLeft+(card.offsetWidth/2);
+      const distance=Math.abs(cardCenter-viewportCenter);
+      if(distance<bestDistance){
+        bestDistance=distance;
+        best=index;
+      }
+    });
+
+    return best;
+  };
+
+  let animationFrame=0;
+
+  const stopAnimation=()=>{
+    if(animationFrame){
+      cancelAnimationFrame(animationFrame);
+      animationFrame=0;
+    }
+  };
+
+  const animateTo=(target,duration=300)=>{
+    stopAnimation();
+
+    const from=track.scrollLeft;
+    const to=Math.max(0,Math.min(maxScroll(),target));
+    const distance=to-from;
+
+    if(Math.abs(distance)<1){
+      track.scrollLeft=to;
+      return;
+    }
+
+    const start=performance.now();
+
+    track.classList.add('is-v528-manual','is-v527-touching');
+
+    const ease=t=>1-Math.pow(1-t,3);
+
+    const frame=now=>{
+      const progress=Math.min(1,(now-start)/duration);
+      track.scrollLeft=from+(distance*ease(progress));
+
+      if(progress<1){
+        animationFrame=requestAnimationFrame(frame);
+      }else{
+        animationFrame=0;
+        track.scrollLeft=to;
+        requestAnimationFrame(()=>{
+          track.classList.remove('is-v528-manual','is-v527-touching');
+        });
+      }
+    };
+
+    animationFrame=requestAnimationFrame(frame);
+  };
+
+  const goTo=(index,duration=300)=>{
+    const list=cards();
+    if(!list.length)return;
+
+    const bounded=Math.max(0,Math.min(list.length-1,index));
+    animateTo(centerLeft(list[bounded]),duration);
+  };
+
+  /* ---------------------------------------------------------
+     Replace old carousel arrows so no old click handlers remain.
+     --------------------------------------------------------- */
+  if(shell.dataset.v528Arrows!=='1'){
+    shell.dataset.v528Arrows='1';
+
+    const replaceArrow=(selector,side)=>{
+      const old=shell.querySelector(selector);
+      if(!old)return null;
+
+      const btn=old.cloneNode(false);
+      btn.type='button';
+      btn.className=`v485-carousel-arrow v486-active-arrow v528-carousel-arrow v528-${side}`;
+      btn.setAttribute('aria-label',side==='prev'
+        ? (document.documentElement.dir==='rtl'?'السابق':'Previous product')
+        : (document.documentElement.dir==='rtl'?'التالي':'Next product'));
+
+      btn.innerHTML=side==='prev'
+        ? `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6.5 9 12l5.5 5.5"/></svg>`
+        : `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 6.5 5.5 5.5-5.5 5.5"/></svg>`;
+
+      old.replaceWith(btn);
+      return btn;
+    };
+
+    const prev=replaceArrow('.v485-carousel-prev','prev');
+    const next=replaceArrow('.v485-carousel-next','next');
+
+    const update=()=>{
+      const list=cards();
+      const i=nearestIndex();
+
+      if(prev){
+        prev.disabled=list.length<2 || i<=0;
+        prev.setAttribute('aria-disabled',String(prev.disabled));
+      }
+      if(next){
+        next.disabled=list.length<2 || i>=list.length-1;
+        next.setAttribute('aria-disabled',String(next.disabled));
+      }
+    };
+
+    prev?.addEventListener('click',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      goTo(nearestIndex()-1,280);
+      setTimeout(update,310);
+    });
+
+    next?.addEventListener('click',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      goTo(nearestIndex()+1,280);
+      setTimeout(update,310);
+    });
+
+    let updateTimer=0;
+    track.addEventListener('scroll',()=>{
+      clearTimeout(updateTimer);
+      updateTimer=setTimeout(update,90);
+    },{passive:true});
+
+    requestAnimationFrame(update);
+  }
+
+  /* ---------------------------------------------------------
+     Prevent older bubble-phase TOUCH handlers from competing.
+     Browser vertical scroll remains native because we do not
+     preventDefault here; horizontal dragging is owned by
+     Pointer Events below using touch-action: pan-y.
+     --------------------------------------------------------- */
+  if(track.dataset.v528TouchGuard!=='1'){
+    track.dataset.v528TouchGuard='1';
+
+    const stopOldTouch=e=>{
+      e.stopImmediatePropagation();
+    };
+
+    track.addEventListener('touchstart',stopOldTouch,{capture:true,passive:true});
+    track.addEventListener('touchmove',stopOldTouch,{capture:true,passive:true});
+    track.addEventListener('touchend',stopOldTouch,{capture:true,passive:true});
+    track.addEventListener('touchcancel',stopOldTouch,{capture:true,passive:true});
+  }
+
+  /* ---------------------------------------------------------
+     Pointer Events drag — reliable on Android Chrome and iOS
+     browsers, while vertical page scroll remains available.
+     --------------------------------------------------------- */
+  if(track.dataset.v528PointerBound!=='1'){
+    track.dataset.v528PointerBound='1';
+
+    let active=false;
+    let horizontal=false;
+    let pointerId=null;
+    let startX=0;
+    let startY=0;
+    let startScroll=0;
+    let lastX=0;
+    let lastTime=0;
+    let velocityX=0;
+    let suppressClickUntil=0;
+
+    const interactive='button,a,input,select,textarea,label';
+
+    const finish=(e,cancelled=false)=>{
+      if(!active)return;
+
+      const dx=lastX-startX;
+      const list=cards();
+      const current=nearestIndex();
+      const cardWidth=list[current]?.offsetWidth || Math.min(window.innerWidth*.84,320);
+      const threshold=Math.max(34,cardWidth*.13);
+
+      active=false;
+
+      try{
+        if(pointerId!==null && track.hasPointerCapture?.(pointerId)){
+          track.releasePointerCapture(pointerId);
+        }
+      }catch{}
+
+      pointerId=null;
+      track.classList.remove('is-v528-dragging');
+
+      if(horizontal && !cancelled){
+        suppressClickUntil=Date.now()+360;
+
+        if(dx < -threshold || velocityX < -0.38){
+          goTo(current+1,270);
+        }else if(dx > threshold || velocityX > 0.38){
+          goTo(current-1,270);
+        }else{
+          goTo(current,230);
+        }
+      }else{
+        track.classList.remove('is-v528-manual','is-v527-touching');
+      }
+
+      horizontal=false;
+    };
+
+    track.addEventListener('pointerdown',e=>{
+      if(e.pointerType!=='touch' && e.pointerType!=='pen')return;
+      if(e.isPrimary===false)return;
+      if(e.target.closest(interactive))return;
+
+      stopAnimation();
+
+      active=true;
+      horizontal=false;
+      pointerId=e.pointerId;
+      startX=lastX=e.clientX;
+      startY=e.clientY;
+      startScroll=track.scrollLeft;
+      lastTime=performance.now();
+      velocityX=0;
+
+      track.classList.add('is-v528-manual','is-v527-touching');
+
+      try{track.setPointerCapture(e.pointerId)}catch{}
+    },true);
+
+    track.addEventListener('pointermove',e=>{
+      if(!active || e.pointerId!==pointerId)return;
+
+      const dx=e.clientX-startX;
+      const dy=e.clientY-startY;
+
+      if(!horizontal){
+        if(Math.abs(dx)<6 && Math.abs(dy)<6)return;
+
+        if(Math.abs(dy)>Math.abs(dx)*1.12){
+          finish(e,true);
+          return;
+        }
+
+        horizontal=true;
+        track.classList.add('is-v528-dragging');
+      }
+
+      const now=performance.now();
+      const dt=Math.max(1,now-lastTime);
+      velocityX=(e.clientX-lastX)/dt;
+      lastX=e.clientX;
+      lastTime=now;
+
+      track.scrollLeft=Math.max(
+        0,
+        Math.min(maxScroll(),startScroll-dx)
+      );
+
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    },true);
+
+    track.addEventListener('pointerup',e=>finish(e,false),true);
+    track.addEventListener('pointercancel',e=>finish(e,true),true);
+
+    track.addEventListener('click',e=>{
+      if(Date.now()<suppressClickUntil){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    },true);
+  }
+
+  /* Re-center after layout/image changes. */
+  if(track.dataset.v528ResizeBound!=='1'){
+    track.dataset.v528ResizeBound='1';
+
+    let resizeTimer=0;
+    const recenter=()=>{
+      clearTimeout(resizeTimer);
+      resizeTimer=setTimeout(()=>{
+        if(track.classList.contains('is-v528-dragging'))return;
+        goTo(nearestIndex(),0);
+      },80);
+    };
+
+    if('ResizeObserver' in window){
+      const observer=new ResizeObserver(recenter);
+      observer.observe(track);
+      cards().forEach(card=>observer.observe(card));
+      track.__v528ResizeObserver=observer;
+    }
+
+    window.addEventListener('orientationchange',recenter,{passive:true});
+  }
+}
+
+;(()=>{
+  const installV528MobileCarouselCSS=()=>{
+    if(document.getElementById('v528-mobile-carousel-pointer-swipe'))return;
+
+    const style=document.createElement('style');
+    style.id='v528-mobile-carousel-pointer-swipe';
+    style.textContent=`
+/* =========================================================
+   v528 — reliable touch drag + refined smooth arrows
+   ========================================================= */
+
+@media(max-width:900px){
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  #products.ref-products.v528-pointer-carousel{
+    touch-action:pan-y!important;
+    overscroll-behavior-x:contain!important;
+    scroll-behavior:auto!important;
+    -webkit-overflow-scrolling:touch!important;
+    user-select:none!important;
+    -webkit-user-select:none!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  #products.ref-products.v528-pointer-carousel.is-v528-manual{
+    scroll-snap-type:none!important;
+    scroll-behavior:auto!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  #products.ref-products.v528-pointer-carousel.is-v528-dragging{
+    cursor:grabbing!important;
+  }
+
+  /* Buttons/links inside cards keep normal tap behavior. */
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  #products.ref-products.v528-pointer-carousel button,
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  #products.ref-products.v528-pointer-carousel a{
+    touch-action:manipulation!important;
+    user-select:auto!important;
+    -webkit-user-select:auto!important;
+  }
+
+  /* Premium compact arrows */
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  .v528-carousel-arrow{
+    top:50%!important;
+
+    width:34px!important;
+    height:34px!important;
+    min-width:34px!important;
+    min-height:34px!important;
+
+    display:grid!important;
+    place-items:center!important;
+
+    padding:0!important;
+    margin:0!important;
+
+    border-radius:50%!important;
+    border:1px solid rgba(198,151,37,.78)!important;
+
+    background:rgba(255,255,255,.96)!important;
+    color:#0b624b!important;
+
+    box-shadow:
+      0 5px 16px rgba(13,61,48,.13),
+      inset 0 0 0 1px rgba(255,255,255,.8)!important;
+
+    backdrop-filter:blur(7px)!important;
+    -webkit-backdrop-filter:blur(7px)!important;
+
+    transform:translateY(-50%)!important;
+    transition:
+      transform .14s ease,
+      box-shadow .14s ease,
+      opacity .14s ease!important;
+
+    z-index:540!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  .v528-carousel-arrow svg{
+    width:17px!important;
+    height:17px!important;
+    display:block!important;
+    fill:none!important;
+    stroke:currentColor!important;
+    stroke-width:2.3!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  .v528-carousel-arrow:active:not(:disabled){
+    transform:translateY(-50%) scale(.92)!important;
+    box-shadow:0 3px 10px rgba(13,61,48,.10)!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  .v528-carousel-arrow:disabled{
+    opacity:.20!important;
+    pointer-events:none!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  .v528-prev{
+    left:8px!important;
+    right:auto!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  .v528-next{
+    right:8px!important;
+    left:auto!important;
+  }
+}
+
+@media(max-width:430px){
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  .v528-carousel-arrow{
+    width:32px!important;
+    height:32px!important;
+    min-width:32px!important;
+    min-height:32px!important;
+  }
+
+  .app-shell:not(.admin-shell)
+  #collection.ref-collection
+  .v485-product-carousel-shell
+  .v528-carousel-arrow svg{
+    width:16px!important;
+    height:16px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  const boot=()=>{
+    installV528MobileCarouselCSS();
+    setupV528MobileCarousel();
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',boot,{once:true});
+  }else{
+    boot();
+  }
+
+  /* Re-run after product/language renders replace carousel DOM. */
+  if(!window.__v528CarouselObserver){
+    let queued=false;
+    window.__v528CarouselObserver=new MutationObserver(()=>{
+      if(queued)return;
+      queued=true;
+      requestAnimationFrame(()=>{
+        queued=false;
+        setupV528MobileCarousel();
+      });
+    });
+
+    window.__v528CarouselObserver.observe(document.body,{
+      childList:true,
+      subtree:true
+    });
+  }
+
+  window.addEventListener('resize',()=>{
+    requestAnimationFrame(setupV528MobileCarousel);
+  },{passive:true});
+})();
+
 
