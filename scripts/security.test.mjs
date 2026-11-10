@@ -490,3 +490,110 @@ test('customer passwords use bcrypt and legacy scrypt hashes upgrade after login
   assert.match(row.password_hash,/^\$2[aby]\$12\$/);
   db.close();
 });
+
+
+test('customer registration and login endpoints enforce rate limiting',async t=>{
+  const temp=await mkdtemp(path.join(os.tmpdir(),'ahl-rate-limit-'));
+  const dbPath=path.join(temp,'security.sqlite3');
+  const port=await freePort();
+  const base=`http://127.0.0.1:${port}`;
+  const logs=[];
+
+  const child=spawn(process.execPath,['scripts/serve.mjs'],{
+    cwd:path.resolve('.'),
+    env:{
+      ...process.env,
+      NODE_ENV:'development',
+      HOST:'127.0.0.1',
+      PORT:String(port),
+      KABSH_DB_PATH:dbPath,
+      KABSH_TRUST_PROXY:'0',
+      KABSH_COOKIE_SECURE:'0',
+      KABSH_OTP_PEPPER:'test-only-security-pepper-do-not-use-in-production'
+    },
+    stdio:['ignore','pipe','pipe']
+  });
+  child.stdout.on('data',chunk=>logs.push(String(chunk)));
+  child.stderr.on('data',chunk=>logs.push(String(chunk)));
+
+  t.after(async()=>{
+    if(child.exitCode===null){
+      child.kill('SIGTERM');
+      await new Promise(resolve=>{
+        const timer=setTimeout(resolve,1500);
+        child.once('exit',()=>{clearTimeout(timer);resolve()});
+      });
+    }
+    await rm(temp,{recursive:true,force:true});
+  });
+
+  await waitForHealth(base,child,logs);
+
+  let registerResponse;
+  for(let i=0;i<11;i++){
+    registerResponse=await fetch(`${base}/api/customer/register`,{
+      method:'POST',
+      headers:{Origin:base,'Content-Type':'application/json'},
+      body:JSON.stringify({})
+    });
+  }
+  assert.equal(registerResponse.status,429);
+  const registerPayload=await registerResponse.json();
+  assert.equal(registerPayload.code,'CUSTOMER_REGISTER_RATE_LIMITED');
+  assert.ok(Number(registerPayload.retry_after)>0);
+
+  child.kill('SIGTERM');
+  await new Promise(resolve=>{
+    const timer=setTimeout(resolve,1500);
+    child.once('exit',()=>{clearTimeout(timer);resolve()});
+  });
+
+  const temp2=await mkdtemp(path.join(os.tmpdir(),'ahl-rate-limit-login-'));
+  const dbPath2=path.join(temp2,'security.sqlite3');
+  const port2=await freePort();
+  const base2=`http://127.0.0.1:${port2}`;
+  const logs2=[];
+
+  const child2=spawn(process.execPath,['scripts/serve.mjs'],{
+    cwd:path.resolve('.'),
+    env:{
+      ...process.env,
+      NODE_ENV:'development',
+      HOST:'127.0.0.1',
+      PORT:String(port2),
+      KABSH_DB_PATH:dbPath2,
+      KABSH_TRUST_PROXY:'0',
+      KABSH_COOKIE_SECURE:'0',
+      KABSH_OTP_PEPPER:'test-only-security-pepper-do-not-use-in-production'
+    },
+    stdio:['ignore','pipe','pipe']
+  });
+  child2.stdout.on('data',chunk=>logs2.push(String(chunk)));
+  child2.stderr.on('data',chunk=>logs2.push(String(chunk)));
+
+  t.after(async()=>{
+    if(child2.exitCode===null){
+      child2.kill('SIGTERM');
+      await new Promise(resolve=>{
+        const timer=setTimeout(resolve,1500);
+        child2.once('exit',()=>{clearTimeout(timer);resolve()});
+      });
+    }
+    await rm(temp2,{recursive:true,force:true});
+  });
+
+  await waitForHealth(base2,child2,logs2);
+
+  let loginResponse;
+  for(let i=0;i<11;i++){
+    loginResponse=await fetch(`${base2}/api/customer/login`,{
+      method:'POST',
+      headers:{Origin:base2,'Content-Type':'application/json'},
+      body:JSON.stringify({identifier:'attacker@example.test',password:'wrong-password'})
+    });
+  }
+  assert.equal(loginResponse.status,429);
+  const loginPayload=await loginResponse.json();
+  assert.equal(loginPayload.code,'CUSTOMER_LOGIN_RATE_LIMITED');
+  assert.ok(Number(loginPayload.retry_after)>0);
+});
