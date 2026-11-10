@@ -1890,6 +1890,11 @@ async function finishCustomerAuth(user){
 async function setupGoogleSignin(){
   const slot=document.querySelector('#google-signin-button');
   if(!slot||!customerConfig?.google_enabled||!customerConfig?.google_client_id)return;
+  const localHost=/^(localhost|127\.0\.0\.1)$/i.test(location.hostname);
+  if(localHost){
+    slot.innerHTML=`<div class="google-load-error">${safe(t('تسجيل Google متاح على الموقع المباشر.','Google sign-in is available on the live site.'))}</div>`;
+    return;
+  }
   try{
     const gis=await loadGoogleIdentity();if(!gis)return;
     gis.initialize({client_id:customerConfig.google_client_id,callback:async response=>{
