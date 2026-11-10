@@ -34921,3 +34921,32 @@ html[lang="en"] body{
     scroll-behavior:auto!important;
   }
 }
+
+
+/* =========================================================
+   Lighthouse performance hardening — mobile rendering
+   ========================================================= */
+@media (max-width:900px){
+  .app-shell:not(.admin-shell) .screen > section:not(.announcement):not(.v94-hero-slider):not(.ref-district-card),
+  .app-shell:not(.admin-shell) .screen > div:not(.v449-search-overlay){
+    content-visibility:auto;
+    contain-intrinsic-size:700px;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide .hero-copy>*,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-arrow,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-dots button{
+    transition-duration:.18s!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide .luxury-hero-media img{
+    transition:none!important;
+    transform:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .hero-slider-progress,
+  .app-shell:not(.admin-shell) .hero-slider-progress i{
+    animation:none!important;
+  }
+}
