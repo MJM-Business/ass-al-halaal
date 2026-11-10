@@ -36,3 +36,9 @@ test('render keep-alive workflow pings health endpoint on a schedule',()=>{
   assert.match(keepalive,/https:\/\/ass-al-halaal\.onrender\.com\/api\/health/);
   assert.match(keepalive,/workflow_dispatch/);
 });
+
+
+test('production image optimization build and routing are configured',()=>{
+  assert.match(server,/\/dist\/assets\//);
+  assert.match(server,/target\.startsWith\('\/assets\/'\)/);
+});
