@@ -1,4 +1,4 @@
-const start=()=>import('./app.js?v=421');
+const start=()=>import('./app.js?v=422');
 if('requestIdleCallback' in window){
   requestIdleCallback(start,{timeout:1800});
 }else{
