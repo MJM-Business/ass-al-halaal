@@ -1203,15 +1203,50 @@ function adminRequestIp(req){
   const forwarded=TRUST_PROXY?String(req.headers['x-forwarded-for']||'').split(',')[0].trim():'';
   return String(forwarded||req.socket?.remoteAddress||'unknown').slice(0,80);
 }
+function validateIncomingJson(value,depth=0){
+  if(depth>8)throw new Error('JSON payload is nested too deeply');
+  if(value===null||typeof value==='boolean'||typeof value==='number')return value;
+  if(typeof value==='string'){
+    if(value.length>20_000)throw new Error('Input value is too long');
+    if(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(value))throw new Error('Input contains unsupported control characters');
+    return value.normalize('NFC');
+  }
+  if(Array.isArray(value)){
+    if(value.length>200)throw new Error('JSON array contains too many items');
+    return value.map(item=>validateIncomingJson(item,depth+1));
+  }
+  if(typeof value==='object'){
+    const entries=Object.entries(value);
+    if(entries.length>200)throw new Error('JSON object contains too many fields');
+    const clean=Object.create(null);
+    for(const [key,item] of entries){
+      if(['__proto__','prototype','constructor'].includes(key))throw new Error('Unsafe JSON key rejected');
+      if(key.length>120)throw new Error('JSON field name is too long');
+      clean[key]=validateIncomingJson(item,depth+1);
+    }
+    return clean;
+  }
+  throw new Error('Unsupported JSON value');
+}
 async function rawBody(req,max=1_000_000){
+  const declared=Number(req.headers['content-length']||0);
+  if(Number.isFinite(declared)&&declared>max)throw new Error('Payload too large');
   let raw='';
-  for await(const chunk of req){raw+=chunk;if(raw.length>max) throw new Error('Payload too large')}
+  for await(const chunk of req){
+    raw+=chunk;
+    if(Buffer.byteLength(raw,'utf8')>max)throw new Error('Payload too large');
+  }
   return raw;
 }
 async function body(req){
+  const contentType=String(req.headers['content-type']||'').split(';')[0].trim().toLowerCase();
+  if(contentType&&contentType!=='application/json')throw new Error('Content-Type must be application/json');
   const raw=await rawBody(req);
-  if(!raw) return {};
-  try{return JSON.parse(raw)}catch{throw new Error('Invalid JSON')}
+  if(!raw) return Object.create(null);
+  let parsed;
+  try{parsed=JSON.parse(raw)}catch{throw new Error('Invalid JSON')}
+  if(!parsed||Array.isArray(parsed)||typeof parsed!=='object')throw new Error('JSON body must be an object');
+  return validateIncomingJson(parsed);
 }
 function operationForOrder(orderId){
   const operation=db.prepare(`SELECT oo.*,s.name_ar slaughterhouse_name_ar,s.name_en slaughterhouse_name_en,s.city slaughterhouse_city,
