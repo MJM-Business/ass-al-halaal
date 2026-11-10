@@ -1804,7 +1804,7 @@ function applyBatch2UxHardening(root=document){
     const style=document.createElement('style');
     style.id='batch2-ux-style';
     style.textContent=``;
-    document.head.appendChild(style);
+    if(style.textContent.trim())document.head.appendChild(style);
   }
 }
 
@@ -9103,7 +9103,7 @@ function ensureAddedCartPopupStyles(){
   const style=document.createElement('style');
   style.id='added-cart-popup-styles';
   style.textContent=``;
-  document.head.appendChild(style);
+    if(style.textContent.trim())document.head.appendChild(style);
 }
 
 function showAddedToCartPopup(item){
@@ -9433,7 +9433,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v419-mobile-responsive-fix';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',installV419MobileStyles,{once:true});
   else installV419MobileStyles();
@@ -9446,7 +9446,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v428-accurate-header';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', installV428AccurateHeader, {once:true});
   else installV428AccurateHeader();
@@ -9459,7 +9459,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v429-directional-header';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', installV429DirectionalHeader, {once:true});
   else installV429DirectionalHeader();
@@ -9472,7 +9472,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v430-exact-header-fix';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',installV430ExactHeader,{once:true});
   else installV430ExactHeader();
@@ -9485,7 +9485,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v431-logo-contrast';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded',installV431LogoContrast,{once:true});
@@ -9501,7 +9501,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v432-login-logo-circle-fix';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -9518,7 +9518,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v433-whatsapp-logo-fix';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded',installV433WhatsAppLogoFix,{once:true});
@@ -9534,7 +9534,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v436-whatsapp-clean-header';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -9551,7 +9551,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v437-whatsapp-full-logo-fix';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded',installV437WhatsAppFullLogoFix,{once:true});
@@ -9567,7 +9567,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v440-hero-polish';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',installV440HeroPolish,{once:true});
   else installV440HeroPolish();
@@ -9579,7 +9579,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v441-hero-login-polish';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',installV441HeroLoginPolish,{once:true});
   else installV441HeroLoginPolish();
@@ -9592,7 +9592,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v442-sticky-top-navigation';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded',installV442StickyTopNavigation,{once:true});
@@ -9610,7 +9610,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id=STYLE_ID;
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   }
 
   function px(n){ return `${Math.max(0,Math.round(n))}px`; }
@@ -9702,7 +9702,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v444-premium-utility-bar';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
     requestAnimationFrame(()=>{
       if(typeof window.applyV443LockedTopNav==='function') window.applyV443LockedTopNav();
     });
@@ -9721,7 +9721,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v445-crisp-utility-font';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
     requestAnimationFrame(()=>{
       if(typeof window.applyV443LockedTopNav==='function') window.applyV443LockedTopNav();
     });
@@ -9736,7 +9736,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v446-mobile-brand-notification';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
     requestAnimationFrame(()=>{
       if(typeof window.applyV443LockedTopNav==='function') window.applyV443LockedTopNav();
     });
@@ -9755,7 +9755,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v447-mobile-brand-safe-zone';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
     requestAnimationFrame(()=>{
       if(typeof window.applyV443LockedTopNav==='function') window.applyV443LockedTopNav();
     });
@@ -9771,7 +9771,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v448-whatsapp-responsive-logo';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -9791,7 +9791,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id=STYLE_ID;
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   }
 
   const esc=s=>String(s??'').replace(/[&<>\"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[m]));
@@ -9950,7 +9950,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v450-most-requested';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',installV450MostRequested,{once:true});
   else installV450MostRequested();
@@ -9963,7 +9963,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v451-most-requested-heading';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded',installV451MostRequestedHeading,{once:true});
@@ -9979,7 +9979,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v452-district-stamp-cleanup';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded',installV452DistrictStampCleanup,{once:true});
@@ -9995,7 +9995,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v453-approved-style-stamp';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded',installV453ApprovedStamp,{once:true});
@@ -10011,7 +10011,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v454-green-3d-stamp';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10029,7 +10029,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v455-stamp-image';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10047,7 +10047,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v456-stamp-uplift';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10065,7 +10065,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v457-stamp-rotation';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10083,7 +10083,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v458-mobile-hero-images';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10101,7 +10101,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v459-mobile-hero-slider-stack-fix';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10119,7 +10119,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v460-mobile-hero-background-fallback';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10137,7 +10137,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v462-balanced-rtl-ltr-header';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10155,7 +10155,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v463-mobile-brand-front';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10173,7 +10173,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v464-mobile-three-zone-header';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
 
     requestAnimationFrame(()=>{
       if(typeof window.applyV443LockedTopNav==='function') window.applyV443LockedTopNav();
@@ -10195,7 +10195,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v465-mobile-brand-readable';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
 
     requestAnimationFrame(()=>{
       if(typeof window.applyV443LockedTopNav==='function') window.applyV443LockedTopNav();
@@ -10217,7 +10217,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v466-mobile-brand-shift-left';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
 
     requestAnimationFrame(()=>{
       if(typeof window.applyV443LockedTopNav==='function') window.applyV443LockedTopNav();
@@ -10239,7 +10239,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v467-mobile-brand-bigger-left';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10257,7 +10257,7 @@ if(view()==='admin'){
     const style=document.createElement('style');
     style.id='v468-dedicated-mobile-hero-image';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10369,7 +10369,7 @@ if(!window.__v469ResizeBound){
     const style=document.createElement('style');
     style.id='v469-mobile-premium-operational';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10387,7 +10387,7 @@ if(!window.__v469ResizeBound){
     const style=document.createElement('style');
     style.id='v470-delivery-area-desktop-fonts';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10405,7 +10405,7 @@ if(!window.__v469ResizeBound){
     const style=document.createElement('style');
     style.id='v471-delivery-area-larger-fonts';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10423,7 +10423,7 @@ if(!window.__v469ResizeBound){
     const style=document.createElement('style');
     style.id='v472-premium-responsive-hero';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10441,7 +10441,7 @@ if(!window.__v469ResizeBound){
     const style=document.createElement('style');
     style.id='v473-complete-hero-rebuild';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10459,7 +10459,7 @@ if(!window.__v469ResizeBound){
     const style=document.createElement('style');
     style.id='v474-realistic-hero-upgrade';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10477,7 +10477,7 @@ if(!window.__v469ResizeBound){
     const style=document.createElement('style');
     style.id='v475-selected-hero-design';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10495,7 +10495,7 @@ if(!window.__v469ResizeBound){
     const style=document.createElement('style');
     style.id='v476-integrated-curve-hero';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10513,7 +10513,7 @@ if(!window.__v469ResizeBound){
     const style=document.createElement('style');
     style.id='v477-controlled-curve';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10531,7 +10531,7 @@ if(!window.__v469ResizeBound){
     const style=document.createElement('style');
     style.id='v478-pure-green-gold-hero';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10549,7 +10549,7 @@ if(!window.__v469ResizeBound){
     const style=document.createElement('style');
     style.id='v479-centered-hero';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10567,7 +10567,7 @@ if(!window.__v469ResizeBound){
     const style=document.createElement('style');
     style.id='v480-true-center-hero';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   const applyV480TrueCenterRuntime=()=>{
@@ -10630,7 +10630,7 @@ if(!window.__v469ResizeBound){
     const style=document.createElement('style');
     style.id='v481-hero-cleanup';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10666,7 +10666,7 @@ if(!window.__v469ResizeBound){
     const style=document.createElement('style');
     style.id='v482-hero-system';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   const normalizeActiveHero=()=>{
@@ -10709,7 +10709,7 @@ if(!window.__v469ResizeBound){
     const style=document.createElement('style');
     style.id='v483-hero-font-clipping-fix';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10727,7 +10727,7 @@ if(!window.__v469ResizeBound){
     const style=document.createElement('style');
     style.id='v484-third-slide-tags-spacing';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -10877,7 +10877,7 @@ function setupV485MostRequestedSlider(){
     const style=document.createElement('style');
     style.id='v485-most-requested-product-slider';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -11089,7 +11089,7 @@ function setupV486MostRequestedInteractions(){
     const style=document.createElement('style');
     style.id='v486-active-carousel-controls';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   const boot=()=>{
@@ -11341,7 +11341,7 @@ function setupV487StableCarousel(){
     const style=document.createElement('style');
     style.id='v487-stable-active-carousel';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   const boot=()=>{
@@ -11385,7 +11385,7 @@ function setupV487StableCarousel(){
     const style=document.createElement('style');
     style.id='v488-page-overflow-fix';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   const resetHorizontalPageOffset=()=>{
@@ -11605,7 +11605,7 @@ function setupV489RequestFitSelector(){
     const style=document.createElement('style');
     style.id='v489-request-fit-css';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   const boot=()=>{
@@ -11676,7 +11676,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v490-request-section-css';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   const boot=()=>{
@@ -11699,7 +11699,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v491-premium-request-polish';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -11716,7 +11716,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v492-premium-request-redesign';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -11733,7 +11733,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v493-sketch-request-style';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -11750,7 +11750,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v494-prominent-whatsapp';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -11767,7 +11767,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v495-faq-arrow-refine';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -11820,7 +11820,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v497-faq-no-stretch';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -11837,7 +11837,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v498-livestock-cards-larger';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -11853,7 +11853,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v499-header-location-popup-style';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -11870,7 +11870,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v500-premium-header-icons';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -11887,7 +11887,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v501-web-app-header-mode';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
 
     /* iOS Safari PWA does not always expose display-mode reliably. */
     const installed=window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator.standalone===true;
@@ -11908,7 +11908,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v502-website-vs-installed-navigation';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
 
     const installed =
       window.matchMedia?.('(display-mode: standalone)')?.matches ||
@@ -11931,7 +11931,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v503-mobile-preview-bottom-nav';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -12202,7 +12202,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v509-standard-number-boxes';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -12219,7 +12219,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v510-login-button-gap';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -12236,7 +12236,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v511-customer-account-premium';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -12252,7 +12252,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v512-full-customer-profile';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installV512FullCustomerProfile,{once:true});
   else installV512FullCustomerProfile();
@@ -12265,7 +12265,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v513-customer-profile-decent-fix';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -12282,7 +12282,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v514-mobile-brand-green-fixed';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -12299,7 +12299,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v515-mobile-header-clean-premium';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -12316,7 +12316,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v516-mobile-header-logo-icons-refined';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -12333,7 +12333,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v517-adaptive-mobile-brand';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
 
     const rgbFrom=(value)=>{
       const m=String(value||'').match(/rgba?\(\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)/i);
@@ -12409,7 +12409,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v518-mobile-header-final-refine';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -12426,7 +12426,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v519-mobile-header-final';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -12442,7 +12442,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v520-reference-mobile-layout';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -12459,7 +12459,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v521-remove-mobile-top-icons';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -12476,7 +12476,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v522-remove-only-duplicate-mobile-dock';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -12493,7 +12493,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v523-balanced-compact-mobile-header';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -12510,7 +12510,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v524-mobile-header-full-white';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -12527,7 +12527,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v525-professional-full-white-header';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -12544,7 +12544,7 @@ function setupV490RequestSection(){
     const style=document.createElement('style');
     style.id='v526-mobile-hero-centered-balanced';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -12779,7 +12779,7 @@ function setupV527MobileProductCarousel(){
     const style=document.createElement('style');
     style.id='v527-mobile-product-center-swipe';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   const boot=()=>{
@@ -13148,7 +13148,7 @@ function setupV528MobileCarousel(){
     const style=document.createElement('style');
     style.id='v528-mobile-carousel-pointer-swipe';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   const boot=()=>{
@@ -13270,7 +13270,7 @@ function setupV529AdminResponsiveShell(){
     const style=document.createElement('style');
     style.id='v529-admin-responsive-foundation';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -13781,7 +13781,7 @@ function setupV530PortalManagerBindings(){
     const style=document.createElement('style');
     style.id='v530-portal-manager-css';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -13801,7 +13801,7 @@ function setupV530PortalManagerBindings(){
     const style=document.createElement('style');
     style.id='v531-admin-brand-logo';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -13820,7 +13820,7 @@ function setupV530PortalManagerBindings(){
     const style=document.createElement('style');
     style.id='v532-product-editor-css';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -13841,7 +13841,7 @@ function setupV530PortalManagerBindings(){
     const style=document.createElement('style');
     style.id='v533-clear-product-editor';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
@@ -13862,7 +13862,7 @@ function setupV530PortalManagerBindings(){
     const style=document.createElement('style');
     style.id='v534-admin-2fa-prominent';
     style.textContent=``;
-    (document.head||document.documentElement).appendChild(style);
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   if(document.readyState==='loading'){
