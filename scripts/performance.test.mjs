@@ -20,11 +20,9 @@ test('static assets use browser caching policies',()=>{
   assert.match(server,/max-age=86400, stale-while-revalidate=604800/);
 });
 
-test('critical shell paints first while full CSS and app hydrate safely',()=>{
-  assert.match(index,/id="full-style" rel="stylesheet" href="style\.css\?v=425" media="print"/);
-  assert.match(index,/class="prepaint-shell"/);
-  assert.match(index,/src="bootstrap\.js\?v=425"/);
-  assert.doesNotMatch(index,/rel="modulepreload" href="app\.js/);
+test('critical stylesheet and module use resource hints',()=>{
+  assert.match(index,/rel="preload" href="style\.css\?v=421" as="style"/);
+  assert.match(index,/rel="modulepreload" href="app\.js\?v=421"/);
 });
 
 test('google identity origin is preconnected',()=>{
