@@ -1677,6 +1677,83 @@ async function loadCustomerAuth(){
   }catch{customerSession=null}
 }
 function customerOrderCode(o){return String(o?.order_code||o?.id||'')}
+function localizedValidationMessage(field){
+  const v=field?.validity;
+  if(!v)return t('تحقق من هذا الحقل.','Please check this field.');
+  if(v.valueMissing)return t('هذا الحقل مطلوب.','This field is required.');
+  if(v.typeMismatch)return field.type==='email'?t('أدخل بريداً إلكترونياً صحيحاً.','Enter a valid email address.'):t('أدخل قيمة صحيحة.','Enter a valid value.');
+  if(v.tooShort)return t('القيمة أقصر من المطلوب.','This value is too short.');
+  if(v.tooLong)return t('القيمة أطول من المسموح.','This value is too long.');
+  if(v.patternMismatch)return t('أدخل القيمة بالصيغة المطلوبة.','Enter the value in the required format.');
+  if(v.rangeUnderflow||v.rangeOverflow)return t('القيمة خارج النطاق المسموح.','This value is outside the allowed range.');
+  return t('تحقق من هذا الحقل.','Please check this field.');
+}
+function ensureFormStatus(form){
+  if(!form)return null;
+  let status=form.querySelector('[data-form-status]');
+  if(status)return status;
+  status=document.createElement('p');
+  status.className='form-error form-status';
+  status.dataset.formStatus='1';
+  status.setAttribute('role','status');
+  status.setAttribute('aria-live','polite');
+  status.setAttribute('aria-atomic','true');
+  form.appendChild(status);
+  return status;
+}
+function clearFormFeedback(form){
+  if(!form)return;
+  form.querySelectorAll('[aria-invalid="true"]').forEach(el=>el.removeAttribute('aria-invalid'));
+  form.querySelectorAll('[data-field-error]').forEach(el=>el.remove());
+  const status=ensureFormStatus(form);
+  if(status){status.textContent='';status.dataset.state='';}
+}
+function showFieldError(form,field,message){
+  if(!form||!field)return false;
+  clearFormFeedback(form);
+  field.setAttribute('aria-invalid','true');
+  const id=field.id||('field-'+Math.random().toString(36).slice(2,9));
+  field.id=id;
+  const error=document.createElement('small');
+  error.className='field-error';
+  error.dataset.fieldError='1';
+  error.id=id+'-error';
+  error.textContent=message;
+  field.setAttribute('aria-describedby',error.id);
+  const label=field.closest('label');
+  (label||field.parentElement||form).appendChild(error);
+  const status=ensureFormStatus(form);
+  if(status){status.textContent=message;status.dataset.state='error';}
+  field.focus({preventScroll:true});
+  field.scrollIntoView({behavior:'smooth',block:'center'});
+  return false;
+}
+function validateLocalizedForm(form){
+  if(!form)return false;
+  clearFormFeedback(form);
+  const invalid=[...form.elements].find(el=>el?.willValidate&&!el.checkValidity());
+  if(!invalid)return true;
+  return showFieldError(form,invalid,localizedValidationMessage(invalid));
+}
+function setFormBusy(form,busy,label=''){
+  if(!form)return;
+  form.setAttribute('aria-busy',busy?'true':'false');
+  const btn=form.querySelector('button[type="submit"],input[type="submit"],button.checkout-cta');
+  if(!btn)return;
+  if(busy){
+    if(!btn.dataset.originalText)btn.dataset.originalText=btn.textContent||'';
+    btn.disabled=true;
+    if(label)btn.textContent=label;
+  }else{
+    btn.disabled=false;
+    if(btn.dataset.originalText){btn.textContent=btn.dataset.originalText;delete btn.dataset.originalText;}
+  }
+}
+function setFormStatus(form,message,state='error'){
+  const status=ensureFormStatus(form);
+  if(status){status.textContent=message||'';status.dataset.state=state;}
+}
+
 function customerAuthMarkup(){
   return `<div class="simple-auth-shell" data-auth-mode="login">
     <div class="simple-auth-icon simple-auth-logo-wrap"><img src="assets/ass-al-halaal-logo-colored.png" alt="Ass Al Halaal"></div>
@@ -1918,11 +1995,12 @@ function bindCustomerAuth(){
   const login=document.querySelector('#customer-login-form');
   if(login)login.onsubmit=async e=>{
     e.preventDefault();
+    if(!validateLocalizedForm(login))return;
     const d=Object.fromEntries(new FormData(login));
     const identifier=String(d.identifier||'').trim();
     const secret=String(d.password||'');
     const btn=login.querySelector('[type="submit"]');
-    btn.disabled=true;
+    setFormBusy(login,true,t('جاري تسجيل الدخول…','Signing in…'));
 
     // Unified role detection:
     // ADM-* identifiers use the admin session endpoint.
@@ -1932,14 +2010,14 @@ function bindCustomerAuth(){
     if(isAdmin){
       try{
         await startAdminTwoFactor(identifier,secret);
-        btn.disabled=false;
+        setFormBusy(login,false);
       }catch(err){
         if(err.code==='RBAC_ACCOUNT_SUSPENDED')toast(t('هذا الحساب الإداري موقوف.','This administrative account is suspended.'));
         else if(err.code==='ADMIN_2FA_NOT_CONFIGURED')toast(t('التحقق بخطوتين غير مهيأ لهذا الحساب.','Two-factor authentication is not configured for this account.'));
         else if(err.code==='ADMIN_AUTH_RATE_LIMITED'||err.code==='ADMIN_PASSWORD_RATE_LIMITED')toast(t('محاولات تسجيل دخول كثيرة. حاول لاحقاً.','Too many sign-in attempts. Try again later.'));
         else if(err.code==='OTP_DELIVERY_FAILED')toast(err.message||t('تعذر إرسال رمز التحقق.','Unable to send the verification code.'));
         else toast(t('معرف الإدارة أو كلمة المرور غير صحيحة.','Incorrect Admin ID or password.'));
-        btn.disabled=false;
+        setFormBusy(login,false);
       }
       return;
     }
@@ -1953,23 +2031,27 @@ function bindCustomerAuth(){
       toast(t('تم تسجيل الدخول','Signed in'));
       setView('account');
     }catch(err){
-      toast(err.message);
-      btn.disabled=false;
+      const msg=err.message||t('تعذر تسجيل الدخول.','Unable to sign in.');
+      setFormStatus(login,msg,'error');
+      toast(msg);
+      setFormBusy(login,false);
+      login.querySelector('input[name="identifier"]')?.focus();
     }
   };
 
   const register=document.querySelector('#customer-register-form');
   if(register)register.onsubmit=async e=>{
     e.preventDefault();
+    if(!validateLocalizedForm(register))return;
     const d=Object.fromEntries(new FormData(register));
     const local=String(d.phone||'').replace(/\D/g,'');
     d.phone=local.startsWith('966')?`+${local}`:local.startsWith('0')?local:`05${local.replace(/^5/,'')}`;
-    if(!validPhone(d.phone)){toast(t('أدخل رقم جوال سعودي صحيح','Enter a valid Saudi mobile number'));return}
-    const btn=register.querySelector('[type="submit"]');btn.disabled=true;
+    if(!validPhone(d.phone)){return showFieldError(register,register.querySelector('[name="phone"]'),t('أدخل رقم جوال سعودي صحيح','Enter a valid Saudi mobile number'))}
+    const btn=register.querySelector('[type="submit"]');setFormBusy(register,true,t('جاري إنشاء الحساب…','Creating account…'));
     try{
       const data=await api('/api/customer/register',{method:'POST',body:JSON.stringify(d)});
       await finishCustomerAuth(data.user);toast(t('تم إنشاء الحساب','Account created'));
-    }catch(err){toast(err.message);btn.disabled=false}
+    }catch(err){const msg=err.message||t('تعذر إنشاء الحساب.','Unable to create account.');setFormStatus(register,msg,'error');toast(msg);setFormBusy(register,false)}
   };
 
   document.querySelector('#customer-logout')?.addEventListener('click',async()=>{try{await api('/api/customer/logout',{method:'POST',body:'{}'})}catch{}customerSession=null;myOrders=[];render();toast(t('تم تسجيل الخروج','Signed out'))});
@@ -9096,12 +9178,13 @@ function checkout(){
 }
 async function submitCheckout(e){
   e.preventDefault();const form=e.currentTarget;const d=Object.fromEntries(new FormData(form));const error=document.querySelector('#checkout-error');
-  if(!validPhone(d.phone)){error.textContent=t('تحقق من رقم الجوال السعودي.','Enter a valid Saudi mobile number.');return}
-  const btn=form.querySelector('button[type="submit"],button.checkout-cta');btn.disabled=true;btn.textContent=t('جاري إرسال الطلب…','Sending order…');
+  if(!validateLocalizedForm(form))return;
+  if(!validPhone(d.phone)){if(error)error.textContent=t('تحقق من رقم الجوال السعودي.','Enter a valid Saudi mobile number.');return showFieldError(form,form.querySelector('[name="phone"]'),t('تحقق من رقم الجوال السعودي.','Enter a valid Saudi mobile number.'))}
+  const btn=form.querySelector('button[type="submit"],button.checkout-cta');setFormBusy(form,true,t('جاري إرسال الطلب…','Sending order…'));if(error)error.textContent='';
   try{
     const result=await api('/api/orders',{method:'POST',body:JSON.stringify({name:d.name,phone:d.phone,city:'Jeddah',district:d.district,address:d.address,deliveryDate:d.deliveryDate,slot:d.slot,notes:[d.notes,...cart.map(i=>`${i.id}: ${prepText(i)}`)].filter(Boolean).join(' | '),couponCode:cartCouponCode,items:cart.map(i=>({id:i.id,qty:i.qty,cut:i.cut,pack:i.pack,fat:i.fat,head:i.head,tripe:i.tripe,slaughter:i.slaughter}))})});
     myPhone=d.phone;district=d.district;cart=[];cartCouponCode='';if(customerSession)customerSession={...customerSession,phone:d.phone};persist();modal.close();toast(`${t('تم إنشاء الطلب','Order created')}: ${customerOrderCode(result.order)}`);setView('orders');await loadMyOrders();setTimeout(()=>openCustomerInvoice(result.order.id),120);
-  }catch(err){btn.disabled=false;btn.textContent=t('تأكيد وإرسال الطلب','Place order');error.textContent=err.message}
+  }catch(err){setFormBusy(form,false);const msg=err.message||t('تعذر إرسال الطلب. حاول مرة أخرى.','Unable to place the order. Please try again.');if(error)error.textContent=msg;setFormStatus(form,msg,'error');form.querySelector('[name="address"]')?.focus()}
 }
 
 async function loadMyOrders(code=''){
