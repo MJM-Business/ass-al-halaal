@@ -933,7 +933,8 @@ function clearCustomerSession(req,res){
 }
 const BCRYPT_COST=12;
 function hashPassword(password){
-  return bcrypt.hashSync(String(password),BCRYPT_COST);
+  // Keep the bootstrap path independent of const initialization order.
+  return bcrypt.hashSync(String(password),12);
 }
 function verifyLegacyScrypt(password,stored){
   const [kind,salt,hash]=String(stored||'').split('$');
