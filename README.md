@@ -52,7 +52,7 @@ The old local PIN login is no longer used.
 
 Admin authentication includes:
 
-- Passwords hashed server-side with scrypt.
+- Passwords hashed server-side with bcrypt (cost 12). Legacy scrypt hashes are verified only for migration and automatically upgraded to bcrypt after a successful password login.
 - Real OTP delivery through configured email and/or SMS providers.
 - OTP expiration.
 - Wrong-code attempt limits.
