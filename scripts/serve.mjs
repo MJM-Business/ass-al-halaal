@@ -936,7 +936,22 @@ function hashPassword(password){
   return bcrypt.hashSync(String(password),BCRYPT_COST);
 }
 function verifyLegacyScrypt(password,stored){
-  const [kind,salt,hash]=String(stored||'').split('
+  const [kind,salt,hash]=String(stored||'').split('$');
+  if(kind!=='scrypt'||!salt||!hash)return false;
+  const actual=crypto.scryptSync(String(password),salt,64);
+  const expected=Buffer.from(hash,'hex');
+  return actual.length===expected.length&&crypto.timingSafeEqual(actual,expected);
+}
+function verifyPassword(password,stored){
+  const value=String(stored||'');
+  if(/^\$2[aby]\$/.test(value)){
+    try{return bcrypt.compareSync(String(password),value)}catch{return false}
+  }
+  return verifyLegacyScrypt(password,value);
+}
+function passwordHashNeedsUpgrade(stored){
+  return !/^\$2[aby]\$12\$/.test(String(stored||''));
+}
 const DUMMY_PASSWORD_HASH=hashPassword(`kabsh-dummy-${crypto.randomBytes(16).toString('hex')}`);
 function authBucket(scope,key){
   return crypto.createHash('sha256').update(`${scope}:${String(key||'unknown').trim().toLowerCase()}`).digest('hex');
