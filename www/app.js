@@ -54,6 +54,7 @@ const ugModuleMeta={
   ai:{ar:'مركز الذكاء الاصطناعي',en:'AI Center'},
   whatsapp:{ar:'واتساب الموحد',en:'WhatsApp Inbox'},
   marketing:{ar:'التسويق',en:'Marketing'},
+  portal:{ar:'إدارة بوابة العملاء',en:'Customer Portal Manager'},
   users:{ar:'المستخدمون والحوكمة',en:'Users & Governance'},
   audit:{ar:'سجل التدقيق',en:'Audit Log'}
 };
@@ -1225,7 +1226,148 @@ function withFeaturedProducts(list=[]){
   return [{...HASHI_MAIN_PRODUCT},{...HUWAR_JAML_PRODUCT},{...BAQAR_AJL_PRODUCT},{...BESHI_PRODUCT},{...BARBARI_PRODUCT},{...RUFAIDI_PRODUCT},{...TEETH_PRODUCT},{...NAJDI_BREED_PRODUCT},{...SAWAKNI_PRODUCT},{...NAIMI_BREED_PRODUCT},{...HARRI_BREED_PRODUCT},...without];
 }
 
-let products=withFeaturedProducts(visibleFallbackProducts().map(p=>({...p,image:premiumProductImage(p)||p.image}))).filter(p=>!isRemovedProduct(p));
+
+/* =========================================================
+   v530 — CUSTOMER PORTAL MANAGER STATE
+   Local persistence is always available. If the backend later
+   exposes /api/admin/portal-content, the same snapshot syncs there.
+   ========================================================= */
+
+const PORTAL_MANAGER_DEFAULTS={
+  home:{
+    announcementAr:'تغطية شاملة لأحياء جدة • مسالخ معتمدة تحت إشراف بيطري',
+    announcementEn:'Jeddah-wide coverage • Municipality-approved slaughterhouses under veterinary supervision',
+    heroBadgeAr:'ضمان جودة %100',
+    heroBadgeEn:'100% QUALITY GUARANTEE',
+    heroGoldAr:'لحم فاخر،',
+    heroGoldEn:'Premium meat,',
+    heroTitleAr:'يُجهز بعناية',
+    heroTitleEn:'prepared with care',
+    heroDescAr:'نختار طلبك بعناية، ونجهزه ونغلفه حسب رغبتك، ثم نوصله مبرداً وطازجاً إلى بابك داخل جدة.',
+    heroDescEn:'We carefully select, prepare and pack your order to your preference, then deliver it chilled and fresh across Jeddah.',
+    mostRequestedAr:'الأكثر طلباً',
+    mostRequestedEn:'MOST REQUESTED',
+    faqTitleAr:'أسئلة تساعدك على إكمال طلبك',
+    faqTitleEn:'Questions that help you complete your order'
+  },
+  categories:{
+    kabsh:{visible:true,ar:'كبش',en:'Kabsh',image:'assets/najdi-sheep-category-v506.png'},
+    jamal:{visible:true,ar:'جمل',en:'Camel',image:'assets/jamal-top-v397.png'},
+    baqar:{visible:true,ar:'بقر',en:'Cattle',image:'assets/baqar-top-v397.png'},
+    maaz:{visible:true,ar:'ماعز',en:'Goat',image:'assets/maaz-top-v397.png'}
+  },
+  faqs:[
+    {qAr:'كيف أختار نوع الحلال؟',qEn:'How do I choose a livestock type?',aAr:'استخدم قسم أنواع الحلال في الصفحة الرئيسية ثم افتح النوع المناسب لمراجعة الخيارات المتاحة.',aEn:'Use the livestock categories on the home page, then open the type you want to review its available options.'},
+    {qAr:'هل يمكنني مراجعة تفاصيل المنتج قبل إضافته للسلة؟',qEn:'Can I review product details before adding it to cart?',aAr:'نعم، افتح بطاقة المنتج لمراجعة التفاصيل والخيارات المتاحة قبل الإضافة للسلة.',aEn:'Yes. Open the product card to review available details and options before adding it to cart.'},
+    {qAr:'كيف أحدد منطقة التوصيل؟',qEn:'How do I choose my delivery area?',aAr:'استخدم محدد منطقة التوصيل الموجود أسفل العرض الرئيسي واختر الحي المناسب داخل جدة.',aEn:'Use the delivery-area selector below the main banner and choose the relevant Jeddah district.'},
+    {qAr:'أين أتابع طلبي؟',qEn:'Where can I track my order?',aAr:'استخدم زر تتبع الطلب في شريط التنقل لمراجعة حالة طلبك.',aEn:'Use Track order in the navigation to review your order status.'},
+    {qAr:'هل يعمل الموقع على الجوال؟',qEn:'Does the website work on mobile?',aAr:'نعم، نفس المنصة مصممة للعمل كموقع على سطح المكتب وكتجربة تطبيق متجاوبة على الجوال والأجهزة اللوحية.',aEn:'Yes. The same platform is designed to work as a desktop website and as a responsive app-like experience on phones and tablets.'},
+    {qAr:'كيف أصل إلى حسابي؟',qEn:'How do I access my account?',aAr:'استخدم زر الحساب أو تسجيل الدخول من شريط التنقل، ثم أكمل خطوات الدخول الحالية.',aEn:'Use Account or Login in the navigation and continue through the existing sign-in flow.'}
+  ],
+  products:{},
+  meta:{updatedAt:null,updatedBy:null}
+};
+
+function mergePortalManagerDefaults(saved={}){
+  const base=JSON.parse(JSON.stringify(PORTAL_MANAGER_DEFAULTS));
+  const v=saved&&typeof saved==='object'?saved:{};
+  base.home={...base.home,...(v.home||{})};
+  base.categories={...base.categories,...(v.categories||{})};
+  for(const id of Object.keys(base.categories)){
+    base.categories[id]={...PORTAL_MANAGER_DEFAULTS.categories[id],...(v.categories?.[id]||{})};
+  }
+  base.faqs=Array.isArray(v.faqs)&&v.faqs.length
+    ?PORTAL_MANAGER_DEFAULTS.faqs.map((row,i)=>({...row,...(v.faqs[i]||{})}))
+    :base.faqs;
+  base.products=v.products&&typeof v.products==='object'?v.products:{};
+  base.meta={...base.meta,...(v.meta||{})};
+  return base;
+}
+
+let portalManagerState=mergePortalManagerDefaults(read('ahl-portal-manager-v1',{}));
+let portalManagerServerStatus='local';
+let portalManagerServerChecked=false;
+
+function portalProductOverride(id){return portalManagerState.products?.[String(id||'')]||{}}
+function portalProductVisible(id){return portalProductOverride(id).visible!==false}
+function portalApplyProductOverrides(list=[]){
+  return (Array.isArray(list)?list:[]).map(p=>{
+    const o=portalProductOverride(p?.id);
+    if(!o||!Object.keys(o).length)return p;
+    return {
+      ...p,
+      ar:o.ar??p.ar,
+      en:o.en??p.en,
+      name_ar:o.ar??p.name_ar,
+      name_en:o.en??p.name_en,
+      price:o.price!==undefined&&o.price!==''?Number(o.price):p.price,
+      oldPrice:o.oldPrice!==undefined&&o.oldPrice!==''?Number(o.oldPrice):p.oldPrice,
+      subAr:o.subAr??p.subAr,
+      subEn:o.subEn??p.subEn,
+      badgeAr:o.badgeAr??p.badgeAr,
+      badgeEn:o.badgeEn??p.badgeEn,
+      image:o.image??p.image
+    };
+  });
+}
+function portalCategoryRows(){
+  const order=['kabsh','jamal','baqar','maaz'];
+  return order.map(id=>[id,portalManagerState.categories[id]])
+    .filter(([,c])=>c&&c.visible!==false)
+    .map(([id,c])=>[id,c.image,c.ar,c.en]);
+}
+function portalFaqRows(){
+  return (portalManagerState.faqs||[]).filter(x=>x&&(x.qAr||x.qEn));
+}
+function portalManagerPersistLocal(){
+  portalManagerState.meta.updatedAt=new Date().toISOString();
+  portalManagerState.meta.updatedBy=adminUserId||'ADM';
+  write('ahl-portal-manager-v1',portalManagerState);
+}
+async function portalManagerSyncToServer({silent=true}={}){
+  portalManagerPersistLocal();
+  try{
+    const data=await api('/api/admin/portal-content',{
+      method:'PUT',
+      body:JSON.stringify({content:portalManagerState})
+    });
+    if(data?.content)portalManagerState=mergePortalManagerDefaults(data.content);
+    portalManagerServerStatus='server';
+    write('ahl-portal-manager-v1',portalManagerState);
+    return true;
+  }catch(err){
+    portalManagerServerStatus='local';
+    if(!silent)toast(t('تم الحفظ محلياً. ربط الحفظ المركزي سيتم مع API المحتوى.','Saved locally. Central persistence will activate when the portal-content API is available.'));
+    return false;
+  }
+}
+async function portalManagerHydrateFromServer(){
+  if(portalManagerServerChecked)return;
+  portalManagerServerChecked=true;
+  try{
+    const data=await api('/api/admin/portal-content',{method:'GET'});
+    if(data?.content){
+      portalManagerState=mergePortalManagerDefaults(data.content);
+      write('ahl-portal-manager-v1',portalManagerState);
+      portalManagerServerStatus='server';
+      products=portalApplyProductOverrides(products);
+      if(view()==='admin'&&adminModule==='portal')render();
+    }
+  }catch{
+    portalManagerServerStatus='local';
+  }
+}
+function applyPortalProductCardVisuals(){
+  document.querySelectorAll('[data-product-detail]').forEach(card=>{
+    const id=card.dataset.productDetail;
+    const o=portalProductOverride(id);
+    if(!o?.image)return;
+    const img=card.querySelector('img');
+    if(img&&img.getAttribute('src')!==o.image)img.setAttribute('src',o.image);
+  });
+}
+
+let products=portalApplyProductOverrides(withFeaturedProducts(visibleFallbackProducts().map(p=>({...p,image:premiumProductImage(p)||p.image}))).filter(p=>!isRemovedProduct(p)));
 let filter='all',query='',myOrders=[],ordersLoading=false,adminOrders=[],adminStats=null,adminLoading=false,adminFilter='all',adminQuery='',adminModule='dashboard',ordersSubView='overview',ordersFacilityFilter='',ordersCourierFilter='',waMode=read('kn-wa-mode','ai'),waSelected='',waSearch='',waFilter='all',waLocalMessages=read('kn-wa-local-messages',{}),waAiBusy=false,waAiError='',waSettings=null,waSettingsLoading=false;
 let mktCampaigns=read('kn-mkt-campaigns',[
   {id:'CMP-001',nameAr:'حملة ثلاجة المنزل - خروف حري طازج',nameEn:'Home Fridge Campaign — Fresh Harri Sheep',channel:'Snap / Instagram',productIndex:0,budget:12000,spent:8950,roas:5.2,conversions:248,status:'active'},
@@ -1358,7 +1500,7 @@ function adminCan(module,access='view'){
   return access==='manage'?Boolean(p.manage):Boolean(p.view);
 }
 function firstAllowedAdminModule(){
-  const order=['dashboard','orders','finance','suppliers','ai','whatsapp','marketing','users','audit'];
+  const order=['dashboard','portal','orders','finance','suppliers','ai','whatsapp','marketing','users','audit'];
   return order.find(id=>adminCan(id,'view'))||'dashboard';
 }
 function rbacDeniedMessage(module,access='view'){
@@ -1448,6 +1590,19 @@ function applyRbacUi(){
       '[data-mkt-toggle]',
       '[data-coupon-toggle]',
       '#mkt-ai-form button'
+    ],
+    portal:[
+      '[data-portal-edit-product]',
+      '[data-portal-toggle-product]',
+      '#portal-home-form input',
+      '#portal-home-form textarea',
+      '#portal-home-form button',
+      '.portal-category-form input',
+      '.portal-category-form button',
+      '#portal-faq-form input',
+      '#portal-faq-form textarea',
+      '#portal-faq-form button',
+      '#portal-reset-all'
     ],
     whatsapp:[
       '[data-wa-op]',
@@ -1917,8 +2072,8 @@ async function loadProducts(){
   try{
     const {products:rows}=await api('/api/products',{method:'GET',headers:{}});
     const detail=new Map(fallbackProducts.map(p=>[p.id,p]));
-    products=withFeaturedProducts(rows.map(r=>{const merged={...detail.get(r.id),id:r.id,ar:r.name_ar,en:r.name_en,name_en:r.name_en,price:r.price,kg:r.kg,category:r.category};return {...merged,image:premiumProductImage(merged)||r.image||detail.get(r.id)?.image};})).filter(p=>!isRemovedProduct(p));
-  }catch{products=withFeaturedProducts(visibleFallbackProducts().map(p=>({...p,image:premiumProductImage(p)||p.image}))).filter(p=>!isRemovedProduct(p))}
+    products=portalApplyProductOverrides(withFeaturedProducts(rows.map(r=>{const merged={...detail.get(r.id),id:r.id,ar:r.name_ar,en:r.name_en,name_en:r.name_en,price:r.price,kg:r.kg,category:r.category};return {...merged,image:premiumProductImage(merged)||r.image||detail.get(r.id)?.image};})).filter(p=>!isRemovedProduct(p)));
+  }catch{products=portalApplyProductOverrides(withFeaturedProducts(visibleFallbackProducts().map(p=>({...p,image:premiumProductImage(p)||p.image}))).filter(p=>!isRemovedProduct(p)))}
 }
 
 
@@ -2026,9 +2181,9 @@ function homePage(){
   const heroSlides=[
     {
       theme:'premium',
-      badge:t('ضمان جودة %100','100% QUALITY GUARANTEE'),
-      gold:t('لحم فاخر،','Premium meat,'),title:t('يُجهز بعناية','prepared with care'),
-      desc:t('نختار طلبك بعناية، ونجهزه ونغلفه حسب رغبتك، ثم نوصله مبرداً وطازجاً إلى بابك داخل جدة.','We carefully select, prepare and pack your order to your preference, then deliver it chilled and fresh across Jeddah.'),
+      badge:t(portalManagerState.home.heroBadgeAr,portalManagerState.home.heroBadgeEn),
+      gold:t(portalManagerState.home.heroGoldAr,portalManagerState.home.heroGoldEn),title:t(portalManagerState.home.heroTitleAr,portalManagerState.home.heroTitleEn),
+      desc:t(portalManagerState.home.heroDescAr,portalManagerState.home.heroDescEn),
       features:[['◒',t('طازج ونظيف','Fresh & hygienic')],['✦',t('تجهيز احترافي','Expert preparation')],['❄',t('توصيل مبرد','Chilled delivery')],['♢',t('ثقة العائلات','Trusted by families')]]
     },
     {
@@ -2055,7 +2210,7 @@ function homePage(){
   ];
   return `<section class="announcement ref-announcement">
   <span>✓</span>
-  <p>${t('تغطية شاملة لأحياء جدة • مسالخ معتمدة تحت إشراف بيطري','Jeddah-wide coverage • Municipality-approved slaughterhouses under veterinary supervision')}</p>
+  <p>${t(portalManagerState.home.announcementAr,portalManagerState.home.announcementEn)}</p>
   <div class="announcement-features">
     <small>❄ ${t('تبريد 4°C','Chilled 4°C delivery')}</small>
     <small>♢ ${t('موثق وتحت الإشراف','Certified & supervised')}</small>
@@ -2180,12 +2335,7 @@ function homePage(){
   </style>
   <div class="section-row"><div><h2>${t('أنواع الحلالات والذبائح','Livestock & meat categories')}</h2><p>${t('اختيارات سريعة من الأكثر طلباً','Quick access to our most popular selections')}</p></div><button id="view-all">${t('عرض الكل','View all')} →</button></div>
   <div class="category-row">
-    ${[
-      ['kabsh','assets/najdi-sheep-category-v506.png','كبش','Kabsh'],
-      ['jamal','assets/jamal-top-v397.png','جمل','Camel'],
-      ['baqar','assets/baqar-top-v397.png','بقر','Cattle'],
-      ['maaz','assets/maaz-top-v397.png','ماعز','Goat']
-    ].map(([id,img,ar,en])=>`<article class="category ref-category livestock-type-card" aria-label="${safe(t(ar,en))}">
+    ${portalCategoryRows().map(([id,img,ar,en])=>`<article class="category ref-category livestock-type-card" aria-label="${safe(t(ar,en))}">
       <button class="category-image-button" data-livestock-category="${id}" aria-label="${safe(t(ar,en))}">
         <span class="category-photo"><img src="${img}" alt="${safe(t(ar,en))}"></span>
       </button>
@@ -2195,7 +2345,7 @@ function homePage(){
 </section>
 
 <section id="collection" class="collection ref-collection">
-  <div class="section-row most-requested-heading"><div><h2>${t('الأكثر طلباً','MOST REQUESTED')}</h2></div></div>
+  <div class="section-row most-requested-heading"><div><h2>${t(portalManagerState.home.mostRequestedAr,portalManagerState.home.mostRequestedEn)}</h2></div></div>
   <div id="products" class="product-list ref-products">${productCards()}</div>
 </section>
 
@@ -2440,16 +2590,11 @@ function homePage(){
 <section class="v500-faq-section" aria-labelledby="v500-faq-title">
   <div class="v500-section-heading">
     <small>${t('معلومات سريعة','HELP & FAQ')}</small>
-    <h2 id="v500-faq-title">${t('أسئلة تساعدك على إكمال طلبك','Questions that help you complete your order')}</h2>
+    <h2 id="v500-faq-title">${t(portalManagerState.home.faqTitleAr,portalManagerState.home.faqTitleEn)}</h2>
     <span class="v500-heading-rule" aria-hidden="true"><i></i><b></b><i></i></span>
   </div>
   <div class="v500-faq-grid">
-    <details><summary>${t('كيف أختار نوع الحلال؟','How do I choose a livestock type?')}</summary><p>${t('استخدم قسم أنواع الحلال في الصفحة الرئيسية ثم افتح النوع المناسب لمراجعة الخيارات المتاحة.','Use the livestock categories on the home page, then open the type you want to review its available options.')}</p></details>
-    <details><summary>${t('هل يمكنني مراجعة تفاصيل المنتج قبل إضافته للسلة؟','Can I review product details before adding it to cart?')}</summary><p>${t('نعم، افتح بطاقة المنتج لمراجعة التفاصيل والخيارات المتاحة قبل الإضافة للسلة.','Yes. Open the product card to review available details and options before adding it to cart.')}</p></details>
-    <details><summary>${t('كيف أحدد منطقة التوصيل؟','How do I choose my delivery area?')}</summary><p>${t('استخدم محدد منطقة التوصيل الموجود أسفل العرض الرئيسي واختر الحي المناسب داخل جدة.','Use the delivery-area selector below the main banner and choose the relevant Jeddah district.')}</p></details>
-    <details><summary>${t('أين أتابع طلبي؟','Where can I track my order?')}</summary><p>${t('استخدم زر تتبع الطلب في شريط التنقل لمراجعة حالة طلبك.','Use Track order in the navigation to review your order status.')}</p></details>
-    <details><summary>${t('هل يعمل الموقع على الجوال؟','Does the website work on mobile?')}</summary><p>${t('نعم، نفس المنصة مصممة للعمل كموقع على سطح المكتب وكتجربة تطبيق متجاوبة على الجوال والأجهزة اللوحية.','Yes. The same platform is designed to work as a desktop website and as a responsive app-like experience on phones and tablets.')}</p></details>
-    <details><summary>${t('كيف أصل إلى حسابي؟','How do I access my account?')}</summary><p>${t('استخدم زر الحساب أو تسجيل الدخول من شريط التنقل، ثم أكمل خطوات الدخول الحالية.','Use Account or Login in the navigation and continue through the existing sign-in flow.')}</p></details>
+    ${portalFaqRows().map(row=>`<details><summary>${safe(t(row.qAr,row.qEn))}</summary><p>${safe(t(row.aAr,row.aEn))}</p></details>`).join('')}
   </div>
 </section>
 
@@ -2960,7 +3105,7 @@ function setupCustomBox3DShowcase(){
 }
 
 function productCards(){
-  const list=products.filter(p=>!isRemovedProduct(p)&&(filter==='all'||p.category===filter)&&`${p.ar} ${p.en}`.toLowerCase().includes(query.toLowerCase()));
+  const list=products.filter(p=>!isRemovedProduct(p)&&portalProductVisible(p.id)&&(filter==='all'||p.category===filter)&&`${p.ar} ${p.en}`.toLowerCase().includes(query.toLowerCase()));
   if(!list.length)return `<div class="empty">${t('لا توجد منتجات مطابقة','No matching products')}</div>`;
 
   const cards=list.map(p=>{
@@ -7646,6 +7791,7 @@ function adminPage(){
     ['ai','ai','مركز الذكاء الاصطناعي','AI Center'],
     ['whatsapp','whatsapp','صندوق واتساب الموحد','WhatsApp Inbox'],
     ['marketing','marketing','الحملات والدعاية والإعلان','Marketing'],
+    ['portal','store','إدارة بوابة العملاء','Customer Portal Manager'],
     ['users','users','المستخدمون والحوكمة','Users & governance'],
     ['audit','audit','سجل التدقيق','Audit log']
   ];
@@ -7656,6 +7802,8 @@ function adminPage(){
     ? `<div class="loading">${t('جاري تحميل لوحة الإدارة…','Loading admin portal…')}</div>`
     : adminModule==='dashboard'
       ? adminDashboardContent()
+      : adminModule==='portal'
+        ? adminPortalManagerContent()
       : adminModule==='orders'
         ? adminOrdersContent()
         : adminModule==='security'
@@ -7663,9 +7811,10 @@ function adminPage(){
           : adminSimpleModule(adminModule);
 
   return `<div class="reference-admin stitch-shell-v186 ${adminModule==='dashboard'?'stitch-dashboard-active':''}">
-    <aside class="reference-sidebar">
+    <aside class="reference-sidebar" id="admin-responsive-sidebar" aria-label="${t('قائمة الإدارة','Admin navigation')}">
+      <button type="button" id="admin-sidebar-close" class="admin-responsive-close" aria-label="${t('إغلاق القائمة','Close menu')}">×</button>
       <div class="reference-brand">
-        <div class="reference-brand-mark"><img src="assets/ass-al-halaal-logo-white.png" alt="Ass Al Halaal"></div>
+        <div class="reference-brand-mark admin-brand-logo-v531"><img src="assets/ass-al-halaal-mobile-logo-v519.png" alt="Ass Al Halaal"></div>
         <div><b>${t('عاس الحلال','ASS AL HALAAL')}</b><small>${t('الإدارة والعمليات','ADMIN & OPERATIONS')}</small></div>
       </div>
 
@@ -7680,11 +7829,27 @@ function adminPage(){
 
       <div class="reference-sidebar-foot">
         <button type="button" data-nav="home">${adminIcon('store')}<span>${t('فتح متجر العملاء','Open customer store')}</span></button>
-        <button type="button" id="admin-security-shortcut" class="reference-secure">${adminIcon('secure')}<div><b>${t('جلسة إدارية آمنة','Secure admin session')}</b><small>${t('التحقق بخطوتين مفعل','2FA enabled')}</small></div>${adminIcon('chevron')}</button>
+        <button type="button" id="admin-security-shortcut" class="reference-secure admin-2fa-prominent-v534">
+          <span class="admin-2fa-shield-v534">${adminIcon('secure')}</span>
+          <span class="admin-2fa-copy-v534">
+            <span class="admin-2fa-title-v534">${t('جلسة إدارية آمنة','Secure admin session')}</span>
+            <span class="admin-2fa-status-v534"><i></i>${t('الحماية نشطة','Protected access active')}</span>
+          </span>
+          <span class="admin-2fa-badge-v534">2FA ${t('مفعل','ENABLED')}</span>
+          <span class="admin-2fa-chevron-v534">${adminIcon('chevron')}</span>
+        </button>
       </div>
     </aside>
 
+    <button type="button" id="admin-mobile-backdrop" class="admin-mobile-backdrop" aria-label="${t('إغلاق القائمة','Close menu')}"></button>
+
     <header class="reference-admin-header executive-command-bar">
+      <button type="button" id="admin-mobile-menu" class="admin-mobile-menu" aria-label="${t('فتح قائمة الإدارة','Open admin menu')}">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16"></path>
+        </svg>
+        <span>${t('القائمة','Menu')}</span>
+      </button>
       ${adminModule==='dashboard'?`
         <div class="stitch-top-status">
           <span class="stitch-market-sync"><i></i>${t('مزامنة سوق جدة: محدث الآن','Jeddah market sync: updated now')}</span>
@@ -8381,6 +8546,8 @@ function bind(){
   document.querySelector('#admin-export')?.addEventListener('click',()=>toast(t('سيتم ربط التصدير في مرحلة التقارير.','Export will be connected in the reports phase.')));
   document.querySelectorAll('[data-admin-module]').forEach(b=>b.onclick=()=>{const target=b.dataset.adminModule;if(!rbacGuard(target,'view'))return;try{adminModule=target;render()}catch(err){console.error('Admin module render failed:',target,err);const reason=String(err?.message||err||'Render error');adminModule='dashboard';render();toast(`${t('تعذر فتح الوحدة','Unable to open module')}: ${reason}`)}});
   syncMobileAdminNav();
+  setupV529AdminResponsiveShell();
+  setupV530PortalManagerBindings();
   document.querySelectorAll('[data-finance-tab]').forEach(b=>b.onclick=()=>{financeTab=b.dataset.financeTab;render()});
   document.querySelectorAll('#finance-export,#finance-export-top').forEach(b=>b.onclick=financeExportCsv);
   document.querySelectorAll('#finance-create-settlement,#finance-create-settlement-2').forEach(b=>b.onclick=openFinanceSettlementModal);
@@ -8481,7 +8648,7 @@ function bind(){
   document.querySelectorAll('[data-admin-status]').forEach(s=>s.onchange=()=>updateAdminStatus(s.dataset.adminStatus,s.value));
   applyRbacUi();
 }
-function renderProducts(){const el=document.querySelector('#products');if(!el)return;el.innerHTML=productCards();document.querySelectorAll('[data-product]').forEach(b=>b.onclick=e=>{e.stopPropagation();productDialog(b.dataset.product)});document.querySelectorAll('[data-product-detail-button]').forEach(b=>b.onclick=e=>{e.stopPropagation();setView('product/'+encodeURIComponent(b.dataset.productDetailButton))});document.querySelectorAll('[data-product-detail]').forEach(card=>{card.onclick=e=>{if(e.target.closest('button'))return;setView('product/'+encodeURIComponent(card.dataset.productDetail))}});document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const id=b.dataset.fav;favourites.has(id)?favourites.delete(id):favourites.add(id);persist();renderProducts()});document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareProduct(b.dataset.share));setupCustomBox3DShowcase();setupV485MostRequestedSlider();if(typeof setupV487StableCarousel==='function')setupV487StableCarousel()}
+function renderProducts(){const el=document.querySelector('#products');if(!el)return;el.innerHTML=productCards();applyPortalProductCardVisuals();document.querySelectorAll('[data-product]').forEach(b=>b.onclick=e=>{e.stopPropagation();productDialog(b.dataset.product)});document.querySelectorAll('[data-product-detail-button]').forEach(b=>b.onclick=e=>{e.stopPropagation();setView('product/'+encodeURIComponent(b.dataset.productDetailButton))});document.querySelectorAll('[data-product-detail]').forEach(card=>{card.onclick=e=>{if(e.target.closest('button'))return;setView('product/'+encodeURIComponent(card.dataset.productDetail))}});document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const id=b.dataset.fav;favourites.has(id)?favourites.delete(id):favourites.add(id);persist();renderProducts()});document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareProduct(b.dataset.share));setupCustomBox3DShowcase();setupV485MostRequestedSlider();if(typeof setupV487StableCarousel==='function')setupV487StableCarousel()}
 
 
 function productOptionsDialog(id){
@@ -30085,6 +30252,2629 @@ function setupV528MobileCarousel(){
   window.addEventListener('resize',()=>{
     requestAnimationFrame(setupV528MobileCarousel);
   },{passive:true});
+})();
+
+/* =========================================================
+   Ass Al Halaal v529 — RESPONSIVE ADMIN PORTAL FOUNDATION
+   Desktop: full operations sidebar
+   Tablet: compact sidebar
+   Mobile: off-canvas drawer + sticky command bar
+   Existing RBAC/module actions are preserved.
+   ========================================================= */
+
+function setupV529AdminResponsiveShell(){
+  if(view()!=='admin')return;
+
+  const root=document.querySelector('.reference-admin');
+  const menu=document.querySelector('#admin-mobile-menu');
+  const close=document.querySelector('#admin-sidebar-close');
+  const backdrop=document.querySelector('#admin-mobile-backdrop');
+  if(!root)return;
+
+  const isDrawerMode=()=>window.matchMedia('(max-width: 900px)').matches;
+
+  const closeDrawer=()=>{
+    root.classList.remove('admin-drawer-open');
+    document.body.classList.remove('admin-drawer-lock');
+    menu?.setAttribute('aria-expanded','false');
+  };
+
+  const openDrawer=()=>{
+    if(!isDrawerMode())return;
+    root.classList.add('admin-drawer-open');
+    document.body.classList.add('admin-drawer-lock');
+    menu?.setAttribute('aria-expanded','true');
+    setTimeout(()=>document.querySelector('.reference-nav button.active')?.focus({preventScroll:true}),80);
+  };
+
+  if(menu && menu.dataset.v529Bound!=='1'){
+    menu.dataset.v529Bound='1';
+    menu.setAttribute('aria-expanded','false');
+    menu.addEventListener('click',()=>{
+      root.classList.contains('admin-drawer-open')?closeDrawer():openDrawer();
+    });
+  }
+
+  if(close && close.dataset.v529Bound!=='1'){
+    close.dataset.v529Bound='1';
+    close.addEventListener('click',closeDrawer);
+  }
+
+  if(backdrop && backdrop.dataset.v529Bound!=='1'){
+    backdrop.dataset.v529Bound='1';
+    backdrop.addEventListener('click',closeDrawer);
+  }
+
+  root.querySelectorAll('.reference-nav [data-admin-module], .reference-sidebar-foot button').forEach(btn=>{
+    if(btn.dataset.v529DrawerBound==='1')return;
+    btn.dataset.v529DrawerBound='1';
+    btn.addEventListener('click',()=>{ if(isDrawerMode())closeDrawer(); });
+  });
+
+  if(!window.__v529AdminEscapeBound){
+    window.__v529AdminEscapeBound=true;
+    document.addEventListener('keydown',e=>{
+      if(e.key==='Escape')document.querySelector('.reference-admin.admin-drawer-open')?.classList.remove('admin-drawer-open');
+      if(e.key==='Escape')document.body.classList.remove('admin-drawer-lock');
+    });
+  }
+
+  if(!window.__v529AdminResizeBound){
+    window.__v529AdminResizeBound=true;
+    window.addEventListener('resize',()=>{
+      const current=document.querySelector('.reference-admin');
+      if(!current)return;
+      if(window.innerWidth>900){
+        current.classList.remove('admin-drawer-open');
+        document.body.classList.remove('admin-drawer-lock');
+      }
+    },{passive:true});
+  }
+}
+
+;(()=>{
+  const installV529AdminResponsiveCSS=()=>{
+    if(document.getElementById('v529-admin-responsive-foundation'))return;
+
+    const style=document.createElement('style');
+    style.id='v529-admin-responsive-foundation';
+    style.textContent=`
+/* =========================================================
+   ADMIN RESPONSIVE FOUNDATION — v529
+   ========================================================= */
+
+.admin-mobile-menu,
+.admin-responsive-close,
+.admin-mobile-backdrop{display:none}
+
+/* ---------- DESKTOP / LARGE LAPTOP ---------- */
+@media(min-width:1181px){
+  .admin-shell{
+    min-height:100dvh!important;
+    background:#f4f6f4!important;
+  }
+
+  .reference-admin{
+    min-height:100dvh!important;
+    display:grid!important;
+    grid-template-columns:280px minmax(0,1fr)!important;
+    grid-template-rows:auto minmax(0,1fr)!important;
+    grid-template-areas:
+      "sidebar header"
+      "sidebar content"!important;
+    background:#f4f6f4!important;
+  }
+
+  html[dir="rtl"] .reference-admin{
+    grid-template-columns:minmax(0,1fr) 280px!important;
+    grid-template-areas:
+      "header sidebar"
+      "content sidebar"!important;
+  }
+
+  .reference-sidebar{
+    grid-area:sidebar!important;
+    position:sticky!important;
+    top:0!important;
+    height:100dvh!important;
+    min-height:100dvh!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    z-index:40!important;
+  }
+
+  .reference-admin-header{
+    grid-area:header!important;
+    min-width:0!important;
+    position:sticky!important;
+    top:0!important;
+    z-index:32!important;
+  }
+
+  .reference-admin-content{
+    grid-area:content!important;
+    min-width:0!important;
+    width:100%!important;
+    max-width:100%!important;
+    overflow-x:hidden!important;
+    box-sizing:border-box!important;
+  }
+}
+
+/* ---------- TABLET / SMALL LAPTOP ---------- */
+@media(min-width:901px) and (max-width:1180px){
+  .reference-admin{
+    min-height:100dvh!important;
+    display:grid!important;
+    grid-template-columns:92px minmax(0,1fr)!important;
+    grid-template-rows:auto minmax(0,1fr)!important;
+    grid-template-areas:
+      "sidebar header"
+      "sidebar content"!important;
+  }
+
+  html[dir="rtl"] .reference-admin{
+    grid-template-columns:minmax(0,1fr) 92px!important;
+    grid-template-areas:
+      "header sidebar"
+      "content sidebar"!important;
+  }
+
+  .reference-sidebar{
+    grid-area:sidebar!important;
+    position:sticky!important;
+    top:0!important;
+    height:100dvh!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    padding-inline:10px!important;
+    z-index:40!important;
+  }
+
+  .reference-sidebar .reference-brand{
+    justify-content:center!important;
+    padding-inline:0!important;
+  }
+
+  .reference-sidebar .reference-brand>div:last-child,
+  .reference-market-card>div,
+  .reference-nav button>span,
+  .reference-sidebar-foot button>span,
+  .reference-sidebar-foot .reference-secure>div,
+  .reference-sidebar-foot .reference-secure>.admin-svg-icon:last-child{
+    display:none!important;
+  }
+
+  .reference-sidebar .reference-brand-mark{
+    margin:auto!important;
+  }
+
+  .reference-market-card{
+    justify-content:center!important;
+    padding-inline:0!important;
+  }
+
+  .reference-nav button,
+  .reference-sidebar-foot button{
+    width:58px!important;
+    min-width:58px!important;
+    height:52px!important;
+    min-height:52px!important;
+    margin-inline:auto!important;
+    padding:0!important;
+    justify-content:center!important;
+    border-radius:14px!important;
+  }
+
+  .reference-nav button .admin-svg-icon,
+  .reference-sidebar-foot button .admin-svg-icon{
+    margin:0!important;
+  }
+
+  .reference-admin-header{
+    grid-area:header!important;
+    min-width:0!important;
+    position:sticky!important;
+    top:0!important;
+    z-index:32!important;
+    padding-inline:16px!important;
+  }
+
+  .reference-admin-content{
+    grid-area:content!important;
+    min-width:0!important;
+    overflow-x:hidden!important;
+    padding-inline:16px!important;
+  }
+
+  .executive-profile-pill>div{
+    display:none!important;
+  }
+
+  .executive-global-search{
+    min-width:220px!important;
+    max-width:420px!important;
+  }
+
+  .stitch-kpi-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+
+  .stitch-middle-grid,
+  .stitch-three-grid,
+  .ai-main-grid,
+  .ai-case-grid{
+    grid-template-columns:1fr!important;
+  }
+}
+
+/* ---------- MOBILE / PHONE ---------- */
+@media(max-width:900px){
+  body.admin-drawer-lock{
+    overflow:hidden!important;
+    touch-action:none!important;
+  }
+
+  .admin-shell{
+    min-height:100dvh!important;
+    width:100%!important;
+    max-width:100%!important;
+    background:#f5f7f5!important;
+    overflow-x:hidden!important;
+  }
+
+  .reference-admin{
+    position:relative!important;
+    display:block!important;
+    min-height:100dvh!important;
+    width:100%!important;
+    max-width:100%!important;
+    background:#f5f7f5!important;
+    overflow-x:hidden!important;
+  }
+
+  /* Off-canvas sidebar */
+  .reference-sidebar{
+    display:flex!important;
+    flex-direction:column!important;
+    position:fixed!important;
+    top:0!important;
+    bottom:0!important;
+    left:0!important;
+    width:min(82vw,310px)!important;
+    max-width:310px!important;
+    height:100dvh!important;
+    min-height:100dvh!important;
+    padding:18px 14px 18px!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    z-index:1002!important;
+    transform:translateX(-104%)!important;
+    transition:transform .24s ease!important;
+    box-shadow:18px 0 46px rgba(5,44,34,.18)!important;
+  }
+
+  html[dir="rtl"] .reference-sidebar{
+    left:auto!important;
+    right:0!important;
+    transform:translateX(104%)!important;
+    box-shadow:-18px 0 46px rgba(5,44,34,.18)!important;
+  }
+
+  .reference-admin.admin-drawer-open .reference-sidebar{
+    transform:translateX(0)!important;
+  }
+
+  .admin-responsive-close{
+    display:grid!important;
+    place-items:center!important;
+    position:absolute!important;
+    top:12px!important;
+    right:12px!important;
+    width:36px!important;
+    height:36px!important;
+    min-width:36px!important;
+    min-height:36px!important;
+    padding:0 0 2px!important;
+    border:1px solid rgba(255,255,255,.16)!important;
+    border-radius:11px!important;
+    background:rgba(255,255,255,.08)!important;
+    color:#fff!important;
+    font-size:24px!important;
+    line-height:1!important;
+    z-index:3!important;
+  }
+
+  html[dir="rtl"] .admin-responsive-close{
+    right:auto!important;
+    left:12px!important;
+  }
+
+  .admin-mobile-backdrop{
+    display:block!important;
+    position:fixed!important;
+    inset:0!important;
+    z-index:1001!important;
+    border:0!important;
+    padding:0!important;
+    margin:0!important;
+    background:rgba(7,29,23,.52)!important;
+    backdrop-filter:blur(2px)!important;
+    -webkit-backdrop-filter:blur(2px)!important;
+    opacity:0!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+    transition:opacity .2s ease,visibility .2s ease!important;
+  }
+
+  .reference-admin.admin-drawer-open .admin-mobile-backdrop{
+    opacity:1!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+  }
+
+  .reference-sidebar .reference-brand{
+    padding-inline-end:46px!important;
+  }
+
+  html[dir="rtl"] .reference-sidebar .reference-brand{
+    padding-inline-end:0!important;
+    padding-inline-start:46px!important;
+  }
+
+  .reference-nav button{
+    min-height:48px!important;
+    touch-action:manipulation!important;
+  }
+
+  /* Sticky mobile admin command bar */
+  .reference-admin-header{
+    position:sticky!important;
+    top:0!important;
+    z-index:900!important;
+    width:100%!important;
+    min-width:0!important;
+    min-height:64px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:8px!important;
+    padding:8px 10px!important;
+    box-sizing:border-box!important;
+    background:#ffffff!important;
+    border-bottom:1px solid #e2e8e4!important;
+    box-shadow:0 6px 18px rgba(16,53,42,.07)!important;
+  }
+
+  .admin-mobile-menu{
+    display:inline-flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:6px!important;
+    height:42px!important;
+    min-height:42px!important;
+    padding:0 11px!important;
+    border:1px solid #d7e4de!important;
+    border-radius:12px!important;
+    background:#f7fbf9!important;
+    color:#0a614a!important;
+    font-size:11px!important;
+    font-weight:900!important;
+    white-space:nowrap!important;
+    touch-action:manipulation!important;
+  }
+
+  .admin-mobile-menu svg{
+    width:19px!important;
+    height:19px!important;
+    fill:none!important;
+    stroke:currentColor!important;
+    stroke-width:2!important;
+    stroke-linecap:round!important;
+  }
+
+  .reference-admin-header .stitch-top-status{
+    flex:1 1 auto!important;
+    min-width:0!important;
+    overflow:hidden!important;
+  }
+
+  .reference-admin-header .stitch-top-status .stitch-approved-count{
+    display:none!important;
+  }
+
+  .reference-admin-header .stitch-market-sync{
+    max-width:100%!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+  }
+
+  .reference-header-actions{
+    flex:0 0 auto!important;
+    gap:5px!important;
+  }
+
+  .reference-header-actions .executive-profile-pill,
+  .reference-header-actions .executive-settings{
+    display:none!important;
+  }
+
+  .reference-header-actions .executive-head-icon,
+  .reference-header-actions .executive-language-btn{
+    width:38px!important;
+    min-width:38px!important;
+    height:38px!important;
+    min-height:38px!important;
+    padding:0!important;
+    border-radius:11px!important;
+  }
+
+  .reference-header-actions .executive-language-btn{
+    justify-content:center!important;
+  }
+
+  .reference-header-actions .executive-language-btn .admin-svg-icon{
+    display:none!important;
+  }
+
+  .executive-global-search{
+    flex:1 1 auto!important;
+    min-width:0!important;
+    max-width:none!important;
+    height:42px!important;
+  }
+
+  .executive-global-search kbd{
+    display:none!important;
+  }
+
+  /* Main admin content */
+  .reference-admin-content{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:14px 12px 30px!important;
+    box-sizing:border-box!important;
+    overflow-x:hidden!important;
+  }
+
+  .reference-page-heading,
+  .stitch-hero-content,
+  .stitch-hero-actions,
+  .reference-heading-actions,
+  .gov-hero,
+  .gov-hero-actions,
+  .wa-settings-head{
+    flex-direction:column!important;
+    align-items:stretch!important;
+  }
+
+  .reference-page-heading h1,
+  .stitch-hero-copy h1{
+    font-size:clamp(24px,7vw,34px)!important;
+    line-height:1.14!important;
+  }
+
+  .stitch-hero-v186{
+    border-radius:18px!important;
+    padding:18px!important;
+  }
+
+  .stitch-hero-actions>*,
+  .reference-heading-actions>*,
+  .gov-hero-actions>*{
+    width:100%!important;
+    max-width:100%!important;
+  }
+
+  /* Operational cards/grids */
+  .stitch-kpi-grid,
+  .stitch-middle-grid,
+  .stitch-three-grid,
+  .stitch-stage-grid,
+  .reference-orders-grid,
+  .ai-main-grid,
+  .ai-case-grid,
+  .ai-kpis,
+  .ai-telemetry-grid,
+  .ai-sensor-grid,
+  .gov-kpis,
+  .supplier-detail-grid,
+  .audit-detail-grid{
+    grid-template-columns:1fr!important;
+    gap:12px!important;
+  }
+
+  .stitch-panel,
+  .stitch-stream-panel,
+  .stitch-flow-panel,
+  .admin-order,
+  .ai-card,
+  .ai-stream-card,
+  .gov-rbac-page,
+  .gov-registry{
+    min-width:0!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+
+  /* Tables remain fully usable on phone via local horizontal scroll */
+  .reference-admin-content table{
+    display:block!important;
+    width:100%!important;
+    max-width:100%!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior-x:contain!important;
+    white-space:nowrap!important;
+  }
+
+  .stitch-table-wrap,
+  .ai-table-wrap,
+  .gov-table-wrap,
+  .gov-rbac-table-wrap{
+    width:100%!important;
+    max-width:100%!important;
+    overflow-x:auto!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+
+  .reference-admin-content input,
+  .reference-admin-content select,
+  .reference-admin-content textarea,
+  .reference-admin-content button{
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+
+  .reference-admin-content button,
+  .reference-admin-content select,
+  .reference-admin-content input[type="button"],
+  .reference-admin-content input[type="submit"]{
+    min-height:42px;
+    touch-action:manipulation!important;
+  }
+
+  /* Forms / filters stack sensibly */
+  .gov-filters,
+  .gov-toolbar,
+  .admin-meta,
+  .wa-settings-actions{
+    flex-wrap:wrap!important;
+  }
+
+  .gov-filters>*,
+  .gov-toolbar>*{
+    min-width:min(100%,220px)!important;
+    flex:1 1 180px!important;
+  }
+
+  /* Admin login gate usable on every phone */
+  .admin-login.unified-admin-gate{
+    width:min(92vw,520px)!important;
+    max-width:520px!important;
+    margin:28px auto!important;
+    padding:24px 18px!important;
+    box-sizing:border-box!important;
+    border-radius:20px!important;
+  }
+
+  .admin-login.unified-admin-gate img{
+    max-width:110px!important;
+    height:auto!important;
+    object-fit:contain!important;
+  }
+}
+
+@media(max-width:430px){
+  .reference-admin-header{
+    padding-inline:8px!important;
+  }
+
+  .admin-mobile-menu{
+    width:40px!important;
+    min-width:40px!important;
+    padding:0!important;
+  }
+
+  .admin-mobile-menu span{
+    display:none!important;
+  }
+
+  .reference-header-actions .executive-language-btn,
+  .reference-header-actions .executive-head-icon{
+    width:36px!important;
+    min-width:36px!important;
+    height:36px!important;
+    min-height:36px!important;
+  }
+
+  .reference-admin-content{
+    padding-inline:9px!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .reference-sidebar,
+  .admin-mobile-backdrop{
+    transition:none!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV529AdminResponsiveCSS,{once:true});
+  }else{
+    installV529AdminResponsiveCSS();
+  }
+})();
+
+/* =========================================================
+   v530 — CUSTOMER PORTAL MANAGER ADMIN MODULE
+   ========================================================= */
+
+function portalManagerStatusBadge(){
+  if(portalManagerServerStatus==='server')return `<span class="portal-sync-badge server"><i></i>${t('حفظ مركزي','CENTRAL SYNC')}</span>`;
+  return `<span class="portal-sync-badge local"><i></i>${t('حفظ محلي مؤقت','LOCAL FALLBACK')}</span>`;
+}
+
+function adminPortalManagerContent(){
+  const visibleProducts=products.filter(p=>portalProductVisible(p.id)).length;
+  const hiddenProducts=products.length-visibleProducts;
+  const visibleCategories=portalCategoryRows().length;
+  const faqCount=portalFaqRows().length;
+  const canManage=adminCan('portal','manage');
+
+  return `<section class="portal-manager-page">
+    <section class="portal-manager-hero">
+      <div>
+        <div class="portal-manager-kicker">${adminIcon('store')}<span>${t('إدارة تجربة العميل','CUSTOMER EXPERIENCE CONTROL')}</span></div>
+        <h1>${t('إدارة بوابة العملاء','Customer Portal Manager')}</h1>
+        <p>${t(
+          'تحكم في المنتجات، بطاقات العرض، محتوى الصفحة الرئيسية، الفئات والأسئلة الشائعة من لوحة الإدارة.',
+          'Control products, customer-facing cards, home-page content, categories and FAQs from the admin portal.'
+        )}</p>
+        <div class="portal-manager-hero-meta">
+          ${portalManagerStatusBadge()}
+          <span>${t('آخر تحديث','Last update')}: ${safe(portalManagerState.meta.updatedAt?new Date(portalManagerState.meta.updatedAt).toLocaleString(lang==='ar'?'ar-SA':'en-GB'):'—')}</span>
+        </div>
+      </div>
+      <div class="portal-manager-hero-actions">
+        <button type="button" data-nav="home" class="portal-open-store">${adminIcon('store')}${t('فتح متجر العملاء','Open customer portal')}</button>
+        ${canManage?`<button type="button" id="portal-reset-all" class="portal-reset-btn">${adminIcon('refresh')}${t('استعادة الإعدادات الأصلية','Reset content')}</button>`:''}
+      </div>
+    </section>
+
+    <section class="portal-manager-kpis">
+      <article><span>${adminIcon('store')}</span><div><small>${t('المنتجات الظاهرة','Visible products')}</small><strong>${visibleProducts}</strong><em>${hiddenProducts} ${t('مخفي','hidden')}</em></div></article>
+      <article><span>${adminIcon('suppliers')}</span><div><small>${t('الفئات الظاهرة','Visible categories')}</small><strong>${visibleCategories}</strong><em>4 ${t('إجمالي','total')}</em></div></article>
+      <article><span>${adminIcon('marketing')}</span><div><small>${t('محتوى الرئيسية','Home content')}</small><strong>LIVE</strong><em>${t('نصوص قابلة للتعديل','editable copy')}</em></div></article>
+      <article><span>${adminIcon('audit')}</span><div><small>${t('الأسئلة الشائعة','FAQ entries')}</small><strong>${faqCount}</strong><em>${t('قابلة للتعديل','editable')}</em></div></article>
+    </section>
+
+    <section class="portal-manager-panel">
+      <header>
+        <div><small>${t('الكتالوج','CATALOG')}</small><h2>${t('بطاقات المنتجات','Product Cards')}</h2><p>${t('تعديل الاسم والسعر والصورة والشارة وحالة الظهور لكل منتج.','Edit product name, pricing, image, badge and customer-facing visibility.')}</p></div>
+      </header>
+      <div class="portal-product-grid">
+        ${products.map(p=>{
+          const o=portalProductOverride(p.id);
+          const visible=portalProductVisible(p.id);
+          const image=o.image||p.image||premiumProductImage(p);
+          return `<article class="portal-product-admin-card ${visible?'':'is-hidden'}">
+            <div class="portal-product-admin-image"><img src="${safe(image||'assets/ass-al-halaal-logo-colored.png')}" alt="${safe(t(p.ar,p.en))}"></div>
+            <div class="portal-product-admin-copy">
+              <div class="portal-product-admin-title"><div><small>${safe(p.id)}</small><h3>${safe(t(p.ar,p.en))}</h3></div><span class="${visible?'active':'hidden'}">${visible?t('ظاهر','VISIBLE'):t('مخفي','HIDDEN')}</span></div>
+              <p>${safe(t(p.subAr||'',p.subEn||''))}</p>
+              <div class="portal-product-admin-price"><strong>${money(p.price)}</strong>${p.oldPrice?`<del>${money(p.oldPrice)}</del>`:''}</div>
+              <div class="portal-product-admin-actions">
+                <button type="button" data-portal-edit-product="${safe(p.id)}" ${canManage?'':'disabled'}>${adminIcon('settings')}${t('تعديل','Edit')}</button>
+                <button type="button" class="portal-visibility-toggle ${visible?'on':'off'}" data-portal-toggle-product="${safe(p.id)}" ${canManage?'':'disabled'}>${visible?t('إخفاء','Hide'):t('إظهار','Show')}</button>
+              </div>
+            </div>
+          </article>`;
+        }).join('')}
+      </div>
+    </section>
+
+    <section class="portal-manager-split">
+      <section class="portal-manager-panel">
+        <header><div><small>${t('الصفحة الرئيسية','HOME PAGE')}</small><h2>${t('النصوص التسويقية','Marketing & Hero Copy')}</h2><p>${t('تعديل شريط الإعلان والعرض الرئيسي وعنوان المنتجات.', 'Edit the announcement bar, primary hero and product-section title.')}</p></div></header>
+        <form id="portal-home-form" class="portal-manager-form">
+          <div class="portal-form-pair">
+            <label>${t('شريط الإعلان · عربي','Announcement · Arabic')}<textarea name="announcementAr" rows="2">${safe(portalManagerState.home.announcementAr)}</textarea></label>
+            <label>${t('شريط الإعلان · English','Announcement · English')}<textarea name="announcementEn" rows="2">${safe(portalManagerState.home.announcementEn)}</textarea></label>
+          </div>
+          <div class="portal-form-pair">
+            <label>${t('شارة العرض · عربي','Hero badge · Arabic')}<input name="heroBadgeAr" value="${safe(portalManagerState.home.heroBadgeAr)}"></label>
+            <label>${t('شارة العرض · English','Hero badge · English')}<input name="heroBadgeEn" value="${safe(portalManagerState.home.heroBadgeEn)}"></label>
+          </div>
+          <div class="portal-form-pair">
+            <label>${t('العنوان الذهبي · عربي','Gold title · Arabic')}<input name="heroGoldAr" value="${safe(portalManagerState.home.heroGoldAr)}"></label>
+            <label>${t('العنوان الذهبي · English','Gold title · English')}<input name="heroGoldEn" value="${safe(portalManagerState.home.heroGoldEn)}"></label>
+          </div>
+          <div class="portal-form-pair">
+            <label>${t('العنوان الرئيسي · عربي','Hero title · Arabic')}<input name="heroTitleAr" value="${safe(portalManagerState.home.heroTitleAr)}"></label>
+            <label>${t('العنوان الرئيسي · English','Hero title · English')}<input name="heroTitleEn" value="${safe(portalManagerState.home.heroTitleEn)}"></label>
+          </div>
+          <div class="portal-form-pair">
+            <label>${t('وصف العرض · عربي','Hero description · Arabic')}<textarea name="heroDescAr" rows="4">${safe(portalManagerState.home.heroDescAr)}</textarea></label>
+            <label>${t('وصف العرض · English','Hero description · English')}<textarea name="heroDescEn" rows="4">${safe(portalManagerState.home.heroDescEn)}</textarea></label>
+          </div>
+          <div class="portal-form-pair">
+            <label>${t('عنوان الأكثر طلباً · عربي','Most Requested · Arabic')}<input name="mostRequestedAr" value="${safe(portalManagerState.home.mostRequestedAr)}"></label>
+            <label>${t('عنوان الأكثر طلباً · English','Most Requested · English')}<input name="mostRequestedEn" value="${safe(portalManagerState.home.mostRequestedEn)}"></label>
+          </div>
+          <div class="portal-form-pair">
+            <label>${t('عنوان الأسئلة · عربي','FAQ title · Arabic')}<input name="faqTitleAr" value="${safe(portalManagerState.home.faqTitleAr)}"></label>
+            <label>${t('عنوان الأسئلة · English','FAQ title · English')}<input name="faqTitleEn" value="${safe(portalManagerState.home.faqTitleEn)}"></label>
+          </div>
+          <button class="portal-save-btn" type="submit" ${canManage?'':'disabled'}>${adminIcon('secure')}${t('حفظ محتوى الرئيسية','Save home content')}</button>
+        </form>
+      </section>
+
+      <section class="portal-manager-panel">
+        <header><div><small>${t('الفئات','CATEGORIES')}</small><h2>${t('بطاقات أنواع الحلال','Livestock Category Cards')}</h2><p>${t('تعديل الاسم والصورة وحالة الظهور للبطاقات الأربع.', 'Edit name, image and visibility for the four top category cards.')}</p></div></header>
+        <div class="portal-category-admin-list">
+          ${['kabsh','jamal','baqar','maaz'].map(id=>{
+            const c=portalManagerState.categories[id];
+            return `<form class="portal-category-form" data-portal-category="${id}">
+              <div class="portal-category-preview"><img src="${safe(c.image)}" alt="${safe(t(c.ar,c.en))}"></div>
+              <div class="portal-category-fields">
+                <div><label>${t('الاسم العربي','Arabic name')}<input name="ar" value="${safe(c.ar)}"></label><label>English<input name="en" value="${safe(c.en)}"></label></div>
+                <label>${t('مسار/رابط الصورة','Image path / URL')}<input name="image" value="${safe(c.image)}" dir="ltr"></label>
+                <label class="portal-check"><input type="checkbox" name="visible" ${c.visible!==false?'checked':''}><span>${t('إظهار البطاقة في بوابة العملاء','Show this category in customer portal')}</span></label>
+                <button type="submit" ${canManage?'':'disabled'}>${t('حفظ الفئة','Save category')}</button>
+              </div>
+            </form>`;
+          }).join('')}
+        </div>
+      </section>
+    </section>
+
+    <section class="portal-manager-panel">
+      <header><div><small>${t('المحتوى المساعد','HELP CONTENT')}</small><h2>${t('الأسئلة الشائعة','FAQ Manager')}</h2><p>${t('تعديل السؤال والإجابة باللغتين.','Edit each customer-facing question and answer in both languages.')}</p></div></header>
+      <form id="portal-faq-form" class="portal-faq-form">
+        ${(portalManagerState.faqs||[]).map((row,i)=>`<article>
+          <header><span>${String(i+1).padStart(2,'0')}</span><b>${t('سؤال','Question')} ${i+1}</b></header>
+          <div class="portal-form-pair"><label>${t('السؤال · عربي','Question · Arabic')}<input name="qAr_${i}" value="${safe(row.qAr)}"></label><label>Question · English<input name="qEn_${i}" value="${safe(row.qEn)}"></label></div>
+          <div class="portal-form-pair"><label>${t('الإجابة · عربي','Answer · Arabic')}<textarea name="aAr_${i}" rows="3">${safe(row.aAr)}</textarea></label><label>Answer · English<textarea name="aEn_${i}" rows="3">${safe(row.aEn)}</textarea></label></div>
+        </article>`).join('')}
+        <button class="portal-save-btn" type="submit" ${canManage?'':'disabled'}>${adminIcon('secure')}${t('حفظ الأسئلة الشائعة','Save FAQ content')}</button>
+      </form>
+    </section>
+  </section>`;
+}
+
+function portalProductImageIsDataUrl(value){
+  return /^data:image\//i.test(String(value||'').trim());
+}
+
+async function portalPrepareProductImage(file){
+  if(!file || !String(file.type||'').startsWith('image/')){
+    throw new Error(t('اختر ملف صورة صالحاً','Please choose a valid image file'));
+  }
+  if(Number(file.size||0)>10*1024*1024){
+    throw new Error(t('حجم الصورة كبير جداً. الحد الأقصى 10MB','Image is too large. Maximum size is 10MB'));
+  }
+
+  const source=await new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(String(reader.result||''));
+    reader.onerror=()=>reject(new Error(t('تعذر قراءة الصورة','Could not read image')));
+    reader.readAsDataURL(file);
+  });
+
+  const img=await new Promise((resolve,reject)=>{
+    const node=new Image();
+    node.onload=()=>resolve(node);
+    node.onerror=()=>reject(new Error(t('تعذر فتح الصورة','Could not open image')));
+    node.src=source;
+  });
+
+  const maxSide=1600;
+  const scale=Math.min(1,maxSide/Math.max(img.naturalWidth||1,img.naturalHeight||1));
+  const width=Math.max(1,Math.round((img.naturalWidth||1)*scale));
+  const height=Math.max(1,Math.round((img.naturalHeight||1)*scale));
+
+  const canvas=document.createElement('canvas');
+  canvas.width=width;
+  canvas.height=height;
+  const ctx=canvas.getContext('2d',{alpha:false});
+  if(!ctx)return source;
+
+  ctx.fillStyle='#ffffff';
+  ctx.fillRect(0,0,width,height);
+  ctx.drawImage(img,0,0,width,height);
+
+  let result='';
+  try{
+    result=canvas.toDataURL('image/webp',0.88);
+    if(!result.startsWith('data:image/webp'))result='';
+  }catch{}
+  if(!result){
+    try{result=canvas.toDataURL('image/jpeg',0.9)}catch{result=source}
+  }
+  return result||source;
+}
+
+function openPortalProductEditor(id){
+  if(!rbacGuard('portal','manage'))return;
+  const p=products.find(x=>String(x.id)===String(id));
+  if(!p)return;
+
+  const o=portalProductOverride(p.id);
+  const current={...p,...o};
+  const currentImage=String(current.image||p.image||premiumProductImage(p)||'assets/ass-al-halaal-logo-colored.png');
+  const currentUrlValue=portalProductImageIsDataUrl(currentImage)?'':currentImage;
+
+  open(`<section class="portal-product-editor portal-product-editor-v532">
+    <header class="portal-editor-head">
+      <div>
+        <small>${t('إدارة بوابة العملاء','CUSTOMER PORTAL MANAGER')}</small>
+        <h2>${t('تعديل بطاقة المنتج','Edit product card')}</h2>
+        <p><span>${safe(p.id)}</span> · ${safe(t(current.ar||p.ar,current.en||p.en))}</p>
+      </div>
+      <span class="portal-editor-status">${portalProductVisible(p.id)?t('ظاهر للعملاء','VISIBLE TO CUSTOMERS'):t('مخفي','HIDDEN')}</span>
+    </header>
+
+    <form id="portal-product-editor-form" data-product-id="${safe(p.id)}">
+      <div class="portal-editor-layout">
+        <aside class="portal-editor-media">
+          <div class="portal-editor-media-label">
+            <div><small>${t('صورة البطاقة','PRODUCT HERO')}</small><b>${t('صورة العميل الرئيسية','Customer-facing image')}</b></div>
+            <span>${t('معاينة مباشرة','LIVE PREVIEW')}</span>
+          </div>
+
+          <div class="portal-editor-image-stage" id="portal-product-image-dropzone" tabindex="0">
+            <img id="portal-product-image-preview" src="${safe(currentImage)}" alt="${safe(t(current.ar||p.ar,current.en||p.en))}">
+            <div class="portal-editor-image-overlay">
+              <button type="button" id="portal-product-image-pick" class="portal-editor-upload-btn">
+                ${adminIcon('store')}
+                <span>${t('استبدال الصورة','Replace image')}</span>
+              </button>
+              <small>${t('JPG, PNG, WEBP · حتى 10MB','JPG, PNG, WEBP · up to 10MB')}</small>
+            </div>
+          </div>
+
+          <input id="portal-product-image-file" type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden>
+          <input id="portal-product-image-value" name="image" type="hidden" value="${safe(currentImage)}">
+
+          <div class="portal-editor-media-actions">
+            <button type="button" id="portal-product-image-pick-secondary">${adminIcon('store')}${t('اختيار صورة من الجهاز','Choose image from device')}</button>
+            <button type="button" id="portal-product-image-original">${adminIcon('refresh')}${t('استعادة الصورة الأصلية','Restore original')}</button>
+          </div>
+
+          <div class="portal-editor-drop-hint">
+            <span>${adminIcon('secure')}</span>
+            <p><b>${t('يمكنك السحب والإفلات أيضاً','Drag & drop is supported')}</b><small>${t('سيتم ضغط الصورة تلقائياً للحفاظ على سرعة المتجر.','The image is optimized automatically to keep the store fast.')}</small></p>
+          </div>
+
+          <label class="portal-editor-url-field">
+            <span>${t('أو استخدم مسار / رابط صورة','Or use image path / URL')}</span>
+            <div>
+              <input id="portal-product-image-url" dir="ltr" value="${safe(currentUrlValue)}" placeholder="assets/product-image.webp or https://...">
+              <button type="button" id="portal-product-image-apply-url">${t('معاينة','Preview')}</button>
+            </div>
+          </label>
+        </aside>
+
+        <section class="portal-editor-fields">
+          <div class="portal-editor-section-title">
+            <span>01</span>
+            <div><b>${t('معلومات المنتج','Product information')}</b><small>${t('الاسم والوصف المعروض للعملاء','Customer-facing name and description')}</small></div>
+          </div>
+
+          <div class="portal-form-pair">
+            <label>${t('الاسم العربي','Arabic name')}<input name="ar" value="${safe(current.ar||'')}" required></label>
+            <label>English name<input name="en" value="${safe(current.en||'')}" required></label>
+          </div>
+
+          <div class="portal-form-pair">
+            <label>${t('الوصف العربي','Arabic description')}<textarea name="subAr" rows="3">${safe(current.subAr||'')}</textarea></label>
+            <label>English description<textarea name="subEn" rows="3">${safe(current.subEn||'')}</textarea></label>
+          </div>
+
+          <div class="portal-editor-section-title">
+            <span>02</span>
+            <div><b>${t('السعر والعرض','Pricing & offer')}</b><small>${t('السعر الحالي والسعر السابق وشارة التسويق','Current price, old price and marketing badge')}</small></div>
+          </div>
+
+          <div class="portal-form-pair">
+            <label>${t('السعر الحالي','Current price')}<div class="portal-money-input"><input name="price" type="number" min="0" step="0.01" value="${safe(current.price??'')}"><span>SAR</span></div></label>
+            <label>${t('السعر السابق','Old price')}<div class="portal-money-input"><input name="oldPrice" type="number" min="0" step="0.01" value="${safe(current.oldPrice??'')}"><span>SAR</span></div></label>
+          </div>
+
+          <div class="portal-form-pair">
+            <label>${t('شارة المنتج · عربي','Badge · Arabic')}<input name="badgeAr" value="${safe(current.badgeAr||'')}"></label>
+            <label>Badge · English<input name="badgeEn" value="${safe(current.badgeEn||'')}"></label>
+          </div>
+
+          <div class="portal-editor-product-preview">
+            <small>${t('معاينة البطاقة','CARD PREVIEW')}</small>
+            <div>
+              <img id="portal-mini-card-image" src="${safe(currentImage)}" alt="">
+              <section>
+                <span>${safe(t(current.badgeAr||'',current.badgeEn||''))}</span>
+                <b id="portal-mini-card-name">${safe(t(current.ar||p.ar,current.en||p.en))}</b>
+                <small id="portal-mini-card-desc">${safe(t(current.subAr||'',current.subEn||''))}</small>
+                <strong id="portal-mini-card-price">${money(Number(current.price||0))}</strong>
+              </section>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="portal-product-editor-actions portal-product-editor-actions-v532">
+        <button type="button" id="portal-product-reset">${adminIcon('refresh')}${t('إعادة المنتج للأصل','Reset product')}</button>
+        <button type="submit" class="checkout-cta">${adminIcon('secure')}<span>${t('حفظ التعديلات','Save changes')}</span></button>
+      </footer>
+    </form>
+  </section>`,'portal-product-dialog portal-product-dialog-v532');
+
+  const form=document.querySelector('#portal-product-editor-form');
+  const fileInput=document.querySelector('#portal-product-image-file');
+  const imageValue=document.querySelector('#portal-product-image-value');
+  const urlInput=document.querySelector('#portal-product-image-url');
+  const preview=document.querySelector('#portal-product-image-preview');
+  const miniImage=document.querySelector('#portal-mini-card-image');
+  const dropzone=document.querySelector('#portal-product-image-dropzone');
+
+  const setImage=(value,{clearUrl=false}={})=>{
+    const src=String(value||'').trim();
+    if(!src)return;
+    if(imageValue)imageValue.value=src;
+    if(preview)preview.src=src;
+    if(miniImage)miniImage.src=src;
+    if(clearUrl&&urlInput)urlInput.value='';
+  };
+
+  const useFile=async file=>{
+    if(!file)return;
+    try{
+      dropzone?.classList.add('is-loading');
+      const data=await portalPrepareProductImage(file);
+      setImage(data,{clearUrl:true});
+      toast(t('تم تجهيز الصورة. اضغط حفظ لتطبيقها.','Image ready. Press Save changes to apply it.'));
+    }catch(err){
+      toast(err?.message||t('تعذر معالجة الصورة','Could not process image'));
+    }finally{
+      dropzone?.classList.remove('is-loading','is-dragging');
+      if(fileInput)fileInput.value='';
+    }
+  };
+
+  document.querySelector('#portal-product-image-pick')?.addEventListener('click',()=>fileInput?.click());
+  document.querySelector('#portal-product-image-pick-secondary')?.addEventListener('click',()=>fileInput?.click());
+  fileInput?.addEventListener('change',()=>useFile(fileInput.files?.[0]));
+
+  dropzone?.addEventListener('dragover',e=>{
+    e.preventDefault();
+    dropzone.classList.add('is-dragging');
+  });
+  dropzone?.addEventListener('dragleave',()=>dropzone.classList.remove('is-dragging'));
+  dropzone?.addEventListener('drop',e=>{
+    e.preventDefault();
+    dropzone.classList.remove('is-dragging');
+    useFile(e.dataTransfer?.files?.[0]);
+  });
+
+  document.querySelector('#portal-product-image-apply-url')?.addEventListener('click',()=>{
+    const value=String(urlInput?.value||'').trim();
+    if(!value){toast(t('أدخل مسار أو رابط الصورة أولاً','Enter an image path or URL first'));return}
+    setImage(value);
+    toast(t('تم تحديث المعاينة. اضغط حفظ لتطبيقها.','Preview updated. Press Save changes to apply it.'));
+  });
+
+  document.querySelector('#portal-product-image-original')?.addEventListener('click',()=>{
+    const base=visibleFallbackProducts().find(x=>String(x.id)===String(p.id))||p;
+    const original=String(premiumProductImage(base)||base.image||p.image||'');
+    if(!original)return;
+    setImage(original);
+    if(urlInput)urlInput.value=portalProductImageIsDataUrl(original)?'':original;
+  });
+
+  const syncMiniPreview=()=>{
+    const fd=new FormData(form);
+    const name=lang==='ar'?String(fd.get('ar')||''):String(fd.get('en')||'');
+    const desc=lang==='ar'?String(fd.get('subAr')||''):String(fd.get('subEn')||'');
+    const badge=lang==='ar'?String(fd.get('badgeAr')||''):String(fd.get('badgeEn')||'');
+    const price=Number(fd.get('price')||0);
+    const nameEl=document.querySelector('#portal-mini-card-name');
+    const descEl=document.querySelector('#portal-mini-card-desc');
+    const priceEl=document.querySelector('#portal-mini-card-price');
+    const badgeEl=document.querySelector('.portal-editor-product-preview section>span');
+    if(nameEl)nameEl.textContent=name;
+    if(descEl)descEl.textContent=desc;
+    if(priceEl)priceEl.textContent=money(price);
+    if(badgeEl)badgeEl.textContent=badge;
+  };
+  form?.addEventListener('input',syncMiniPreview);
+
+  form?.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const d=Object.fromEntries(new FormData(form));
+    const old=portalProductOverride(p.id);
+    portalManagerState.products[p.id]={
+      ...old,
+      ar:String(d.ar||'').trim(),
+      en:String(d.en||'').trim(),
+      subAr:String(d.subAr||'').trim(),
+      subEn:String(d.subEn||'').trim(),
+      price:d.price===''?'':Number(d.price),
+      oldPrice:d.oldPrice===''?'':Number(d.oldPrice),
+      badgeAr:String(d.badgeAr||'').trim(),
+      badgeEn:String(d.badgeEn||'').trim(),
+      image:String(d.image||'').trim(),
+      visible:old.visible!==false
+    };
+    products=portalApplyProductOverrides(products);
+    await portalManagerSyncToServer({silent:false});
+    modal.close();
+    render();
+    toast(t('تم تحديث بطاقة المنتج والصورة','Product card and image updated'));
+  });
+
+  document.querySelector('#portal-product-reset')?.addEventListener('click',async()=>{
+    const visible=portalProductVisible(p.id);
+    portalManagerState.products[p.id]={visible};
+    products=portalApplyProductOverrides(withFeaturedProducts(visibleFallbackProducts().map(x=>({...x,image:premiumProductImage(x)||x.image}))).filter(x=>!isRemovedProduct(x)));
+    await portalManagerSyncToServer({silent:true});
+    modal.close();
+    render();
+    toast(t('تمت استعادة بيانات المنتج الأصلية','Product content reset'));
+  });
+}
+
+function setupV530PortalManagerBindings(){
+  if(view()!=='admin')return;
+
+  if(adminModule==='portal')portalManagerHydrateFromServer();
+
+  document.querySelectorAll('[data-portal-edit-product]').forEach(btn=>{
+    btn.onclick=()=>openPortalProductEditor(btn.dataset.portalEditProduct);
+  });
+
+  document.querySelectorAll('[data-portal-toggle-product]').forEach(btn=>{
+    btn.onclick=async()=>{
+      if(!rbacGuard('portal','manage'))return;
+      const id=btn.dataset.portalToggleProduct;
+      const old=portalProductOverride(id);
+      portalManagerState.products[id]={...old,visible:old.visible===false};
+      await portalManagerSyncToServer({silent:false});
+      render();
+    };
+  });
+
+  const homeForm=document.querySelector('#portal-home-form');
+  if(homeForm)homeForm.onsubmit=async e=>{
+    e.preventDefault();
+    if(!rbacGuard('portal','manage'))return;
+    const d=Object.fromEntries(new FormData(homeForm));
+    portalManagerState.home={...portalManagerState.home,...d};
+    await portalManagerSyncToServer({silent:false});
+    render();
+    toast(t('تم حفظ محتوى الصفحة الرئيسية','Home-page content saved'));
+  };
+
+  document.querySelectorAll('.portal-category-form').forEach(form=>{
+    form.onsubmit=async e=>{
+      e.preventDefault();
+      if(!rbacGuard('portal','manage'))return;
+      const id=form.dataset.portalCategory;
+      const d=Object.fromEntries(new FormData(form));
+      portalManagerState.categories[id]={
+        ...portalManagerState.categories[id],
+        ar:String(d.ar||'').trim(),
+        en:String(d.en||'').trim(),
+        image:String(d.image||'').trim(),
+        visible:Boolean(form.querySelector('input[name="visible"]')?.checked)
+      };
+      await portalManagerSyncToServer({silent:false});
+      render();
+      toast(t('تم تحديث الفئة','Category updated'));
+    };
+  });
+
+  const faqForm=document.querySelector('#portal-faq-form');
+  if(faqForm)faqForm.onsubmit=async e=>{
+    e.preventDefault();
+    if(!rbacGuard('portal','manage'))return;
+    const fd=new FormData(faqForm);
+    portalManagerState.faqs=(portalManagerState.faqs||[]).map((row,i)=>({
+      ...row,
+      qAr:String(fd.get(`qAr_${i}`)||'').trim(),
+      qEn:String(fd.get(`qEn_${i}`)||'').trim(),
+      aAr:String(fd.get(`aAr_${i}`)||'').trim(),
+      aEn:String(fd.get(`aEn_${i}`)||'').trim()
+    }));
+    await portalManagerSyncToServer({silent:false});
+    render();
+    toast(t('تم حفظ الأسئلة الشائعة','FAQ content saved'));
+  };
+
+  document.querySelector('#portal-reset-all')?.addEventListener('click',async()=>{
+    if(!rbacGuard('portal','manage'))return;
+    if(!confirm(t('هل تريد استعادة محتوى بوابة العملاء إلى الإعدادات الأصلية؟','Reset customer-portal content to defaults?')))return;
+    portalManagerState=mergePortalManagerDefaults({});
+    products=portalApplyProductOverrides(withFeaturedProducts(visibleFallbackProducts().map(p=>({...p,image:premiumProductImage(p)||p.image}))).filter(p=>!isRemovedProduct(p)));
+    await portalManagerSyncToServer({silent:true});
+    render();
+    toast(t('تمت استعادة الإعدادات الأصلية','Customer portal content reset'));
+  });
+}
+
+;(()=>{
+  const installV530PortalManagerCSS=()=>{
+    if(document.getElementById('v530-portal-manager-css'))return;
+    const style=document.createElement('style');
+    style.id='v530-portal-manager-css';
+    style.textContent=`
+.portal-manager-page{display:grid;gap:18px;min-width:0}
+.portal-manager-hero{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:26px 28px;border-radius:22px;background:linear-gradient(135deg,#0a604a,#073d31);color:#fff;box-shadow:0 16px 34px rgba(5,63,47,.14)}
+.portal-manager-kicker{display:flex;align-items:center;gap:8px;color:#efca62;font-size:11px;font-weight:900;letter-spacing:.08em}
+.portal-manager-kicker .admin-svg-icon{width:20px;height:20px}
+.portal-manager-hero h1{margin:8px 0 8px;font-size:34px;line-height:1.1}
+.portal-manager-hero p{margin:0;max-width:760px;color:rgba(255,255,255,.77);font-size:13px;line-height:1.65}
+.portal-manager-hero-meta{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:16px;font-size:10px;color:rgba(255,255,255,.7)}
+.portal-sync-badge{display:inline-flex;align-items:center;gap:6px;min-height:28px;padding:0 10px;border-radius:99px;font-weight:900;letter-spacing:.04em}
+.portal-sync-badge i{width:7px;height:7px;border-radius:50%}
+.portal-sync-badge.server{background:rgba(34,197,94,.15);color:#b7f7c8;border:1px solid rgba(34,197,94,.24)}.portal-sync-badge.server i{background:#4ade80}
+.portal-sync-badge.local{background:rgba(234,179,8,.14);color:#fde8a4;border:1px solid rgba(234,179,8,.24)}.portal-sync-badge.local i{background:#eab308}
+.portal-manager-hero-actions{display:flex;flex-direction:column;gap:9px;min-width:210px}
+.portal-manager-hero-actions button{min-height:44px;padding:0 14px;border-radius:12px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:7px}
+.portal-open-store{border:1px solid #f0ca61;background:#e7b83f;color:#073d31}.portal-reset-btn{border:1px solid rgba(255,255,255,.17);background:rgba(255,255,255,.08);color:#fff}
+.portal-manager-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.portal-manager-kpis article{display:flex;align-items:center;gap:12px;min-height:100px;padding:16px;border:1px solid #e0e7e3;border-radius:16px;background:#fff;box-shadow:0 5px 16px rgba(18,55,44,.04)}
+.portal-manager-kpis article>span{width:42px;height:42px;display:grid;place-items:center;border-radius:13px;background:#edf7f3;color:#0b684f}
+.portal-manager-kpis .admin-svg-icon{width:21px;height:21px}.portal-manager-kpis small{display:block;color:#7b8a84;font-size:10px}.portal-manager-kpis strong{display:block;margin-top:3px;color:#153f34;font-size:22px}.portal-manager-kpis em{display:block;margin-top:3px;color:#a17b25;font-size:9px;font-style:normal}
+.portal-manager-panel{min-width:0;padding:20px;border:1px solid #e0e7e3;border-radius:18px;background:#fff;box-shadow:0 6px 20px rgba(18,55,44,.045)}
+.portal-manager-panel>header{display:flex;justify-content:space-between;gap:16px;margin-bottom:17px}.portal-manager-panel>header small{color:#b4851e;font-size:10px;font-weight:900;letter-spacing:.1em}.portal-manager-panel>header h2{margin:4px 0 4px;color:#173f34;font-size:22px}.portal-manager-panel>header p{margin:0;color:#778781;font-size:11px;line-height:1.55}
+.portal-product-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.portal-product-admin-card{display:grid;grid-template-columns:112px minmax(0,1fr);min-width:0;border:1px solid #e1e7e4;border-radius:15px;overflow:hidden;background:#fbfcfb}.portal-product-admin-card.is-hidden{opacity:.62}
+.portal-product-admin-image{min-height:132px;background:#f3f6f4}.portal-product-admin-image img{width:100%;height:100%;min-height:132px;object-fit:cover;display:block}
+.portal-product-admin-copy{min-width:0;padding:12px}.portal-product-admin-title{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.portal-product-admin-title small{display:block;color:#9aa6a1;font-size:8px}.portal-product-admin-title h3{margin:3px 0 0;color:#183f34;font-size:14px}.portal-product-admin-title>span{flex:0 0 auto;padding:4px 7px;border-radius:99px;font-size:7px;font-weight:900}.portal-product-admin-title>span.active{background:#e8f7ef;color:#0c704f}.portal-product-admin-title>span.hidden{background:#f0f1f0;color:#6d7773}
+.portal-product-admin-copy>p{margin:8px 0;color:#75847f;font-size:9px;line-height:1.45}.portal-product-admin-price{display:flex;align-items:center;gap:7px}.portal-product-admin-price strong{color:#0b664e;font-size:13px}.portal-product-admin-price del{color:#a4aaa8;font-size:9px}
+.portal-product-admin-actions{display:flex;gap:7px;margin-top:10px}.portal-product-admin-actions button{min-height:34px;padding:0 9px;border-radius:9px;font-size:9px;font-weight:900}.portal-product-admin-actions button:first-child{border:1px solid #d6e4de;background:#fff;color:#0b6049;display:flex;align-items:center;gap:5px}.portal-product-admin-actions button:first-child .admin-svg-icon{width:14px;height:14px}.portal-visibility-toggle{border:1px solid #e0c66d;background:#fff9e9;color:#8a6718}.portal-visibility-toggle.off{border-color:#cfe6da;background:#edf8f2;color:#0c6d50}
+.portal-manager-split{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;min-width:0}
+.portal-manager-form,.portal-faq-form{display:grid;gap:13px}.portal-form-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.portal-manager-form label,.portal-category-fields label,.portal-faq-form label,.portal-product-editor label{display:flex;flex-direction:column;gap:6px;color:#315248;font-size:10px;font-weight:850}
+.portal-manager-form input,.portal-manager-form textarea,.portal-category-fields input,.portal-faq-form input,.portal-faq-form textarea,.portal-product-editor input,.portal-product-editor textarea{width:100%;box-sizing:border-box;border:1px solid #d7e2dd;border-radius:11px;background:#fbfcfc;color:#173f34;padding:10px 11px;font:inherit;outline:none}.portal-manager-form input,.portal-category-fields input,.portal-faq-form input,.portal-product-editor input{height:43px}.portal-manager-form textarea,.portal-faq-form textarea,.portal-product-editor textarea{resize:vertical;line-height:1.5}
+.portal-manager-form input:focus,.portal-manager-form textarea:focus,.portal-category-fields input:focus,.portal-faq-form input:focus,.portal-faq-form textarea:focus,.portal-product-editor input:focus,.portal-product-editor textarea:focus{border-color:#bb8d25;box-shadow:0 0 0 3px rgba(187,141,37,.1)}
+.portal-save-btn{justify-self:end;min-height:44px;padding:0 16px;border:1px solid #0b654d;border-radius:11px;background:linear-gradient(#0d6b51,#07503d);color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;gap:7px}.portal-save-btn .admin-svg-icon{width:16px;height:16px}
+.portal-category-admin-list{display:grid;gap:10px}.portal-category-form{display:grid;grid-template-columns:104px minmax(0,1fr);gap:12px;padding:10px;border:1px solid #e1e7e4;border-radius:14px;background:#fbfcfb}.portal-category-preview{height:112px;border-radius:11px;overflow:hidden;background:#f0f4f2}.portal-category-preview img{width:100%;height:100%;object-fit:cover}.portal-category-fields{display:grid;gap:8px}.portal-category-fields>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.portal-check{flex-direction:row!important;align-items:center!important}.portal-check input{width:16px!important;height:16px!important}.portal-category-fields button{min-height:36px;border:1px solid #0d654e;border-radius:9px;background:#0b5b46;color:#fff;font-size:9px;font-weight:900}
+.portal-faq-form article{padding:14px;border:1px solid #e2e8e5;border-radius:14px;background:#fbfcfb}.portal-faq-form article>header{display:flex;align-items:center;gap:8px;margin-bottom:10px}.portal-faq-form article>header span{width:32px;height:32px;display:grid;place-items:center;border-radius:9px;background:#a87817;color:#fff;font-size:9px;font-weight:900}.portal-faq-form article>header b{color:#173f34;font-size:11px}
+.portal-product-dialog{width:min(94vw,820px);max-width:820px}.portal-product-editor{padding:10px 6px 4px}.portal-product-editor>small{color:#a97918;font-size:9px;font-weight:900;letter-spacing:.1em}.portal-product-editor h2{margin:5px 0 4px;color:#173f34}.portal-product-editor>p{margin:0 0 16px;color:#8a9692;font-size:10px}.portal-product-editor form{display:grid;gap:12px}.portal-product-editor-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:5px}.portal-product-editor-actions button{min-height:42px;padding:0 14px;border-radius:10px;font-weight:900}.portal-product-editor-actions button:first-child{border:1px solid #d8e1dd;background:#f5f8f7;color:#315248}.portal-product-editor-actions .checkout-cta{border:1px solid #0b654d;background:#0b5b46;color:#fff}
+
+@media(max-width:1180px){.portal-product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.portal-manager-split{grid-template-columns:1fr}.portal-manager-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){
+  .portal-manager-hero{flex-direction:column;align-items:stretch;padding:20px}.portal-manager-hero h1{font-size:27px}.portal-manager-hero-actions{min-width:0}
+  .portal-manager-kpis{grid-template-columns:1fr 1fr}.portal-manager-kpis article{min-height:84px;padding:12px}
+  .portal-manager-panel{padding:14px}.portal-product-grid{grid-template-columns:1fr}.portal-product-admin-card{grid-template-columns:96px minmax(0,1fr)}.portal-product-admin-image,.portal-product-admin-image img{min-height:122px}
+  .portal-form-pair{grid-template-columns:1fr}.portal-category-form{grid-template-columns:82px minmax(0,1fr)}.portal-category-preview{height:92px}.portal-category-fields>div{grid-template-columns:1fr}
+  .portal-save-btn{width:100%;justify-content:center}.portal-product-editor-actions{display:grid;grid-template-columns:1fr 1fr}.portal-product-editor-actions button{min-width:0}
+}
+@media(max-width:420px){.portal-manager-kpis{grid-template-columns:1fr}.portal-category-form{grid-template-columns:1fr}.portal-category-preview{height:150px}}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV530PortalManagerCSS,{once:true});
+  }else{
+    installV530PortalManagerCSS();
+  }
+})();
+
+/* =========================================================
+   Ass Al Halaal v531 — CLEAR ORIGINAL ADMIN BRAND LOGO
+   ========================================================= */
+;(()=>{
+  const installV531AdminBrandLogo=()=>{
+    if(document.getElementById('v531-admin-brand-logo'))return;
+
+    const style=document.createElement('style');
+    style.id='v531-admin-brand-logo';
+    style.textContent=`
+.reference-sidebar .reference-brand-mark.admin-brand-logo-v531{
+  width:58px!important;
+  height:58px!important;
+  min-width:58px!important;
+  min-height:58px!important;
+  flex:0 0 58px!important;
+
+  display:grid!important;
+  place-items:center!important;
+
+  padding:5px!important;
+  box-sizing:border-box!important;
+
+  border-radius:15px!important;
+  border:1px solid rgba(218,177,66,.72)!important;
+  background:#ffffff!important;
+
+  box-shadow:
+    0 5px 15px rgba(0,0,0,.16),
+    inset 0 0 0 1px rgba(255,255,255,.95)!important;
+
+  overflow:hidden!important;
+}
+
+.reference-sidebar .reference-brand-mark.admin-brand-logo-v531 img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+
+  object-fit:contain!important;
+  object-position:center!important;
+
+  filter:none!important;
+  opacity:1!important;
+  mix-blend-mode:normal!important;
+  transform:none!important;
+
+  image-rendering:auto!important;
+}
+
+/* Keep brand text aligned with the clearer logo. */
+.reference-sidebar .reference-brand{
+  align-items:center!important;
+  gap:10px!important;
+}
+
+.reference-sidebar .reference-brand>div:last-child{
+  min-width:0!important;
+}
+
+.reference-sidebar .reference-brand>div:last-child b{
+  display:block!important;
+  line-height:1.12!important;
+}
+
+.reference-sidebar .reference-brand>div:last-child small{
+  display:block!important;
+  margin-top:3px!important;
+}
+
+/* Compact tablet sidebar still gets a clearly visible logo. */
+@media(min-width:901px) and (max-width:1180px){
+  .reference-sidebar .reference-brand-mark.admin-brand-logo-v531{
+    width:58px!important;
+    height:58px!important;
+    min-width:58px!important;
+    min-height:58px!important;
+    flex-basis:58px!important;
+    padding:5px!important;
+    margin:auto!important;
+  }
+}
+
+/* Mobile drawer: slightly larger for easy brand recognition. */
+@media(max-width:900px){
+  .reference-sidebar .reference-brand-mark.admin-brand-logo-v531{
+    width:60px!important;
+    height:60px!important;
+    min-width:60px!important;
+    min-height:60px!important;
+    flex-basis:60px!important;
+    padding:5px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV531AdminBrandLogo,{once:true});
+  }else{
+    installV531AdminBrandLogo();
+  }
+})();
+
+/* =========================================================
+   Ass Al Halaal v532 — PREMIUM PRODUCT EDITOR + IMAGE UPLOAD
+   ========================================================= */
+;(()=>{
+  const installV532ProductEditorCSS=()=>{
+    if(document.getElementById('v532-product-editor-css'))return;
+    const style=document.createElement('style');
+    style.id='v532-product-editor-css';
+    style.textContent=`
+.portal-product-dialog-v532{
+  width:min(96vw,1080px)!important;
+  max-width:1080px!important;
+}
+
+.portal-product-editor-v532{
+  padding:4px!important;
+}
+
+.portal-editor-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:18px;
+  padding:4px 2px 18px;
+  border-bottom:1px solid #e5ebe8;
+}
+
+.portal-editor-head small{
+  color:#b58318;
+  font-size:9px;
+  font-weight:950;
+  letter-spacing:.12em;
+}
+
+.portal-editor-head h2{
+  margin:5px 0 5px;
+  color:#123f34;
+  font-size:26px;
+  line-height:1.08;
+}
+
+.portal-editor-head p{
+  margin:0;
+  color:#82908b;
+  font-size:10px;
+}
+
+.portal-editor-head p span{
+  color:#41665a;
+  font-weight:850;
+}
+
+.portal-editor-status{
+  flex:0 0 auto;
+  padding:7px 10px;
+  border:1px solid #cfe6dc;
+  border-radius:999px;
+  background:#eff9f4;
+  color:#0a6b4f;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.04em;
+}
+
+.portal-editor-layout{
+  display:grid;
+  grid-template-columns:minmax(300px,.82fr) minmax(0,1.18fr);
+  gap:22px;
+  padding:20px 0 4px;
+}
+
+.portal-editor-media{
+  min-width:0;
+  padding:14px;
+  border:1px solid #e0e8e4;
+  border-radius:18px;
+  background:linear-gradient(180deg,#fbfdfc,#f5f9f7);
+}
+
+.portal-editor-media-label{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.portal-editor-media-label small{
+  display:block;
+  color:#ac7c17;
+  font-size:8px;
+  font-weight:950;
+  letter-spacing:.1em;
+}
+
+.portal-editor-media-label b{
+  display:block;
+  margin-top:3px;
+  color:#183f34;
+  font-size:12px;
+}
+
+.portal-editor-media-label>span{
+  padding:5px 8px;
+  border-radius:999px;
+  background:#e9f6f0;
+  color:#0b6a4f;
+  font-size:7px;
+  font-weight:950;
+}
+
+.portal-editor-image-stage{
+  position:relative;
+  aspect-ratio:4/3;
+  overflow:hidden;
+  border:1px solid #d8e4de;
+  border-radius:15px;
+  background:#eaf1ed;
+  outline:none;
+  box-shadow:0 8px 22px rgba(21,61,49,.08);
+  transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease;
+}
+
+.portal-editor-image-stage.is-dragging{
+  border:2px dashed #c99c31;
+  box-shadow:0 0 0 4px rgba(201,156,49,.11),0 8px 22px rgba(21,61,49,.08);
+}
+
+.portal-editor-image-stage.is-loading::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:rgba(255,255,255,.72);
+  backdrop-filter:blur(2px);
+  z-index:4;
+}
+
+.portal-editor-image-stage.is-loading::before{
+  content:"";
+  position:absolute;
+  z-index:5;
+  width:28px;
+  height:28px;
+  left:50%;
+  top:50%;
+  margin:-14px;
+  border:3px solid #d8e3de;
+  border-top-color:#0a664d;
+  border-radius:50%;
+  animation:portal-editor-spin .8s linear infinite;
+}
+
+@keyframes portal-editor-spin{to{transform:rotate(360deg)}}
+
+.portal-editor-image-stage>img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:cover;
+  object-position:center;
+  transition:transform .22s ease;
+}
+
+.portal-editor-image-stage:hover>img{
+  transform:scale(1.015);
+}
+
+.portal-editor-image-overlay{
+  position:absolute;
+  inset:auto 10px 10px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:8px;
+  border:1px solid rgba(255,255,255,.48);
+  border-radius:12px;
+  background:rgba(10,43,34,.78);
+  color:#fff;
+  backdrop-filter:blur(10px);
+}
+
+.portal-editor-image-overlay small{
+  color:rgba(255,255,255,.73);
+  font-size:7px;
+}
+
+.portal-editor-upload-btn{
+  min-height:36px!important;
+  padding:0 11px!important;
+  border:1px solid #ddb342!important;
+  border-radius:9px!important;
+  background:#f0c451!important;
+  color:#123e32!important;
+  font-size:9px!important;
+  font-weight:950!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:6px!important;
+}
+
+.portal-editor-upload-btn .admin-svg-icon{
+  width:14px;
+  height:14px;
+}
+
+.portal-editor-media-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:10px;
+}
+
+.portal-editor-media-actions button{
+  min-height:39px!important;
+  padding:0 9px!important;
+  border-radius:10px!important;
+  font-size:8px!important;
+  font-weight:900!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:5px!important;
+}
+
+.portal-editor-media-actions button:first-child{
+  border:1px solid #0c654d!important;
+  background:#0b5f48!important;
+  color:#fff!important;
+}
+
+.portal-editor-media-actions button:last-child{
+  border:1px solid #dce5e1!important;
+  background:#fff!important;
+  color:#436057!important;
+}
+
+.portal-editor-media-actions .admin-svg-icon{
+  width:14px;
+  height:14px;
+}
+
+.portal-editor-drop-hint{
+  display:flex;
+  gap:9px;
+  margin-top:10px;
+  padding:10px;
+  border-radius:11px;
+  background:#eef5f2;
+  color:#45645a;
+}
+
+.portal-editor-drop-hint>span{
+  width:28px;
+  height:28px;
+  display:grid;
+  place-items:center;
+  flex:0 0 28px;
+  border-radius:9px;
+  background:#fff;
+  color:#0a6a4f;
+}
+
+.portal-editor-drop-hint .admin-svg-icon{
+  width:15px;
+  height:15px;
+}
+
+.portal-editor-drop-hint p{
+  margin:0;
+}
+
+.portal-editor-drop-hint b,
+.portal-editor-drop-hint small{
+  display:block;
+}
+
+.portal-editor-drop-hint b{
+  font-size:9px;
+}
+
+.portal-editor-drop-hint small{
+  margin-top:3px;
+  color:#7b8b85;
+  font-size:7px;
+  line-height:1.35;
+}
+
+.portal-editor-url-field{
+  margin-top:11px;
+}
+
+.portal-editor-url-field>span{
+  color:#49665d;
+  font-size:8px;
+  font-weight:900;
+}
+
+.portal-editor-url-field>div{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:7px;
+  margin-top:6px;
+}
+
+.portal-editor-url-field input{
+  min-width:0;
+  height:39px!important;
+  font-size:8px!important;
+}
+
+.portal-editor-url-field button{
+  min-height:39px!important;
+  padding:0 12px!important;
+  border:1px solid #d8e2dd!important;
+  border-radius:10px!important;
+  background:#fff!important;
+  color:#0b6049!important;
+  font-size:8px!important;
+  font-weight:900!important;
+}
+
+.portal-editor-fields{
+  min-width:0;
+  padding:3px 1px 0;
+}
+
+.portal-editor-section-title{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  margin:2px 0 11px;
+  padding-bottom:9px;
+  border-bottom:1px solid #e8eeeb;
+}
+
+.portal-editor-section-title:not(:first-child){
+  margin-top:18px;
+}
+
+.portal-editor-section-title>span{
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  border-radius:9px;
+  background:#0b6049;
+  color:#fff;
+  font-size:8px;
+  font-weight:950;
+}
+
+.portal-editor-section-title b,
+.portal-editor-section-title small{
+  display:block;
+}
+
+.portal-editor-section-title b{
+  color:#183f34;
+  font-size:11px;
+}
+
+.portal-editor-section-title small{
+  margin-top:2px;
+  color:#82908b;
+  font-size:8px;
+}
+
+.portal-product-editor-v532 label{
+  color:#36584e!important;
+  font-size:9px!important;
+  font-weight:900!important;
+}
+
+.portal-product-editor-v532 input,
+.portal-product-editor-v532 textarea{
+  border-radius:10px!important;
+  background:#fbfdfc!important;
+}
+
+.portal-money-input{
+  position:relative;
+}
+
+.portal-money-input input{
+  padding-inline-end:50px!important;
+}
+
+.portal-money-input>span{
+  position:absolute;
+  inset-inline-end:10px;
+  top:50%;
+  transform:translateY(-50%);
+  padding:4px 6px;
+  border-radius:6px;
+  background:#edf5f1;
+  color:#0c674f;
+  font-size:7px;
+  font-weight:950;
+}
+
+.portal-editor-product-preview{
+  margin-top:18px;
+  padding:12px;
+  border:1px solid #e0e7e4;
+  border-radius:14px;
+  background:#f8fbf9;
+}
+
+.portal-editor-product-preview>small{
+  display:block;
+  margin-bottom:8px;
+  color:#a87918;
+  font-size:7px;
+  font-weight:950;
+  letter-spacing:.09em;
+}
+
+.portal-editor-product-preview>div{
+  display:grid;
+  grid-template-columns:92px minmax(0,1fr);
+  gap:11px;
+  align-items:center;
+}
+
+.portal-editor-product-preview img{
+  width:92px;
+  height:82px;
+  object-fit:cover;
+  border-radius:10px;
+  border:1px solid #dfe7e3;
+  background:#eef3f1;
+}
+
+.portal-editor-product-preview section{
+  min-width:0;
+}
+
+.portal-editor-product-preview section>span{
+  display:inline-block;
+  max-width:100%;
+  padding:4px 7px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  border-radius:999px;
+  background:#f7efd8;
+  color:#8a6718;
+  font-size:7px;
+  font-weight:900;
+}
+
+.portal-editor-product-preview section>b,
+.portal-editor-product-preview section>small,
+.portal-editor-product-preview section>strong{
+  display:block;
+}
+
+.portal-editor-product-preview section>b{
+  margin-top:5px;
+  color:#173f34;
+  font-size:12px;
+}
+
+.portal-editor-product-preview section>small{
+  margin-top:3px;
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#7c8a85;
+  font-size:8px;
+}
+
+.portal-editor-product-preview section>strong{
+  margin-top:6px;
+  color:#0a684f;
+  font-size:13px;
+}
+
+.portal-product-editor-actions-v532{
+  margin-top:18px!important;
+  padding-top:14px;
+  border-top:1px solid #e5ebe8;
+}
+
+.portal-product-editor-actions-v532 button{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:7px!important;
+}
+
+.portal-product-editor-actions-v532 .admin-svg-icon{
+  width:15px;
+  height:15px;
+}
+
+/* Improve the admin product cards themselves */
+.portal-product-admin-card{
+  transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease;
+}
+
+.portal-product-admin-card:hover{
+  transform:translateY(-2px);
+  border-color:#c9d9d2;
+  box-shadow:0 10px 24px rgba(20,62,49,.08);
+}
+
+.portal-product-admin-image{
+  position:relative;
+  overflow:hidden;
+}
+
+.portal-product-admin-image::after{
+  content:"HERO";
+  position:absolute;
+  left:7px;
+  bottom:7px;
+  padding:4px 6px;
+  border-radius:999px;
+  background:rgba(8,49,38,.75);
+  color:#fff;
+  font-size:6px;
+  font-weight:950;
+  letter-spacing:.08em;
+  backdrop-filter:blur(5px);
+}
+
+@media(max-width:820px){
+  .portal-product-dialog-v532{
+    width:min(97vw,720px)!important;
+  }
+  .portal-editor-layout{
+    grid-template-columns:1fr;
+  }
+  .portal-editor-media{
+    order:0;
+  }
+  .portal-editor-fields{
+    order:1;
+  }
+}
+
+@media(max-width:520px){
+  .portal-editor-head{
+    flex-direction:column;
+  }
+  .portal-editor-status{
+    align-self:flex-start;
+  }
+  .portal-editor-head h2{
+    font-size:22px;
+  }
+  .portal-editor-layout{
+    gap:14px;
+    padding-top:14px;
+  }
+  .portal-editor-media{
+    padding:10px;
+  }
+  .portal-editor-image-overlay{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .portal-editor-upload-btn{
+    width:100%!important;
+    justify-content:center!important;
+  }
+  .portal-editor-media-actions{
+    grid-template-columns:1fr;
+  }
+  .portal-editor-url-field>div{
+    grid-template-columns:1fr;
+  }
+  .portal-editor-url-field button{
+    width:100%!important;
+  }
+  .portal-editor-product-preview>div{
+    grid-template-columns:76px minmax(0,1fr);
+  }
+  .portal-editor-product-preview img{
+    width:76px;
+    height:72px;
+  }
+  .portal-product-editor-actions-v532{
+    grid-template-columns:1fr!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV532ProductEditorCSS,{once:true});
+  }else{
+    installV532ProductEditorCSS();
+  }
+})();
+
+/* =========================================================
+   Ass Al Halaal v533 — CLEAR PRODUCT EDITOR VISUAL LAYER
+   Higher contrast, solid white modal, cleaner fields/sections.
+   ========================================================= */
+;(()=>{
+  const installV533ClearEditorCSS=()=>{
+    if(document.getElementById('v533-clear-product-editor'))return;
+
+    const style=document.createElement('style');
+    style.id='v533-clear-product-editor';
+    style.textContent=`
+/* ---------- Modal shell ---------- */
+.portal-product-dialog-v532{
+  width:min(96vw,1120px)!important;
+  max-width:1120px!important;
+  padding:0!important;
+
+  background:#ffffff!important;
+  border:1px solid #dfe7e3!important;
+  border-radius:22px!important;
+
+  box-shadow:
+    0 28px 80px rgba(8,35,28,.28),
+    0 8px 24px rgba(8,35,28,.10)!important;
+
+  overflow:hidden!important;
+}
+
+/* Make the page behind the modal quieter */
+dialog.portal-product-dialog-v532::backdrop,
+.portal-product-dialog-v532::backdrop{
+  background:rgba(8,31,25,.72)!important;
+  backdrop-filter:blur(5px)!important;
+  -webkit-backdrop-filter:blur(5px)!important;
+}
+
+/* If the app modal is not native dialog, strengthen its overlay */
+.modal:has(.portal-product-editor-v532),
+.modal-backdrop:has(+ .portal-product-dialog-v532){
+  background:rgba(8,31,25,.72)!important;
+  backdrop-filter:blur(5px)!important;
+  -webkit-backdrop-filter:blur(5px)!important;
+}
+
+.portal-product-editor-v532{
+  background:#ffffff!important;
+  color:#153f34!important;
+  padding:24px 26px 22px!important;
+}
+
+/* ---------- Header ---------- */
+.portal-editor-head{
+  position:relative!important;
+  margin:0!important;
+  padding:0 0 18px!important;
+  border-bottom:1px solid #dfe8e4!important;
+  background:#ffffff!important;
+}
+
+.portal-editor-head small{
+  color:#a87716!important;
+  font-size:9px!important;
+  font-weight:950!important;
+  letter-spacing:.11em!important;
+}
+
+.portal-editor-head h2{
+  margin:6px 0 5px!important;
+  color:#0d4f3d!important;
+  font-size:28px!important;
+  font-weight:950!important;
+  line-height:1.06!important;
+}
+
+.portal-editor-head p{
+  color:#6d7e78!important;
+  font-size:10px!important;
+}
+
+.portal-editor-status{
+  color:#0a684f!important;
+  background:#ecf8f2!important;
+  border:1px solid #cbe4d8!important;
+  box-shadow:none!important;
+}
+
+/* ---------- Main layout ---------- */
+.portal-editor-layout{
+  gap:24px!important;
+  padding:22px 0 0!important;
+  align-items:start!important;
+}
+
+/* ---------- Media / image card ---------- */
+.portal-editor-media{
+  background:#f8fbf9!important;
+  border:1px solid #dbe6e1!important;
+  border-radius:18px!important;
+  padding:16px!important;
+  box-shadow:none!important;
+}
+
+.portal-editor-media-label small{
+  color:#a87716!important;
+}
+
+.portal-editor-media-label b{
+  color:#123f34!important;
+  font-size:13px!important;
+}
+
+.portal-editor-media-label>span{
+  color:#0b684f!important;
+  background:#e8f6ef!important;
+  border:1px solid #d4eade!important;
+}
+
+.portal-editor-image-stage{
+  background:#eef3f0!important;
+  border:1px solid #d3dfd9!important;
+  border-radius:14px!important;
+  box-shadow:0 4px 14px rgba(16,58,46,.07)!important;
+}
+
+.portal-editor-image-overlay{
+  inset:auto 10px 10px!important;
+  background:rgba(8,49,38,.92)!important;
+  border:1px solid rgba(255,255,255,.18)!important;
+  box-shadow:0 5px 16px rgba(0,0,0,.12)!important;
+}
+
+.portal-editor-image-overlay small{
+  color:#eef7f3!important;
+  opacity:.86!important;
+}
+
+.portal-editor-upload-btn{
+  background:#e6b83f!important;
+  border:1px solid #cf9f28!important;
+  color:#0d3f34!important;
+  box-shadow:none!important;
+}
+
+.portal-editor-media-actions button:first-child{
+  background:#0b654d!important;
+  border-color:#0b654d!important;
+  color:#ffffff!important;
+}
+
+.portal-editor-media-actions button:last-child{
+  background:#ffffff!important;
+  border-color:#d7e2dd!important;
+  color:#31564a!important;
+}
+
+.portal-editor-drop-hint{
+  background:#edf6f2!important;
+  border:1px solid #dce9e3!important;
+  color:#365a4f!important;
+}
+
+.portal-editor-url-field>span{
+  color:#2e5549!important;
+}
+
+/* ---------- Right side form ---------- */
+.portal-editor-fields{
+  background:#ffffff!important;
+}
+
+.portal-editor-section-title{
+  margin-bottom:13px!important;
+  padding-bottom:10px!important;
+  border-bottom:1px solid #dfe7e3!important;
+}
+
+.portal-editor-section-title>span{
+  background:#0b6049!important;
+  color:#ffffff!important;
+  box-shadow:none!important;
+}
+
+.portal-editor-section-title b{
+  color:#123f34!important;
+  font-size:12px!important;
+  font-weight:950!important;
+}
+
+.portal-editor-section-title small{
+  color:#71827c!important;
+  font-size:8px!important;
+}
+
+/* ---------- Labels ---------- */
+.portal-product-editor-v532 label{
+  color:#264f43!important;
+  font-size:9px!important;
+  font-weight:950!important;
+}
+
+/* ---------- Inputs ---------- */
+.portal-product-editor-v532 input,
+.portal-product-editor-v532 textarea{
+  width:100%!important;
+  color:#163f34!important;
+  background:#ffffff!important;
+
+  border:1px solid #cfdcd6!important;
+  border-radius:11px!important;
+
+  box-shadow:
+    inset 0 1px 2px rgba(17,60,47,.03)!important;
+
+  font-size:10px!important;
+  font-weight:700!important;
+}
+
+.portal-product-editor-v532 input{
+  height:46px!important;
+  padding:0 12px!important;
+}
+
+.portal-product-editor-v532 textarea{
+  min-height:82px!important;
+  padding:11px 12px!important;
+  line-height:1.5!important;
+}
+
+.portal-product-editor-v532 input:focus,
+.portal-product-editor-v532 textarea:focus{
+  border-color:#b88921!important;
+  box-shadow:0 0 0 3px rgba(184,137,33,.12)!important;
+  outline:none!important;
+}
+
+.portal-product-editor-v532 input::placeholder,
+.portal-product-editor-v532 textarea::placeholder{
+  color:#9ca8a4!important;
+  opacity:1!important;
+}
+
+/* ---------- Price inputs ---------- */
+.portal-money-input>span{
+  color:#0b654d!important;
+  background:#eef7f3!important;
+  border:1px solid #dceae4!important;
+}
+
+/* ---------- Mini card preview ---------- */
+.portal-editor-product-preview{
+  background:#f8fbf9!important;
+  border:1px solid #dbe5e0!important;
+  border-radius:14px!important;
+  padding:13px!important;
+}
+
+.portal-editor-product-preview>small{
+  color:#a87716!important;
+}
+
+.portal-editor-product-preview section>b{
+  color:#123f34!important;
+}
+
+.portal-editor-product-preview section>small{
+  color:#71827c!important;
+}
+
+.portal-editor-product-preview section>strong{
+  color:#0b654d!important;
+}
+
+/* ---------- Footer / save area ---------- */
+.portal-product-editor-actions-v532{
+  margin-top:20px!important;
+  padding-top:16px!important;
+  border-top:1px solid #dfe7e3!important;
+  background:#ffffff!important;
+}
+
+.portal-product-editor-actions-v532 button{
+  min-height:46px!important;
+  border-radius:11px!important;
+  font-size:10px!important;
+  font-weight:950!important;
+}
+
+.portal-product-editor-actions-v532 #portal-product-reset{
+  background:#f7faf8!important;
+  color:#31564a!important;
+  border:1px solid #d8e2de!important;
+}
+
+.portal-product-editor-actions-v532 .checkout-cta{
+  background:#0b654d!important;
+  color:#ffffff!important;
+  border:1px solid #0b654d!important;
+  box-shadow:0 5px 14px rgba(11,101,77,.16)!important;
+}
+
+/* ---------- Close button ---------- */
+.portal-product-dialog-v532 .modal-close,
+.portal-product-dialog-v532 [data-close],
+.portal-product-dialog-v532 button[aria-label*="Close"],
+.portal-product-dialog-v532 button[aria-label*="إغلاق"]{
+  background:#ffffff!important;
+  color:#204d41!important;
+  border:1px solid #d8e3de!important;
+  box-shadow:0 3px 10px rgba(8,39,30,.08)!important;
+}
+
+/* ---------- Admin product cards clearer too ---------- */
+.portal-product-admin-card{
+  background:#ffffff!important;
+  border:1px solid #dce5e1!important;
+  box-shadow:0 3px 10px rgba(17,56,44,.04)!important;
+}
+
+.portal-product-admin-card:hover{
+  border-color:#c8d8d1!important;
+  box-shadow:0 10px 22px rgba(17,56,44,.08)!important;
+}
+
+.portal-product-admin-copy{
+  background:#ffffff!important;
+}
+
+.portal-product-admin-title h3{
+  color:#123f34!important;
+  font-weight:950!important;
+}
+
+.portal-product-admin-copy>p{
+  color:#6f8079!important;
+}
+
+.portal-product-admin-price strong{
+  color:#0b654d!important;
+}
+
+/* ---------- Mobile ---------- */
+@media(max-width:820px){
+  .portal-product-dialog-v532{
+    width:min(97vw,760px)!important;
+    max-height:94dvh!important;
+    overflow-y:auto!important;
+  }
+
+  .portal-product-editor-v532{
+    padding:18px 16px 18px!important;
+  }
+
+  .portal-editor-layout{
+    gap:16px!important;
+    padding-top:16px!important;
+  }
+}
+
+@media(max-width:520px){
+  .portal-product-dialog-v532{
+    width:96vw!important;
+    border-radius:16px!important;
+  }
+
+  .portal-product-editor-v532{
+    padding:15px 12px!important;
+  }
+
+  .portal-editor-head h2{
+    font-size:23px!important;
+  }
+
+  .portal-editor-media{
+    padding:10px!important;
+  }
+
+  .portal-editor-image-overlay{
+    position:static!important;
+    margin-top:8px!important;
+    border-radius:10px!important;
+  }
+
+  .portal-editor-image-stage{
+    overflow:visible!important;
+    background:transparent!important;
+    border:0!important;
+    box-shadow:none!important;
+  }
+
+  .portal-editor-image-stage>img{
+    aspect-ratio:4/3!important;
+    border:1px solid #d3dfd9!important;
+    border-radius:13px!important;
+    object-fit:cover!important;
+  }
+
+  .portal-editor-product-preview{
+    padding:10px!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV533ClearEditorCSS,{once:true});
+  }else{
+    installV533ClearEditorCSS();
+  }
+})();
+
+/* =========================================================
+   Ass Al Halaal v534 — PROMINENT ADMIN 2FA SECURITY CARD
+   Existing admin-security-shortcut behavior is preserved.
+   ========================================================= */
+;(()=>{
+  const installV534Admin2FA=()=>{
+    if(document.getElementById('v534-admin-2fa-prominent'))return;
+
+    const style=document.createElement('style');
+    style.id='v534-admin-2fa-prominent';
+    style.textContent=`
+.reference-sidebar-foot .admin-2fa-prominent-v534{
+  position:relative!important;
+  width:100%!important;
+  min-height:78px!important;
+  height:auto!important;
+
+  display:grid!important;
+  grid-template-columns:44px minmax(0,1fr) auto!important;
+  grid-template-areas:
+    "shield copy badge"
+    "shield copy chevron"!important;
+  align-items:center!important;
+  column-gap:10px!important;
+  row-gap:3px!important;
+
+  margin-top:10px!important;
+  padding:12px 10px!important;
+
+  border:1px solid rgba(203,158,45,.58)!important;
+  border-radius:16px!important;
+
+  background:
+    radial-gradient(circle at 92% 8%,rgba(229,184,64,.18),transparent 36%),
+    linear-gradient(135deg,#f8fff9 0%,#fff8e8 100%)!important;
+
+  color:#124536!important;
+
+  box-shadow:
+    0 8px 22px rgba(10,73,54,.10),
+    inset 0 0 0 1px rgba(255,255,255,.74)!important;
+
+  text-align:start!important;
+  overflow:hidden!important;
+  cursor:pointer!important;
+
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    border-color .18s ease!important;
+}
+
+.reference-sidebar-foot .admin-2fa-prominent-v534::before{
+  content:""!important;
+  position:absolute!important;
+  inset:0 auto 0 0!important;
+  width:4px!important;
+  background:linear-gradient(180deg,#d8aa35,#0b6a50)!important;
+}
+
+html[dir="rtl"] .reference-sidebar-foot .admin-2fa-prominent-v534::before{
+  left:auto!important;
+  right:0!important;
+}
+
+.reference-sidebar-foot .admin-2fa-prominent-v534:hover{
+  transform:translateY(-2px)!important;
+  border-color:rgba(195,145,22,.82)!important;
+  box-shadow:
+    0 12px 28px rgba(10,73,54,.15),
+    inset 0 0 0 1px rgba(255,255,255,.82)!important;
+}
+
+.reference-sidebar-foot .admin-2fa-prominent-v534:active{
+  transform:translateY(0) scale(.99)!important;
+}
+
+.reference-sidebar-foot .admin-2fa-shield-v534{
+  grid-area:shield!important;
+
+  width:42px!important;
+  height:42px!important;
+  min-width:42px!important;
+  min-height:42px!important;
+
+  display:grid!important;
+  place-items:center!important;
+
+  border-radius:13px!important;
+  background:linear-gradient(145deg,#0e7055,#084c3c)!important;
+  color:#f4cf67!important;
+
+  box-shadow:
+    0 6px 14px rgba(9,85,63,.20),
+    inset 0 0 0 1px rgba(255,255,255,.12)!important;
+}
+
+.reference-sidebar-foot .admin-2fa-shield-v534 .admin-svg-icon{
+  display:block!important;
+  width:21px!important;
+  height:21px!important;
+  margin:0!important;
+  color:inherit!important;
+}
+
+.reference-sidebar-foot .admin-2fa-copy-v534{
+  grid-area:copy!important;
+  display:block!important;
+  min-width:0!important;
+}
+
+.reference-sidebar-foot .admin-2fa-title-v534{
+  display:block!important;
+  color:#123f33!important;
+  font-size:11px!important;
+  font-weight:950!important;
+  line-height:1.3!important;
+}
+
+.reference-sidebar-foot .admin-2fa-status-v534{
+  display:flex!important;
+  align-items:center!important;
+  gap:6px!important;
+  margin-top:6px!important;
+
+  color:#507167!important;
+  font-size:8px!important;
+  font-weight:800!important;
+  line-height:1.25!important;
+}
+
+.reference-sidebar-foot .admin-2fa-status-v534 i{
+  width:8px!important;
+  height:8px!important;
+  min-width:8px!important;
+  border-radius:50%!important;
+  background:#20bc71!important;
+  box-shadow:0 0 0 4px rgba(32,188,113,.12)!important;
+  animation:v534SecurityPulse 2.1s ease-out infinite!important;
+}
+
+@keyframes v534SecurityPulse{
+  0%{box-shadow:0 0 0 0 rgba(32,188,113,.30)}
+  55%{box-shadow:0 0 0 7px rgba(32,188,113,0)}
+  100%{box-shadow:0 0 0 0 rgba(32,188,113,0)}
+}
+
+.reference-sidebar-foot .admin-2fa-badge-v534{
+  grid-area:badge!important;
+  justify-self:end!important;
+  align-self:center!important;
+
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+
+  min-height:23px!important;
+  padding:0 7px!important;
+
+  border:1px solid rgba(11,104,79,.14)!important;
+  border-radius:999px!important;
+
+  background:#0b684f!important;
+  color:#ffffff!important;
+
+  font-size:6.8px!important;
+  font-weight:950!important;
+  letter-spacing:.04em!important;
+  white-space:nowrap!important;
+
+  box-shadow:0 4px 10px rgba(11,104,79,.13)!important;
+}
+
+.reference-sidebar-foot .admin-2fa-chevron-v534{
+  grid-area:chevron!important;
+  justify-self:end!important;
+
+  width:22px!important;
+  height:22px!important;
+  display:grid!important;
+  place-items:center!important;
+
+  color:#9c741d!important;
+}
+
+.reference-sidebar-foot .admin-2fa-chevron-v534 .admin-svg-icon{
+  display:block!important;
+  width:14px!important;
+  height:14px!important;
+  margin:0!important;
+}
+
+/* Desktop sidebar footer: keep card easy to notice */
+@media(min-width:1181px){
+  .reference-sidebar-foot{
+    padding-bottom:12px!important;
+  }
+
+  .reference-sidebar-foot .admin-2fa-prominent-v534{
+    min-height:82px!important;
+  }
+}
+
+/* Compact tablet sidebar: retain a strong shield/status treatment */
+@media(min-width:901px) and (max-width:1180px){
+  .reference-sidebar-foot .admin-2fa-prominent-v534{
+    width:60px!important;
+    min-width:60px!important;
+    min-height:60px!important;
+    height:60px!important;
+
+    display:grid!important;
+    grid-template-columns:1fr!important;
+    grid-template-areas:"shield"!important;
+
+    padding:8px!important;
+    margin-inline:auto!important;
+
+    border-color:rgba(203,158,45,.68)!important;
+    background:linear-gradient(145deg,#fff9e9,#effaf4)!important;
+  }
+
+  .reference-sidebar-foot .admin-2fa-shield-v534{
+    grid-area:shield!important;
+    width:42px!important;
+    height:42px!important;
+    min-width:42px!important;
+    min-height:42px!important;
+    margin:auto!important;
+  }
+
+  .reference-sidebar-foot .admin-2fa-copy-v534,
+  .reference-sidebar-foot .admin-2fa-badge-v534,
+  .reference-sidebar-foot .admin-2fa-chevron-v534{
+    display:none!important;
+  }
+
+  .reference-sidebar-foot .admin-2fa-prominent-v534::after{
+    content:""!important;
+    position:absolute!important;
+    right:7px!important;
+    bottom:7px!important;
+    width:9px!important;
+    height:9px!important;
+    border:2px solid #fff!important;
+    border-radius:50%!important;
+    background:#22bd70!important;
+  }
+}
+
+/* Mobile admin drawer: show full security information */
+@media(max-width:900px){
+  .reference-sidebar-foot .admin-2fa-prominent-v534{
+    min-height:80px!important;
+    margin-top:10px!important;
+  }
+
+  .reference-sidebar-foot .admin-2fa-copy-v534{
+    display:block!important;
+  }
+
+  .reference-sidebar-foot .admin-2fa-badge-v534{
+    display:inline-flex!important;
+  }
+
+  .reference-sidebar-foot .admin-2fa-chevron-v534{
+    display:grid!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .reference-sidebar-foot .admin-2fa-status-v534 i{
+    animation:none!important;
+  }
+
+  .reference-sidebar-foot .admin-2fa-prominent-v534{
+    transition:none!important;
+  }
+}
+`;
+    (document.head||document.documentElement).appendChild(style);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',installV534Admin2FA,{once:true});
+  }else{
+    installV534Admin2FA();
+  }
 })();
 
 
