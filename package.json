@@ -9,6 +9,7 @@
   },
   "scripts": {
     "start": "node scripts/serve.mjs",
+    "predev": "npm run build",
     "dev": "node scripts/serve.mjs",
     "check": "node --check www/app.js && node --check www/shop.js && node --check scripts/serve.mjs && node --check scripts/upload-security.mjs && node --check scripts/secret-scan.mjs && node --check scripts/security.test.mjs && node --check scripts/accessibility.test.mjs && node --check scripts/performance.test.mjs && node scripts/secret-scan.mjs && node --test scripts/shop.test.mjs scripts/security.test.mjs scripts/accessibility.test.mjs scripts/performance.test.mjs",
     "health": "node -e \"fetch('http://127.0.0.1:5173/api/health').then(r=>r.json()).then(console.log).catch(e=>{console.error(e.message);process.exit(1)})\"",
