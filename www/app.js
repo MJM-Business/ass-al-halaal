@@ -9396,12 +9396,34 @@ async function shareProduct(id){
   try{if(navigator.share)await navigator.share({title:'Ass Al Halaal',text});else{await navigator.clipboard.writeText(text);toast(t('تم نسخ تفاصيل المنتج','Product details copied'))}}catch{}
 }
 
-window.addEventListener('hashchange',async()=>{render();if(view()==='orders'&&customerSession)await loadMyOrders();if(view()==='admin'&&adminAuthReady)await loadAdmin()});
+window.addEventListener('hashchange',async()=>{
+  render();
+  if(view()==='orders'&&customerSession)await loadMyOrders();
+  if(view()==='admin'){
+    if(!adminAuthReady)await restoreAdminSession();
+    if(adminAuthReady)await loadAdmin();
+  }
+});
 
-await Promise.all([loadProducts(),loadPublicServiceHealth(),loadCustomerAuth(),restoreAdminSession()]);
+async function hydrateInitialCustomerData(){
+  const jobs=[loadProducts(),loadPublicServiceHealth(),loadCustomerAuth()];
+  await Promise.allSettled(jobs);
+  if(view()!=='admin')render();
+  if(view()==='orders'&&customerSession)await loadMyOrders();
+}
+
 render();
-if(view()==='orders'&&customerSession)await loadMyOrders();
-if(view()==='admin'&&adminAuthReady)await loadAdmin();
+
+if(view()==='admin'){
+  await restoreAdminSession();
+  render();
+  if(adminAuthReady)await loadAdmin();
+}else{
+  const schedule=window.requestIdleCallback
+    ? cb=>window.requestIdleCallback(cb,{timeout:1200})
+    : cb=>setTimeout(cb,60);
+  schedule(()=>{hydrateInitialCustomerData().catch(()=>{})});
+}
 
 
 
