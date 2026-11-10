@@ -20,9 +20,10 @@ test('static assets use browser caching policies',()=>{
   assert.match(server,/max-age=86400, stale-while-revalidate=604800/);
 });
 
-test('critical stylesheet is loaded normally and heavy app boot is deferred',()=>{
-  assert.match(index,/rel="stylesheet" href="style\.css\?v=423"/);
-  assert.match(index,/src="bootstrap\.js\?v=424"/);
+test('critical shell paints first while full CSS and app hydrate safely',()=>{
+  assert.match(index,/id="full-style" rel="stylesheet" href="style\.css\?v=425" media="print"/);
+  assert.match(index,/class="prepaint-shell"/);
+  assert.match(index,/src="bootstrap\.js\?v=425"/);
   assert.doesNotMatch(index,/rel="modulepreload" href="app\.js/);
 });
 
