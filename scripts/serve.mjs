@@ -3416,7 +3416,10 @@ const server=http.createServer(async(req,res)=>{
     let target=pathname==='/'?'/index.html':pathname;
     if(IS_PRODUCTION&&target==='/app.js')target='/dist/app.min.js';
     if(IS_PRODUCTION&&target==='/style.css')target='/dist/style.min.css';
-    if(IS_PRODUCTION&&target.startsWith('/assets/')&&/\.(png|jpe?g|webp)$/i.test(target)){
+    // Prefer generated optimized images in both development and production.
+    // This keeps local Lighthouse representative of production without forcing
+    // development to use the minified JS/CSS bundles.
+    if(target.startsWith('/assets/')&&/\.(png|jpe?g|webp)$/i.test(target)){
       const optimized=target.replace(/^\/assets\//,'/dist/assets/').replace(/\.(png|jpe?g|webp)$/i,'.webp');
       try{
         await readFile(path.resolve(root,'.'+optimized));
