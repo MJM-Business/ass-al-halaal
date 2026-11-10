@@ -8695,6 +8695,12 @@ function bind(){
   document.querySelectorAll('[data-customer-verify]').forEach(b=>b.onclick=()=>openOrderVerification(b.dataset.customerVerify));
   document.querySelectorAll('[data-customer-support]').forEach(b=>b.onclick=()=>openCustomerSupport(b.dataset.customerSupport));
   document.querySelectorAll('[data-customer-refresh]').forEach(b=>b.onclick=async()=>{if(!customerSession)return;await loadMyOrders();toast(t('تم تحديث حالة الطلب','Order status refreshed'))});
+
+  // Customer routes do not need the large admin binding pass.
+  // Returning here avoids scanning and attaching handlers for every admin
+  // module during customer/home renders, reducing main-thread blocking work.
+  if(view()!=='admin')return;
+
   const adminLogin=document.querySelector('#admin-login');if(adminLogin)adminLogin.onsubmit=adminSignIn;
   document.querySelector('#admin-refresh')?.addEventListener('click',loadAdmin);
   document.querySelector('#admin-logout')?.addEventListener('click',async()=>{

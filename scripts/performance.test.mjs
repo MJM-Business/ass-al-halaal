@@ -22,7 +22,7 @@ test('static assets use browser caching policies',()=>{
 
 test('critical stylesheet and module use resource hints',()=>{
   assert.match(index,/rel="stylesheet" href="critical\.css\?v=535"/);
-  assert.match(index,/rel="modulepreload" href="app\.js\?v=535"/);
+  assert.match(index,/rel="modulepreload" href="app\.js\?v=536"/);
 });
 
 test('google identity origin is preconnected',()=>{
@@ -99,4 +99,13 @@ test('full stylesheet is deferred behind critical first-paint CSS',async()=>{
   assert.match(index,/rel="stylesheet" href="critical\.css\?v=535"/);
   assert.match(index,/id="full-style" rel="stylesheet" href="style\.css\?v=535" media="print"/);
   assert.match(index,/style-loader\.js\?v=535/);
+});
+
+
+test('customer renders skip admin-only binding pass',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.match(app,/if\(view\(\)!=='admin'\)return;/);
+  const boundary=app.indexOf("if(view()!=='admin')return;");
+  const adminBinding=app.indexOf("const adminLogin=document.querySelector('#admin-login')");
+  assert.ok(boundary>0&&adminBinding>boundary);
 });
