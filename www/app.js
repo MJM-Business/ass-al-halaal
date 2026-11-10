@@ -2394,7 +2394,7 @@ function homePage(){
 
 <section class="hero-slider v94-hero-slider hero-progress-run" data-hero-slider aria-label="${t('عروض عاس الحلال','Ass Al Halaal highlights')}">
   <div class="hero-slides">
-    ${heroSlides.map((slide,index)=>`<article class="quality-hero ref-quality-hero luxury-quality-hero v93-cover hero-slide hero-theme-${slide.theme} ${index===0?'is-active':''}" data-hero-slide="${index}" aria-hidden="${index===0?'false':'true'}">
+    ${heroSlides.map((slide,index)=>`<article class="quality-hero ref-quality-hero luxury-quality-hero v93-cover hero-slide hero-theme-${slide.theme} ${index===0?'is-active':''}" data-hero-slide="${index}" aria-hidden="${index===0?'false':'true'}" ${index===0?'':'inert'}>
       <div class="hero-copy">
         <div class="hero-badges luxury-hero-badges">
           <span>♛ ${slide.badge}</span>
@@ -2424,7 +2424,7 @@ function homePage(){
   <button class="hero-slider-arrow hero-slider-prev" type="button" data-hero-prev aria-label="${t('الشريحة السابقة','Previous slide')}">‹</button>
   <button class="hero-slider-arrow hero-slider-next" type="button" data-hero-next aria-label="${t('الشريحة التالية','Next slide')}">›</button>
   <div class="hero-slider-dots" role="tablist" aria-label="${t('اختيار الشريحة','Choose slide')}">
-    ${heroSlides.map((_,index)=>`<button type="button" data-hero-dot="${index}" class="${index===0?'active':''}" aria-label="${t('الشريحة','Slide')} ${index+1}" aria-selected="${index===0?'true':'false'}"></button>`).join('')}
+    ${heroSlides.map((_,index)=>`<button type="button" role="tab" data-hero-dot="${index}" class="${index===0?'active':''}" aria-label="${t('الشريحة','Slide')} ${index+1}" aria-selected="${index===0?'true':'false'}" tabindex="${index===0?'0':'-1'}"></button>`).join('')}
   </div>
   <div class="hero-slider-progress" aria-hidden="true"><i></i></div>
 </section>
@@ -3232,7 +3232,7 @@ function customBoxPromoCard(){
       <button type="button" class="promo-3d-nav promo-prev" data-promo-prev aria-label="${t('الصورة السابقة','Previous image')}">${t('›','‹')}</button>
       <button type="button" class="promo-3d-nav promo-next" data-promo-next aria-label="${t('الصورة التالية','Next image')}">${t('‹','›')}</button>
       <div class="promo-3d-dots" role="tablist" aria-label="${t('صور المنتجات','Product images')}">
-        ${slides.map((s,i)=>`<button type="button" class="${i===0?'active':''}" data-promo-dot="${i}" aria-label="${safe(t(s[1],s[2]))}" aria-selected="${i===0?'true':'false'}"></button>`).join('')}
+        ${slides.map((s,i)=>`<button type="button" role="tab" class="${i===0?'active':''}" data-promo-dot="${i}" aria-label="${safe(t(s[1],s[2]))}" aria-selected="${i===0?'true':'false'}" tabindex="${i===0?'0':'-1'}"></button>`).join('')}
       </div>
     </div>
 
@@ -3263,8 +3263,9 @@ function setupCustomBox3DShowcase(){
       else if(i===mod(index+1))slide.classList.add('is-next');
       else slide.classList.add('is-hidden');
       slide.setAttribute('aria-hidden',i===index?'false':'true');
+      slide.toggleAttribute('inert',i!==index);
     });
-    dots.forEach((dot,i)=>{dot.classList.toggle('active',i===index);dot.setAttribute('aria-selected',i===index?'true':'false')});
+    dots.forEach((dot,i)=>{const active=i===index;dot.classList.toggle('active',active);dot.setAttribute('aria-selected',active?'true':'false');dot.setAttribute('tabindex',active?'0':'-1')});
   };
   const stop=()=>{if(customBoxPromoTimer){clearInterval(customBoxPromoTimer);customBoxPromoTimer=0}};
   const start=()=>{if(reduce||customBoxPromoTimer)return;customBoxPromoTimer=setInterval(()=>paint(index+1),3000)};
@@ -8513,11 +8514,13 @@ function setupHeroSlider(){
       const active=i===index;
       slide.classList.toggle('is-active',active);
       slide.setAttribute('aria-hidden',active?'false':'true');
+      slide.toggleAttribute('inert',!active);
     });
     dots.forEach((dot,i)=>{
       const active=i===index;
       dot.classList.toggle('active',active);
       dot.setAttribute('aria-selected',active?'true':'false');
+      dot.setAttribute('tabindex',active?'0':'-1');
     });
     restartProgress();
   };
@@ -12385,7 +12388,7 @@ html[dir="ltr"] .v449-search-panel{direction:ltr!important}
       results.innerHTML=`<div class="v449-search-empty">${lang==='ar'?'لا توجد نتائج مطابقة. جرّب اسم نوع آخر أو تصنيف مختلف.':'No matching results. Try another product or category.'}</div>`;
       return;
     }
-    results.innerHTML=rows.map(p=>`<button type="button" class="v449-search-result" role="listitem" data-v449-product="${esc(p.id)}"><span class="v449-search-result-icon" aria-hidden="true">⌕</span><span class="v449-search-result-copy"><b>${esc(lang==='ar'?p.ar:p.en)}</b><small>${esc(lang==='ar'?(p.subAr||''):(p.subEn||''))}</small></span><span class="v449-search-result-arrow" aria-hidden="true">${lang==='ar'?'←':'→'}</span></button>`).join('');
+    results.innerHTML=rows.map(p=>`<button type="button" class="v449-search-result" data-v449-product="${esc(p.id)}"><span class="v449-search-result-icon" aria-hidden="true">⌕</span><span class="v449-search-result-copy"><b>${esc(lang==='ar'?p.ar:p.en)}</b><small>${esc(lang==='ar'?(p.subAr||''):(p.subEn||''))}</small></span><span class="v449-search-result-arrow" aria-hidden="true">${lang==='ar'?'←':'→'}</span></button>`).join('');
     results.querySelectorAll('[data-v449-product]').forEach(btn=>btn.addEventListener('click',()=>{
       const id=btn.dataset.v449Product;
       closeTopSearchOverlay();
