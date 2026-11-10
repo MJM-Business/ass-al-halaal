@@ -20,9 +20,10 @@ test('static assets use browser caching policies',()=>{
   assert.match(server,/max-age=86400, stale-while-revalidate=604800/);
 });
 
-test('critical stylesheet and module use resource hints',()=>{
+test('critical stylesheet is preloaded and heavy app boot is deferred',()=>{
   assert.match(index,/rel="preload" href="style\.css\?v=421" as="style"/);
-  assert.match(index,/rel="modulepreload" href="app\.js\?v=421"/);
+  assert.match(index,/src="bootstrap\.js\?v=421"/);
+  assert.doesNotMatch(index,/rel="modulepreload" href="app\.js/);
 });
 
 test('google identity origin is preconnected',()=>{
