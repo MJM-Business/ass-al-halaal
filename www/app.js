@@ -1434,7 +1434,24 @@ const statusLabel=s=>t({received:'تم استلام الطلب',confirmed:'تم 
 
 function persist(){write('kn-cart',cart);write('kn-cart-coupon',cartCouponCode);write('kn-lang',lang);write('kn-lang-mode',langMode);write('kn-district',district);write('kn-phone',myPhone);write('kn-favourites',[...favourites])}
 function toast(message){toastEl.textContent=message;toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),2600)}
-function open(html,klass=''){opener=document.activeElement;modal.className=klass;modal.innerHTML=`<button class="close" type="button" aria-label="${t('إغلاق','Close')}">×</button>${html}`;modal.showModal();modal.querySelector('.close').onclick=()=>modal.close();setTimeout(applyRbacUi,0)}
+function applyAccessibilityHardening(root=document){
+  const scope=root&&root.querySelectorAll?root:document;
+  scope.querySelectorAll('img').forEach(img=>{
+    if(!img.hasAttribute('alt'))img.setAttribute('alt','');
+    const aboveFold=Boolean(img.closest('.ref-customer-header,.mobile-reference-header,.v94-hero-slider,.quality-hero,.simple-auth-logo-wrap'));
+    if(!aboveFold&&!img.hasAttribute('loading'))img.setAttribute('loading','lazy');
+    if(!img.hasAttribute('decoding'))img.setAttribute('decoding','async');
+  });
+  scope.querySelectorAll('input:not([type="hidden"]),select,textarea').forEach(field=>{
+    if(field.hasAttribute('aria-label')||field.hasAttribute('aria-labelledby')||field.closest('label'))return;
+    const fallback=field.getAttribute('placeholder')||field.getAttribute('name')||field.id||'Form field';
+    field.setAttribute('aria-label',fallback);
+  });
+  scope.querySelectorAll('[role="button"]').forEach(el=>{
+    if(!el.hasAttribute('tabindex'))el.setAttribute('tabindex','0');
+  });
+}
+function open(html,klass=''){opener=document.activeElement;modal.className=klass;modal.innerHTML=`<button class="close" type="button" aria-label="${t('إغلاق','Close')}">×</button>${html}`;applyAccessibilityHardening(modal);modal.showModal();modal.querySelector('.close').onclick=()=>modal.close();setTimeout(applyRbacUi,0)}
 modal.addEventListener('close',()=>opener?.focus());
 function openLanguagePicker(){
   const detected=deviceAppLanguage();
@@ -2175,7 +2192,7 @@ function bottomNav(){const v=view();return `<nav class="bottom-nav" aria-label="
   <button data-nav="orders" class="${v==='orders'?'active':''}"><span class="nav-icon">${customerIcon('orders')}</span><small>${t('تتبع طلبي','Track order')}</small></button>
   <button data-nav="account" class="${v==='account'?'active':''}"><span class="nav-icon">${customerIcon('account')}</span><small>${t('حسابي','Account')}</small></button>
 </nav>`}
-function shell(content,{admin=false}={}){return `<div class="app-shell ${admin?'admin-shell':''}">${admin?'':header()}<main class="screen">${content}</main>${admin?'':bottomNav()}</div>`}
+function shell(content,{admin=false}={}){return `<div class="app-shell ${admin?'admin-shell':''}">${admin?'':header()}<main id="app-main" class="screen" tabindex="-1">${content}</main>${admin?'':bottomNav()}</div>`}
 
 function homePage(){
   const heroSlides=[
@@ -8062,6 +8079,7 @@ function render(){
   const v=view();
   let content=v==='home'?homePage():v==='orders'?ordersPage():v==='account'?accountPage():v==='admin'?adminPage():v.startsWith('livestock/')?livestockCategoryPage(decodeURIComponent(v.slice(10))):v.startsWith('hashi/')?hashiVariantPage(productById('hashi-camel')||products.find(isHashiCamelProduct),decodeURIComponent(v.slice(6))):v.startsWith('product/')?productDetailPage(decodeURIComponent(v.slice(8))):homePage();
   document.querySelector('#app').innerHTML=shell(content,{admin:v==='admin'});
+  applyAccessibilityHardening(document.querySelector('#app'));
   bind();
   applyV469MobileExperience();
   setupV485MostRequestedSlider();
