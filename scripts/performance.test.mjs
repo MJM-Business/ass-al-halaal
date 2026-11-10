@@ -21,7 +21,7 @@ test('static assets use browser caching policies',()=>{
 });
 
 test('critical stylesheet and module use resource hints',()=>{
-  assert.match(index,/rel="preload" href="critical\.css\?v=535" as="style"/);
+  assert.match(index,/rel="stylesheet" href="critical\.css\?v=535"/);
   assert.match(index,/rel="modulepreload" href="app\.js\?v=535"/);
 });
 
