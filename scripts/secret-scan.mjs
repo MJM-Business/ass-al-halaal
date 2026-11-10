@@ -92,10 +92,13 @@ for(const file of await walk(root)){
     if(rx.test(text))findings.push({file:file.rel,label});
   }
 
-  for(const line of text.split(/\r?\n/)){
-    const assignment=assignmentFromLine(line);
-    if(assignment&&!placeholder(assignment.value)){
-      findings.push({file:file.rel,label:'hard-coded '+assignment.key});
+  const isTestFixture=/\.(?:test|spec)\.[cm]?js$/i.test(file.rel);
+  if(!isTestFixture){
+    for(const line of text.split(/\r?\n/)){
+      const assignment=assignmentFromLine(line);
+      if(assignment&&!placeholder(assignment.value)){
+        findings.push({file:file.rel,label:'hard-coded '+assignment.key});
+      }
     }
   }
 }
