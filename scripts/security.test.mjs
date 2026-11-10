@@ -157,3 +157,93 @@ test('customer order endpoints enforce ownership and prevent IDOR',async t=>{
   assert.equal(anonymous.response.status,401);
   assert.equal(anonymous.payload.code,'CUSTOMER_AUTH_REQUIRED');
 });
+
+
+test('JSON API input hardening rejects unsafe payloads',async t=>{
+  const temp=await mkdtemp(path.join(os.tmpdir(),'ahl-input-security-'));
+  const dbPath=path.join(temp,'security.sqlite3');
+  const port=await freePort();
+  const base=`http://127.0.0.1:${port}`;
+  const logs=[];
+
+  const child=spawn(process.execPath,['scripts/serve.mjs'],{
+    cwd:path.resolve('.'),
+    env:{
+      ...process.env,
+      NODE_ENV:'development',
+      HOST:'127.0.0.1',
+      PORT:String(port),
+      KABSH_DB_PATH:dbPath,
+      KABSH_TRUST_PROXY:'0',
+      KABSH_COOKIE_SECURE:'0',
+      KABSH_OTP_PEPPER:'test-only-security-pepper-do-not-use-in-production'
+    },
+    stdio:['ignore','pipe','pipe']
+  });
+  child.stdout.on('data',chunk=>logs.push(String(chunk)));
+  child.stderr.on('data',chunk=>logs.push(String(chunk)));
+
+  t.after(async()=>{
+    if(child.exitCode===null){
+      child.kill('SIGTERM');
+      await new Promise(resolve=>{
+        const timer=setTimeout(resolve,1500);
+        child.once('exit',()=>{clearTimeout(timer);resolve()});
+      });
+    }
+    await rm(temp,{recursive:true,force:true});
+  });
+
+  await waitForHealth(base,child,logs);
+
+  const badType=await fetch(`${base}/api/customer/login`,{
+    method:'POST',
+    headers:{Origin:base,'Content-Type':'text/plain'},
+    body:'{}'
+  });
+  assert.equal(badType.status,400);
+  assert.match((await badType.json()).error,/Content-Type must be application\/json/);
+
+  const primitive=await fetch(`${base}/api/customer/login`,{
+    method:'POST',
+    headers:{Origin:base,'Content-Type':'application/json'},
+    body:'[]'
+  });
+  assert.equal(primitive.status,400);
+  assert.match((await primitive.json()).error,/JSON body must be an object/);
+
+  const prototypePayload=await fetch(`${base}/api/customer/login`,{
+    method:'POST',
+    headers:{Origin:base,'Content-Type':'application/json'},
+    body:'{"__proto__":{"polluted":true},"identifier":"x","password":"x"}'
+  });
+  assert.equal(prototypePayload.status,400);
+  assert.match((await prototypePayload.json()).error,/Unsafe JSON key rejected/);
+  assert.equal({}.polluted,undefined);
+
+  let nested={value:'ok'};
+  for(let i=0;i<10;i++)nested={child:nested};
+  const deep=await fetch(`${base}/api/customer/login`,{
+    method:'POST',
+    headers:{Origin:base,'Content-Type':'application/json'},
+    body:JSON.stringify(nested)
+  });
+  assert.equal(deep.status,400);
+  assert.match((await deep.json()).error,/nested too deeply/);
+
+  const control=await fetch(`${base}/api/customer/login`,{
+    method:'POST',
+    headers:{Origin:base,'Content-Type':'application/json'},
+    body:'{"identifier":"user@example.test","password":"bad\\u0001value"}'
+  });
+  assert.equal(control.status,400);
+  assert.match((await control.json()).error,/unsupported control characters/);
+
+  const tooLong=await fetch(`${base}/api/customer/login`,{
+    method:'POST',
+    headers:{Origin:base,'Content-Type':'application/json'},
+    body:JSON.stringify({identifier:'a'.repeat(20_001),password:'x'})
+  });
+  assert.equal(tooLong.status,400);
+  assert.match((await tooLong.json()).error,/Input value is too long/);
+});
