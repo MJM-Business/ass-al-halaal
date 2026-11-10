@@ -10,14 +10,16 @@
   "scripts": {
     "start": "node scripts/serve.mjs",
     "dev": "node scripts/serve.mjs",
-    "check": "node --check www/app.js && node --check www/shop.js && node --check scripts/serve.mjs && node --check scripts/upload-security.mjs && node --check scripts/security.test.mjs && node --test scripts/shop.test.mjs scripts/security.test.mjs",
+    "check": "node --check www/app.js && node --check www/shop.js && node --check scripts/serve.mjs && node --check scripts/upload-security.mjs && node --check scripts/secret-scan.mjs && node --check scripts/security.test.mjs && node scripts/secret-scan.mjs && node --test scripts/shop.test.mjs scripts/security.test.mjs",
     "health": "node -e \"fetch('http://127.0.0.1:5173/api/health').then(r=>r.json()).then(console.log).catch(e=>{console.error(e.message);process.exit(1)})\"",
     "native:install": "npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/ios",
     "android:add": "npx cap add android",
     "ios:add": "npx cap add ios",
     "sync": "npx cap sync",
     "android": "npx cap open android",
-    "ios": "npx cap open ios"
+    "ios": "npx cap open ios",
+    "security:secrets": "node scripts/secret-scan.mjs",
+    "security:audit": "npm audit --audit-level=high"
   },
   "dependencies": {
     "bcryptjs": "2.4.3"
