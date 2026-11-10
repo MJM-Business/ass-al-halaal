@@ -1436,11 +1436,21 @@ function persist(){write('kn-cart',cart);write('kn-cart-coupon',cartCouponCode);
 function toast(message){toastEl.textContent=message;toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),2600)}
 function applyAccessibilityHardening(root=document){
   const scope=root&&root.querySelectorAll?root:document;
-  scope.querySelectorAll('img').forEach(img=>{
+  const images=[...scope.querySelectorAll('img')];
+  let priorityAssigned=false;
+  images.forEach(img=>{
     if(!img.hasAttribute('alt'))img.setAttribute('alt','');
     const aboveFold=Boolean(img.closest('.ref-customer-header,.mobile-reference-header,.v94-hero-slider,.quality-hero,.simple-auth-logo-wrap'));
-    if(!aboveFold&&!img.hasAttribute('loading'))img.setAttribute('loading','lazy');
-    if(!img.hasAttribute('decoding'))img.setAttribute('decoding','async');
+    if(aboveFold&&!priorityAssigned){
+      img.setAttribute('loading','eager');
+      img.setAttribute('fetchpriority','high');
+      img.setAttribute('decoding','sync');
+      priorityAssigned=true;
+    }else{
+      if(!img.hasAttribute('loading'))img.setAttribute('loading','lazy');
+      if(!img.hasAttribute('decoding'))img.setAttribute('decoding','async');
+      if(!img.hasAttribute('fetchpriority'))img.setAttribute('fetchpriority','low');
+    }
   });
   scope.querySelectorAll('input:not([type="hidden"]),select,textarea').forEach(field=>{
     if(field.hasAttribute('aria-label')||field.hasAttribute('aria-labelledby')||field.closest('label'))return;
