@@ -37,3 +37,20 @@ test('post-render accessibility hardening covers images and form fields',()=>{
   assert.match(app,/img\.setAttribute\('decoding','async'\)/);
   assert.match(app,/field\.setAttribute\('aria-label',fallback\)/);
 });
+
+
+test('batch 2 localized form feedback and busy states are wired',()=>{
+  assert.match(app,/function localizedValidationMessage\(field\)/);
+  assert.match(app,/function validateLocalizedForm\(form\)/);
+  assert.match(app,/function setFormBusy\(form,busy,label=''/);
+  assert.match(app,/aria-live','polite'/);
+  assert.match(app,/showFieldError\(register,register\.querySelector\('\[name="phone"\]'\)/);
+});
+
+test('batch 2 navigation and search accessibility are wired',()=>{
+  assert.match(app,/function applyBatch2UxHardening\(root=document\)/);
+  assert.match(app,/setAttribute\('aria-current','page'\)/);
+  assert.match(app,/data-v449-result-count role="status" aria-live="polite"/);
+  assert.match(app,/window\.__batch2SearchShortcutBound/);
+  assert.match(app,/e\.ctrlKey\|\|e\.metaKey/);
+});
