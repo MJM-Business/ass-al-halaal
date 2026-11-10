@@ -60,6 +60,8 @@ const ADMIN_PASSWORD_MAX_ATTEMPTS=8;
 const CUSTOMER_LOGIN_MAX_ATTEMPTS=10;
 const AUTH_RATE_WINDOW_MINUTES=10;
 const AUTH_BLOCK_MINUTES=15;
+const CAPTCHA_PROVIDER=env('KABSH_CAPTCHA_PROVIDER').toLowerCase();
+const CAPTCHA_SECRET=env('KABSH_CAPTCHA_SECRET');
 const configuredOtpPepper=env('KABSH_OTP_PEPPER');
 if(IS_PRODUCTION&&!configuredOtpPepper) throw new Error('KABSH_OTP_PEPPER is required when NODE_ENV=production');
 const OTP_PEPPER=configuredOtpPepper||crypto.randomBytes(32).toString('hex');
@@ -995,6 +997,28 @@ function authRateFailure(scope,key,maxAttempts,windowMinutes=AUTH_RATE_WINDOW_MI
 }
 function authRateClear(scope,key){
   db.prepare('DELETE FROM auth_rate_limits WHERE bucket=?').run(authBucket(scope,key));
+}
+function captchaConfigured(){
+  return CAPTCHA_PROVIDER==='turnstile'&&Boolean(CAPTCHA_SECRET);
+}
+async function verifyCaptchaToken(token,ip=''){
+  if(!captchaConfigured())return {ok:true,skipped:true};
+  const value=String(token||'').trim();
+  if(!value)return {ok:false,code:'CAPTCHA_REQUIRED'};
+  const form=new URLSearchParams({secret:CAPTCHA_SECRET,response:value});
+  if(ip&&ip!=='unknown')form.set('remoteip',ip);
+  const response=await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify',{
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:form
+  }).catch(()=>null);
+  if(!response||!response.ok)return {ok:false,code:'CAPTCHA_UNAVAILABLE'};
+  const result=await response.json().catch(()=>({success:false}));
+  return result.success?{ok:true}:{ok:false,code:'CAPTCHA_INVALID'};
+}
+function captchaRequiredByGate(scope,key,softThreshold){
+  const row=db.prepare('SELECT attempts FROM auth_rate_limits WHERE bucket=?').get(authBucket(scope,key));
+  return captchaConfigured()&&Number(row?.attempts||0)>=softThreshold;
 }
 function hashCustomerPassword(password){return hashPassword(password)}
 function verifyCustomerPassword(password,stored){return verifyPassword(password,stored)}
@@ -2292,6 +2316,10 @@ async function handleApi(req,res,url){
       if(!registerGate.allowed)return json(res,429,{error:'Too many registration attempts. Try again later.',code:'CUSTOMER_REGISTER_RATE_LIMITED',retry_after:registerGate.retryAfter});
       authRateFailure('customer-register-ip',ip,10,60,60);
       const d=await body(req);
+      if(captchaRequiredByGate('customer-register-ip',ip,5)){
+        const captcha=await verifyCaptchaToken(d.captcha_token,ip);
+        if(!captcha.ok)return json(res,403,{error:'CAPTCHA verification required',code:captcha.code});
+      }
       const name=String(d.name||'').trim();
       const email=String(d.email||'').trim().toLowerCase();
       const phone=normalizePhone(d.phone||'');
@@ -2321,6 +2349,10 @@ async function handleApi(req,res,url){
       const pairGate=authRateStatus('customer-login-pair',pairKey,CUSTOMER_LOGIN_MAX_ATTEMPTS);
       const blocked=!ipGate.allowed?ipGate:(!pairGate.allowed?pairGate:null);
       if(blocked)return json(res,429,{error:'Too many sign-in attempts. Try again later.',code:'CUSTOMER_LOGIN_RATE_LIMITED',retry_after:blocked.retryAfter});
+      if(captchaRequiredByGate('customer-login-pair',pairKey,5)){
+        const captcha=await verifyCaptchaToken(d.captcha_token,ip);
+        if(!captcha.ok)return json(res,403,{error:'CAPTCHA verification required',code:captcha.code});
+      }
       if(!identifier||!password||password.length>256){
         authRateFailure('customer-login-ip',ip,CUSTOMER_LOGIN_MAX_ATTEMPTS*3);
         authRateFailure('customer-login-pair',pairKey,CUSTOMER_LOGIN_MAX_ATTEMPTS);
