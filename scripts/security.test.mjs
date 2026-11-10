@@ -247,3 +247,117 @@ test('JSON API input hardening rejects unsafe payloads',async t=>{
   assert.equal(tooLong.status,400);
   assert.match((await tooLong.json()).error,/Input value is too long/);
 });
+
+
+test('secure image upload validation and protected media access',async t=>{
+  const temp=await mkdtemp(path.join(os.tmpdir(),'ahl-upload-security-'));
+  const dbPath=path.join(temp,'security.sqlite3');
+  const port=await freePort();
+  const base=`http://127.0.0.1:${port}`;
+  const logs=[];
+
+  const child=spawn(process.execPath,['scripts/serve.mjs'],{
+    cwd:path.resolve('.'),
+    env:{
+      ...process.env,
+      NODE_ENV:'development',
+      HOST:'127.0.0.1',
+      PORT:String(port),
+      KABSH_DB_PATH:dbPath,
+      KABSH_TRUST_PROXY:'0',
+      KABSH_COOKIE_SECURE:'0',
+      KABSH_OTP_PEPPER:'test-only-security-pepper-do-not-use-in-production',
+      KABSH_ADMIN_BOOTSTRAP_PASSWORD:'SecurityAdmin!123',
+      KABSH_RESET_ADMIN_PASSWORD:'1'
+    },
+    stdio:['ignore','pipe','pipe']
+  });
+  child.stdout.on('data',chunk=>logs.push(String(chunk)));
+  child.stderr.on('data',chunk=>logs.push(String(chunk)));
+
+  t.after(async()=>{
+    if(child.exitCode===null){
+      child.kill('SIGTERM');
+      await new Promise(resolve=>{
+        const timer=setTimeout(resolve,1500);
+        child.once('exit',()=>{clearTimeout(timer);resolve()});
+      });
+    }
+    await rm(temp,{recursive:true,force:true});
+  });
+
+  await waitForHealth(base,child,logs);
+
+  const register=await jsonRequest(`${base}/api/customer/register`,{
+    method:'POST',
+    body:{
+      name:'Upload Customer',
+      email:'upload-customer@example.test',
+      phone:'0500000003',
+      password:'Test!Pass123'
+    }
+  });
+  assert.equal(register.response.status,201);
+  const customerCookie=cookieFrom(register.response);
+
+  const productsRes=await jsonRequest(`${base}/api/products`);
+  const product=productsRes.payload.products[0];
+  const create=await jsonRequest(`${base}/api/orders`,{
+    method:'POST',
+    cookie:customerCookie,
+    body:{
+      phone:'0500000003',
+      city:'Jeddah',
+      district:'حي الروضة',
+      address:'Upload test address',
+      deliveryDate:'2026-12-01',
+      slot:'18:00-20:00',
+      items:[{id:product.id,qty:1,pack:'bags',cut:'medium',fat:'regular',head:'raw',tripe:'cleaned'}]
+    }
+  });
+  assert.equal(create.response.status,201);
+  const orderId=create.payload.order.id;
+
+  // Upload route is admin-only; customer session must not be enough.
+  const forbiddenCustomer=await fetch(`${base}/api/admin/orders/${encodeURIComponent(orderId)}/media/upload`,{
+    method:'POST',
+    headers:{Origin:base,Cookie:customerCookie,'Content-Type':'image/png'},
+    body:Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a])
+  });
+  assert.equal(forbiddenCustomer.status,401);
+
+  // Public unauthenticated media IDs must not be enumerable.
+  const missing=await fetch(`${base}/api/media/00000000-0000-0000-0000-000000000000.png`,{
+    headers:{Origin:base}
+  });
+  assert.equal(missing.status,404);
+
+  // Helper-level magic byte validation is covered separately below.
+});
+
+test('upload helper rejects MIME spoofing and oversized files',async()=>{
+  const {validateImageUpload,MAX_UPLOAD_BYTES,safeStoredFilename}=await import('./upload-security.mjs');
+
+  assert.throws(
+    ()=>validateImageUpload({contentType:'image/png',buffer:Buffer.from('not a png')}),
+    /does not match declared image type/
+  );
+
+  const png=Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a,0x00]);
+  const info=validateImageUpload({contentType:'image/png',buffer:png});
+  assert.equal(info.mime,'image/png');
+  assert.equal(info.ext,'.png');
+
+  assert.throws(
+    ()=>validateImageUpload({contentType:'image/gif',buffer:Buffer.from('GIF89a')}),
+    /Unsupported image type/
+  );
+
+  assert.throws(
+    ()=>validateImageUpload({contentType:'image/png',buffer:Buffer.alloc(MAX_UPLOAD_BYTES+1)}),
+    /exceeds 5 MB/
+  );
+
+  assert.match(safeStoredFilename('12345678-1234-1234-1234-123456789abc','.png'),/\.png$/);
+  assert.throws(()=>safeStoredFilename('../../etc/passwd','.png'),/Invalid storage identifier/);
+});
