@@ -57,3 +57,24 @@ test('first visible image is prioritized while remaining images are lazy loaded'
   assert.match(app,/loading','lazy'/);
   assert.match(app,/fetchpriority','low'/);
 });
+
+
+test('mobile rendering uses content visibility and reduced animation overhead',async()=>{
+  const css=await readFile('www/style.css','utf8');
+  assert.match(css,/content-visibility:auto/);
+  assert.match(css,/contain-intrinsic-size:700px/);
+  assert.match(css,/transition:none!important/);
+});
+
+test('production cache lifetimes are extended for generated assets',()=>{
+  assert.match(server,/max-age=31536000, immutable/);
+  assert.match(server,/max-age=2592000/);
+  assert.match(server,/max-age=86400/);
+});
+
+test('hero slider accessibility semantics prevent hidden focus targets',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.match(app,/role="tab"/);
+  assert.match(app,/toggleAttribute\('inert',!active\)/);
+  assert.match(app,/setAttribute\('tabindex',active\?'0':'-1'\)/);
+});
