@@ -8510,14 +8510,26 @@ function setupHeroSlider(){
     restartProgress();
   };
   const reducedMotion=Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+  let autoplayArmed=false;
   const start=()=>{
     if(heroSliderTimer)clearInterval(heroSliderTimer);
-    if(reducedMotion){heroSliderTimer=null;return}
+    if(reducedMotion||!autoplayArmed){heroSliderTimer=null;return}
     heroSliderTimer=setInterval(()=>{if(!paused)activate(index+1)},5600);
   };
-  root.querySelector('[data-hero-prev]')?.addEventListener('click',()=>{activate(index-1);start()});
-  root.querySelector('[data-hero-next]')?.addEventListener('click',()=>{activate(index+1);start()});
-  dots.forEach(dot=>dot.addEventListener('click',()=>{activate(Number(dot.dataset.heroDot)||0);start()}));
+  const armAutoplay=()=>{
+    if(autoplayArmed||reducedMotion)return;
+    autoplayArmed=true;
+    start();
+  };
+  // Do not rotate large hero content before the visitor interacts.
+  // This prevents late automatic slide swaps from extending LCP while
+  // keeping arrows, dots and swipe controls fully functional.
+  window.addEventListener('pointerdown',armAutoplay,{once:true,passive:true});
+  window.addEventListener('keydown',armAutoplay,{once:true});
+  window.addEventListener('touchstart',armAutoplay,{once:true,passive:true});
+  root.querySelector('[data-hero-prev]')?.addEventListener('click',()=>{activate(index-1);armAutoplay()});
+  root.querySelector('[data-hero-next]')?.addEventListener('click',()=>{activate(index+1);armAutoplay()});
+  dots.forEach(dot=>dot.addEventListener('click',()=>{activate(Number(dot.dataset.heroDot)||0);armAutoplay()}));
   root.addEventListener('mouseenter',()=>{paused=true;root.classList.add('hero-paused')});
   root.addEventListener('mouseleave',()=>{paused=false;root.classList.remove('hero-paused')});
   root.addEventListener('focusin',()=>{paused=true;root.classList.add('hero-paused')});
@@ -8530,7 +8542,7 @@ function setupHeroSlider(){
     touchStartX=null;
     if(Math.abs(delta)>45){activate(index+(delta<0?1:-1));start()}
   },{passive:true});
-  restartProgress();
+  root.classList.remove('hero-progress-run');
   start();
 }
 

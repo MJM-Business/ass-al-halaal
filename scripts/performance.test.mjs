@@ -76,3 +76,11 @@ test('hero slider accessibility semantics prevent hidden focus targets',async()=
   assert.match(app,/toggleAttribute\('inert',!active\)/);
   assert.match(app,/setAttribute\('tabindex',active\?'0':'-1'\)/);
 });
+
+
+test('hero autoplay waits for interaction so automatic slide swaps do not extend LCP',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.match(app,/let autoplayArmed=false/);
+  assert.match(app,/window\.addEventListener\('pointerdown',armAutoplay/);
+  assert.match(app,/if\(reducedMotion\|\|!autoplayArmed\)/);
+});
