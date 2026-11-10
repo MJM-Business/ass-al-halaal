@@ -3,7 +3,10 @@ import path from 'node:path';
 
 const root=path.resolve('.');
 const skipDirs=new Set(['.git','node_modules','data','dist','build','android','ios']);
-const textExts=new Set(['.js','.mjs','.cjs','.json','.html','.css','.md','.txt','.yml','.yaml','.toml','.ini','.cfg','.conf','.ps1','.cmd','.sh']);
+const textExts=new Set([
+  '.js','.mjs','.cjs','.json','.html','.css','.md','.txt',
+  '.yml','.yaml','.toml','.ini','.cfg','.conf','.ps1','.cmd','.sh'
+]);
 const exactNames=new Set(['.env.example','.gitignore','Dockerfile','Procfile']);
 
 const rawPatterns=[
@@ -15,28 +18,59 @@ const rawPatterns=[
   ['Private key',/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/g]
 ];
 
-const sensitiveNames=[
+const sensitiveNames=new Set([
   'WHATSAPP_ACCESS_TOKEN','WHATSAPP_VERIFY_TOKEN','META_APP_SECRET',
   'RESEND_API_KEY','TWILIO_AUTH_TOKEN','OPENAI_API_KEY','GEMINI_API_KEY',
   'KABSH_ADMIN_BOOTSTRAP_PASSWORD','KABSH_OTP_PEPPER','DATABASE_URL',
   'DB_PASSWORD','JWT_SECRET','SESSION_SECRET','CLIENT_SECRET'
-];
+]);
 
 function placeholder(value){
   const v=String(value||'').trim().replace(/^['"]|['"]$/g,'');
   return !v||/^(REDACTED|CHANGE_ME|YOUR_|EXAMPLE|PLACEHOLDER|<.*>|\$\{)/i.test(v);
 }
 
+function assignmentFromLine(line){
+  let text=String(line||'').trim();
+  if(!text||text.startsWith('#')||text.startsWith('//'))return null;
+
+  if(text.startsWith('export '))text=text.slice(7).trim();
+  for(const prefix of ['const ','let ','var ']){
+    if(text.startsWith(prefix)){
+      text=text.slice(prefix.length).trim();
+      break;
+    }
+  }
+
+  let separatorIndex=text.indexOf('=');
+  let separator='=';
+  if(separatorIndex<0){
+    separatorIndex=text.indexOf(':');
+    separator=':';
+  }
+  if(separatorIndex<1)return null;
+
+  const key=text.slice(0,separatorIndex).trim().replace(/^['"]|['"]$/g,'');
+  if(!sensitiveNames.has(key))return null;
+
+  let value=text.slice(separatorIndex+separator.length).trim();
+  value=value.replace(/[;,]\s*$/,'').trim();
+  return {key,value};
+}
+
 async function walk(dir,out=[]){
   for(const entry of await readdir(dir,{withFileTypes:true})){
     if(entry.name.startsWith('.')&&!exactNames.has(entry.name)&&entry.name!=='.env.example')continue;
+
     const full=path.join(dir,entry.name);
     const rel=path.relative(root,full).replaceAll('\\','/');
+
     if(entry.isDirectory()){
       if(skipDirs.has(entry.name))continue;
       await walk(full,out);
       continue;
     }
+
     const ext=path.extname(entry.name).toLowerCase();
     if(textExts.has(ext)||exactNames.has(entry.name))out.push({full,rel});
   }
@@ -44,26 +78,34 @@ async function walk(dir,out=[]){
 }
 
 const findings=[];
+
 for(const file of await walk(root)){
   let text='';
-  try{text=await readFile(file.full,'utf8')}catch{continue}
+  try{
+    text=await readFile(file.full,'utf8');
+  }catch{
+    continue;
+  }
+
   for(const [label,rx] of rawPatterns){
     rx.lastIndex=0;
     if(rx.test(text))findings.push({file:file.rel,label});
   }
 
-  if(file.rel!=='.env.example'){
-    for(const name of sensitiveNames){
-      const rx=new RegExp('(?:^|\\n)[ \\t]*(?:export[ \\t]+)?'+name.replace(/[.*+?^$()|[\]{}\\]/g,'\\      const rx=new RegExp('(?:^|\\n)\\s*(?:export\\s+)?'+name.replace(/[.*+?^$()|[\]{}\\]/g,'\\$&')+'\\s*=\\s*([^\\r\\n#]+)','i');')+'[ \\t]*=[ \\t]*([^\\r\\n#]*)','i');
-      const match=text.match(rx);
-      if(match&&!placeholder(match[1]))findings.push({file:file.rel,label:'hard-coded '+name});
+  for(const line of text.split(/\r?\n/)){
+    const assignment=assignmentFromLine(line);
+    if(assignment&&!placeholder(assignment.value)){
+      findings.push({file:file.rel,label:'hard-coded '+assignment.key});
     }
   }
 }
 
-if(findings.length){
+const unique=[...new Map(findings.map(item=>[item.file+'|'+item.label,item])).values()];
+
+if(unique.length){
   console.error('Potential secret exposure detected:');
-  for(const finding of findings)console.error('- '+finding.file+' ['+finding.label+']');
+  for(const finding of unique)console.error('- '+finding.file+' ['+finding.label+']');
   process.exit(1);
 }
+
 console.log('Secret scan passed: no high-confidence hard-coded secrets detected.');
