@@ -42,3 +42,18 @@ test('production image optimization build and routing are configured',()=>{
   assert.match(server,/\/dist\/assets\//);
   assert.match(server,/target\.startsWith\('\/assets\/'\)/);
 });
+
+
+test('startup hydration is deferred so first paint is not blocked by customer APIs',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.match(app,/render\(\);\s*\n\s*if\(view\(\)==='admin'\)/);
+  assert.match(app,/requestIdleCallback/);
+  assert.match(app,/Promise\.allSettled\(jobs\)/);
+});
+
+test('first visible image is prioritized while remaining images are lazy loaded',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.match(app,/fetchpriority','high'/);
+  assert.match(app,/loading','lazy'/);
+  assert.match(app,/fetchpriority','low'/);
+});
