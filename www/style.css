@@ -40383,6 +40383,7 @@ html[dir="ltr"] .v449-search-panel{direction:ltr!important}
     line-height:1.55!important;
     display:-webkit-box!important;
     -webkit-line-clamp:3!important;
+    line-clamp:3!important;
     -webkit-box-orient:vertical!important;
     overflow:hidden!important;
   }
@@ -41263,6 +41264,7 @@ html[dir="ltr"] .v449-search-panel{direction:ltr!important}
     line-height:1.5!important;
     display:-webkit-box!important;
     -webkit-line-clamp:3!important;
+    line-clamp:3!important;
     -webkit-box-orient:vertical!important;
     overflow:hidden!important;
   }
@@ -41874,6 +41876,7 @@ html[dir="ltr"] .v449-search-panel{direction:ltr!important}
     line-height:1.5!important;
     display:-webkit-box!important;
     -webkit-line-clamp:3!important;
+    line-clamp:3!important;
     -webkit-box-orient:vertical!important;
     overflow:hidden!important;
   }
