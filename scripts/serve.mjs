@@ -3,6 +3,7 @@ import {readFile, mkdir, writeFile, unlink} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import {brotliCompressSync,gzipSync,constants as zlibConstants} from 'node:zlib';
 import bcrypt from 'bcryptjs';
 import {DatabaseSync} from 'node:sqlite';
 import {products as catalog, validPhone, validCity} from '../www/shop.js';
@@ -73,6 +74,41 @@ const WA_API_BASE='https://graph.facebook.com';
 const waStreamClients=new Set();
 
 const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp'};
+
+const COMPRESSIBLE_EXTENSIONS=new Set(['.html','.js','.css','.svg','.json','.txt','.xml']);
+const IMMUTABLE_ASSET_EXTENSIONS=new Set(['.png','.jpg','.jpeg','.webp','.svg','.ico','.woff','.woff2']);
+function acceptsEncoding(req,name){
+  return String(req.headers['accept-encoding']||'').toLowerCase().split(',').some(part=>part.trim().startsWith(name));
+}
+function staticCacheControl(file){
+  const ext=path.extname(file).toLowerCase();
+  if(ext==='.html')return 'no-cache';
+  if(IMMUTABLE_ASSET_EXTENSIONS.has(ext))return 'public, max-age=604800, stale-while-revalidate=86400';
+  if(ext==='.js'||ext==='.css')return 'public, max-age=3600, stale-while-revalidate=86400';
+  return 'public, max-age=3600';
+}
+function sendStatic(req,res,file,data){
+  const ext=path.extname(file).toLowerCase();
+  const headers={
+    'Content-Type':types[ext]||'application/octet-stream',
+    'Cache-Control':staticCacheControl(file),
+    'Vary':'Accept-Encoding'
+  };
+  let payload=data;
+  if(COMPRESSIBLE_EXTENSIONS.has(ext)&&data.length>=1024){
+    if(acceptsEncoding(req,'br')){
+      payload=brotliCompressSync(data,{params:{[zlibConstants.BROTLI_PARAM_QUALITY]:5}});
+      headers['Content-Encoding']='br';
+    }else if(acceptsEncoding(req,'gzip')){
+      payload=gzipSync(data,{level:6});
+      headers['Content-Encoding']='gzip';
+    }
+  }
+  headers['Content-Length']=String(payload.length);
+  res.writeHead(200,headers);
+  res.end(payload);
+}
+
 
 function nowIso(){return new Date().toISOString()}
 function env(name){return String(process.env[name]||'').trim()}
@@ -3381,8 +3417,7 @@ const server=http.createServer(async(req,res)=>{
     const relative=path.relative(root,file);
     if(relative.startsWith('..')||path.isAbsolute(relative)){res.writeHead(403);return res.end('Forbidden')}
     const data=await readFile(file);
-    res.writeHead(200,{'Content-Type':types[path.extname(file)]||'application/octet-stream','Cache-Control':'no-cache'});
-    res.end(data);
+    sendStatic(req,res,file,data);
   }catch(e){
     if(!res.headersSent){res.writeHead(404,{'Content-Type':'text/plain; charset=utf-8'});res.end('Not found')}
     else try{res.end()}catch{}
