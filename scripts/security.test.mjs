@@ -361,3 +361,54 @@ test('upload helper rejects MIME spoofing and oversized files',async()=>{
   assert.match(safeStoredFilename('12345678-1234-1234-1234-123456789abc','.png'),/\.png$/);
   assert.throws(()=>safeStoredFilename('../../etc/passwd','.png'),/Invalid storage identifier/);
 });
+
+
+test('production API errors hide internal parser details',async t=>{
+  const temp=await mkdtemp(path.join(os.tmpdir(),'ahl-prod-errors-'));
+  const dbPath=path.join(temp,'security.sqlite3');
+  const port=await freePort();
+  const base=`http://127.0.0.1:${port}`;
+  const logs=[];
+
+  const child=spawn(process.execPath,['scripts/serve.mjs'],{
+    cwd:path.resolve('.'),
+    env:{
+      ...process.env,
+      NODE_ENV:'production',
+      HOST:'127.0.0.1',
+      PORT:String(port),
+      KABSH_DB_PATH:dbPath,
+      KABSH_TRUST_PROXY:'1',
+      KABSH_COOKIE_SECURE:'1',
+      KABSH_ENFORCE_HTTPS:'0',
+      KABSH_PUBLIC_ORIGIN:base,
+      KABSH_OTP_PEPPER:'production-test-pepper-not-a-real-secret'
+    },
+    stdio:['ignore','pipe','pipe']
+  });
+  child.stdout.on('data',chunk=>logs.push(String(chunk)));
+  child.stderr.on('data',chunk=>logs.push(String(chunk)));
+
+  t.after(async()=>{
+    if(child.exitCode===null){
+      child.kill('SIGTERM');
+      await new Promise(resolve=>{
+        const timer=setTimeout(resolve,1500);
+        child.once('exit',()=>{clearTimeout(timer);resolve()});
+      });
+    }
+    await rm(temp,{recursive:true,force:true});
+  });
+
+  await waitForHealth(base,child,logs);
+
+  const response=await fetch(`${base}/api/customer/login`,{
+    method:'POST',
+    headers:{Origin:base,'Content-Type':'text/plain','X-Forwarded-Proto':'https'},
+    body:'{}'
+  });
+  assert.equal(response.status,400);
+  const payload=await response.json();
+  assert.equal(payload.error,'Unable to sign in');
+  assert.doesNotMatch(JSON.stringify(payload),/Content-Type must be application\/json/);
+});
