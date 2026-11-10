@@ -54488,3 +54488,32 @@ html[dir="rtl"] .reference-sidebar-foot .admin-2fa-prominent-v534::before{
   }
 }
 
+
+
+/* =========================================================
+   v534 — Mobile initial hero paints immediately for LCP
+   Visual appearance stays the same; only entrance motion is removed.
+   ========================================================= */
+@media (max-width:900px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active,
+  .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero.is-active,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active .hero-copy,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active .hero-copy>*{
+    opacity:1!important;
+    visibility:visible!important;
+    transform:none!important;
+    transition:none!important;
+    animation:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active .luxury-hero-title,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active .hero-title-gold,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active p,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active .luxury-feature-row,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active .luxury-hero-actions{
+    opacity:1!important;
+    transform:none!important;
+    transition:none!important;
+    animation:none!important;
+  }
+}

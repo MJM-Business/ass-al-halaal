@@ -84,3 +84,12 @@ test('hero autoplay waits for interaction so automatic slide swaps do not extend
   assert.match(app,/window\.addEventListener\('pointerdown',armAutoplay/);
   assert.match(app,/if\(reducedMotion\|\|!autoplayArmed\)/);
 });
+
+
+test('mobile active hero paints immediately without entrance transitions',async()=>{
+  const css=await readFile('www/style.css','utf8');
+  assert.match(css,/v534 — Mobile initial hero paints immediately for LCP/);
+  assert.match(css,/\.v94-hero-slider \.hero-slide\.is-active \.hero-copy>\*/);
+  assert.match(css,/transition:none!important/);
+  assert.match(css,/animation:none!important/);
+});
