@@ -1754,6 +1754,70 @@ function setFormStatus(form,message,state='error'){
   if(status){status.textContent=message||'';status.dataset.state=state;}
 }
 
+function applyBatch2UxHardening(root=document){
+  if(!root)return;
+  const current=view();
+
+  root.querySelectorAll('.desktop-main-nav [data-nav],.bottom-nav [data-nav],.mobile-ref-brand[data-nav],.mobile-ref-actions [data-nav]').forEach(button=>{
+    const target=String(button.dataset.nav||'');
+    const active=target===current;
+    if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
+  });
+
+  const primarySelectors=current==='home'
+    ? ['.unified-login-hero','[data-hero-browse]']
+    : current==='orders'
+      ? [customerSession?'#orders-form button':'.auth-required-card .primary-block']
+      : current==='account'
+        ? [customerSession?'#customer-edit-profile':'#customer-login-form [type="submit"]']
+        : [];
+
+  for(const selector of primarySelectors){
+    const el=root.querySelector(selector);
+    if(el){el.classList.add('batch2-primary-cta');el.dataset.primaryCta='true';break}
+  }
+
+  root.querySelectorAll('form').forEach(form=>{
+    if(!form.getAttribute('aria-label')){
+      const heading=form.closest('section,article,div')?.querySelector('h1,h2,h3');
+      if(heading?.textContent?.trim())form.setAttribute('aria-label',heading.textContent.trim());
+    }
+  });
+
+  root.querySelectorAll('input[type="search"],input[placeholder*="Search"],input[placeholder*="ابحث"]').forEach(input=>{
+    if(!input.getAttribute('aria-label')){
+      input.setAttribute('aria-label',t('بحث','Search'));
+    }
+  });
+
+  if(!document.getElementById('batch2-ux-style')){
+    const style=document.createElement('style');
+    style.id='batch2-ux-style';
+    style.textContent=`
+      .batch2-primary-cta{position:relative!important}
+      .batch2-primary-cta:focus-visible,
+      [data-primary-cta="true"]:focus-visible,
+      .desktop-main-nav button:focus-visible,
+      .bottom-nav button:focus-visible,
+      .v449-search-result:focus-visible,
+      .v449-search-chip:focus-visible{
+        outline:3px solid #f0c94f!important;
+        outline-offset:3px!important;
+      }
+      .v449-search-section-head [role="status"]{min-height:1em}
+      [aria-current="page"]{font-weight:800}
+      .field-error{display:block;margin-top:6px;color:#a12622;font-size:12px;line-height:1.35}
+      [aria-invalid="true"]{border-color:#b92b27!important;box-shadow:0 0 0 2px rgba(185,43,39,.12)!important}
+      .form-status[data-state="error"]{margin-top:8px;color:#a12622}
+      @media (prefers-reduced-motion:reduce){
+        .v449-search-overlay,.v449-search-panel{animation:none!important}
+        *{scroll-behavior:auto!important}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+}
+
 function customerAuthMarkup(){
   return `<div class="simple-auth-shell" data-auth-mode="login">
     <div class="simple-auth-icon simple-auth-logo-wrap"><img src="assets/ass-al-halaal-logo-colored.png" alt="Ass Al Halaal"></div>
@@ -8162,6 +8226,7 @@ function render(){
   let content=v==='home'?homePage():v==='orders'?ordersPage():v==='account'?accountPage():v==='admin'?adminPage():v.startsWith('livestock/')?livestockCategoryPage(decodeURIComponent(v.slice(10))):v.startsWith('hashi/')?hashiVariantPage(productById('hashi-camel')||products.find(isHashiCamelProduct),decodeURIComponent(v.slice(6))):v.startsWith('product/')?productDetailPage(decodeURIComponent(v.slice(8))):homePage();
   document.querySelector('#app').innerHTML=shell(content,{admin:v==='admin'});
   applyAccessibilityHardening(document.querySelector('#app'));
+  applyBatch2UxHardening(document.querySelector('#app'));
   bind();
   applyV469MobileExperience();
   setupV485MostRequestedSlider();
@@ -12288,7 +12353,7 @@ html[dir="ltr"] .v449-search-panel{direction:ltr!important}
       results.innerHTML=`<div class="v449-search-empty">${lang==='ar'?'لا توجد نتائج مطابقة. جرّب اسم نوع آخر أو تصنيف مختلف.':'No matching results. Try another product or category.'}</div>`;
       return;
     }
-    results.innerHTML=rows.map(p=>`<button type="button" class="v449-search-result" data-v449-product="${esc(p.id)}"><span class="v449-search-result-icon">⌕</span><span class="v449-search-result-copy"><b>${esc(lang==='ar'?p.ar:p.en)}</b><small>${esc(lang==='ar'?(p.subAr||''):(p.subEn||''))}</small></span><span class="v449-search-result-arrow">${lang==='ar'?'←':'→'}</span></button>`).join('');
+    results.innerHTML=rows.map(p=>`<button type="button" class="v449-search-result" role="listitem" data-v449-product="${esc(p.id)}"><span class="v449-search-result-icon" aria-hidden="true">⌕</span><span class="v449-search-result-copy"><b>${esc(lang==='ar'?p.ar:p.en)}</b><small>${esc(lang==='ar'?(p.subAr||''):(p.subEn||''))}</small></span><span class="v449-search-result-arrow" aria-hidden="true">${lang==='ar'?'←':'→'}</span></button>`).join('');
     results.querySelectorAll('[data-v449-product]').forEach(btn=>btn.addEventListener('click',()=>{
       const id=btn.dataset.v449Product;
       closeTopSearchOverlay();
@@ -12329,8 +12394,8 @@ html[dir="ltr"] .v449-search-panel{direction:ltr!important}
           </div>
         </div>
         <div class="v449-search-section">
-          <div class="v449-search-section-head"><b>${lang==='ar'?'الأكثر صلة':'Matching products'}</b><small data-v449-result-count></small></div>
-          <div class="v449-search-results" data-v449-search-results></div>
+          <div class="v449-search-section-head"><b>${lang==='ar'?'الأكثر صلة':'Matching products'}</b><small data-v449-result-count role="status" aria-live="polite" aria-atomic="true"></small></div>
+          <div class="v449-search-results" data-v449-search-results role="list" aria-label="${lang==='ar'?'نتائج البحث':'Search results'}"></div>
         </div>
         <div class="v449-search-hint"><span>↵</span>${lang==='ar'?'اكتب ثم اضغط Enter لعرض كل النتائج في قسم المنتجات.':'Type and press Enter to view all matching products.'}</div>
       </section>`;
@@ -12367,7 +12432,7 @@ html[dir="ltr"] .v449-search-panel{direction:ltr!important}
       }
     });
 
-    clear.addEventListener('click',()=>{input.value='';query='';sync();input.focus()});
+    clear.addEventListener('click',()=>{input.value='';query='';filter='all';overlay.querySelectorAll('[data-v449-filter]').forEach(x=>x.classList.toggle('is-active',x.dataset.v449Filter==='all'));sync();input.focus()});
     close.addEventListener('click',closeTopSearchOverlay);
     overlay.addEventListener('mousedown',e=>{if(e.target===overlay) closeTopSearchOverlay()});
     overlay.addEventListener('keydown',e=>{if(e.key==='Escape') closeTopSearchOverlay()});
@@ -12387,6 +12452,23 @@ html[dir="ltr"] .v449-search-panel{direction:ltr!important}
   };
 
   ensureV449SearchStyle();
+
+  if(!window.__batch2SearchShortcutBound){
+    window.__batch2SearchShortcutBound=true;
+    document.addEventListener('keydown',e=>{
+      const target=e.target;
+      const typing=target instanceof HTMLElement&&(target.matches('input,textarea,select,[contenteditable="true"]'));
+      if((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==='k'){
+        e.preventDefault();
+        window.openTopSearchOverlay?.();
+        return;
+      }
+      if(e.key==='/'&&!typing&&!e.ctrlKey&&!e.metaKey&&!e.altKey){
+        e.preventDefault();
+        window.openTopSearchOverlay?.();
+      }
+    });
+  }
 })();
 
 
