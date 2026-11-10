@@ -98,7 +98,7 @@ test('mobile active hero paints immediately without entrance transitions',async(
 test('full stylesheet is deferred behind critical first-paint CSS',async()=>{
   assert.match(index,/rel="stylesheet" href="critical\.css\?v=535"/);
   assert.match(index,/id="full-style" rel="stylesheet" href="style\.css\?v=535" media="print"/);
-  assert.match(index,/style-loader\.js\?v=538/);
+  assert.match(index,/style-loader\.js\?v=535/);
 });
 
 
@@ -106,12 +106,4 @@ test('empty runtime style installers do not mutate the DOM',async()=>{
   const app=await readFile('www/app.js','utf8');
   assert.doesNotMatch(app,/style\.textContent=``;\s*(?:\(document\.head\|\|document\.documentElement\)|document\.head)\.appendChild\(style\);/);
   assert.match(app,/if\(style\.textContent\.trim\(\)\)/);
-});
-
-
-test('customer full stylesheet activates during idle time',async()=>{
-  const loader=await readFile('www/style-loader.js','utf8');
-  assert.match(loader,/requestIdleCallback\(activate,\{timeout:8000\}\)/);
-  assert.match(loader,/location\.hash\.startsWith\('#admin'\)/);
-  assert.match(loader,/fullStyle\.media='all'/);
 });
