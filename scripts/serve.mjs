@@ -83,7 +83,7 @@ function acceptsEncoding(req,name){
 function staticCacheControl(file){
   const ext=path.extname(file).toLowerCase();
   if(ext==='.html')return 'no-cache';
-  if(file.includes('/dist/'))return 'public, max-age=31536000, immutable';
+  if(file.includes('/dist/'))return IS_PRODUCTION?'public, max-age=31536000, immutable':'no-cache';
   if(IMMUTABLE_ASSET_EXTENSIONS.has(ext))return 'public, max-age=2592000, stale-while-revalidate=604800';
   if(ext==='.js'||ext==='.css')return 'public, max-age=86400, stale-while-revalidate=604800';
   return 'public, max-age=86400';
