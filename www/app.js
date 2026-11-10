@@ -3304,7 +3304,7 @@ function productCards(){
     if(hashi){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card hashi-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل السلالة','View breed details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual hashi-final-visual">
-          <img src="assets/hashi-card-final-v344.webp" alt="${safe(t(p.ar,p.en))}" loading="eager">
+          <img src="assets/hashi-card-final-v344.webp" alt="${safe(t(p.ar,p.en))}" loading="lazy" decoding="async" fetchpriority="low">
         </div>
 
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
