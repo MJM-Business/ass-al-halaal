@@ -1,4 +1,4 @@
-import {readdir,readFile,stat} from 'node:fs/promises';
+import {readdir,readFile} from 'node:fs/promises';
 import path from 'node:path';
 
 const root=path.resolve('.');
@@ -54,7 +54,7 @@ for(const file of await walk(root)){
 
   if(file.rel!=='.env.example'){
     for(const name of sensitiveNames){
-      const rx=new RegExp('(?:^|\\n)\\s*(?:export\\s+)?'+name.replace(/[.*+?^$()|[\]{}\\]/g,'\\$&')+'\\s*=\\s*([^\\r\\n#]+)','i');
+      const rx=new RegExp('(?:^|\\n)[ \\t]*(?:export[ \\t]+)?'+name.replace(/[.*+?^$()|[\]{}\\]/g,'\\      const rx=new RegExp('(?:^|\\n)\\s*(?:export\\s+)?'+name.replace(/[.*+?^$()|[\]{}\\]/g,'\\$&')+'\\s*=\\s*([^\\r\\n#]+)','i');')+'[ \\t]*=[ \\t]*([^\\r\\n#]*)','i');
       const match=text.match(rx);
       if(match&&!placeholder(match[1]))findings.push({file:file.rel,label:'hard-coded '+name});
     }
