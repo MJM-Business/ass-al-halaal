@@ -16,9 +16,8 @@ test('static assets support Brotli and gzip compression',()=>{
 });
 
 test('static assets use browser caching policies',()=>{
-  assert.match(server,/stale-while-revalidate/);
-  assert.match(server,/max-age=604800/);
-  assert.match(server,/max-age=3600/);
+  assert.match(server,/max-age=31536000, immutable/);
+  assert.match(server,/max-age=86400, stale-while-revalidate=604800/);
 });
 
 test('critical stylesheet and module use resource hints',()=>{
@@ -42,7 +41,6 @@ test('production image optimization build and routing are configured',()=>{
   assert.match(server,/\/dist\/assets\//);
   assert.match(server,/target\.startsWith\('\/assets\/'\)/);
 });
-
 
 test('startup hydration is deferred so first paint is not blocked by customer APIs',async()=>{
   const app=await readFile('www/app.js','utf8');
