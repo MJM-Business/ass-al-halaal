@@ -2,9 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 
-const [server,index]=await Promise.all([
+const [server,index,keepalive]=await Promise.all([
   readFile('scripts/serve.mjs','utf8'),
-  readFile('www/index.html','utf8')
+  readFile('www/index.html','utf8'),
+  readFile('.github/workflows/render-keepalive.yml','utf8')
 ]);
 
 test('static assets support Brotli and gzip compression',()=>{
@@ -27,4 +28,11 @@ test('critical stylesheet and module use resource hints',()=>{
 
 test('google identity origin is preconnected',()=>{
   assert.match(index,/rel="preconnect" href="https:\/\/accounts\.google\.com"/);
+});
+
+
+test('render keep-alive workflow pings health endpoint on a schedule',()=>{
+  assert.match(keepalive,/cron:\s*"\*\/10 \* \* \* \*"/);
+  assert.match(keepalive,/https:\/\/ass-al-halaal\.onrender\.com\/api\/health/);
+  assert.match(keepalive,/workflow_dispatch/);
 });
