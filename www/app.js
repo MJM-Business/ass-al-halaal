@@ -2394,7 +2394,7 @@ function homePage(){
 
 <section class="hero-slider v94-hero-slider hero-progress-run" data-hero-slider aria-label="${t('عروض عاس الحلال','Ass Al Halaal highlights')}">
   <div class="hero-slides">
-    ${heroSlides.map((slide,index)=>`<article class="quality-hero ref-quality-hero luxury-quality-hero v93-cover hero-slide hero-theme-${slide.theme} ${index===0?'is-active':''}" data-hero-slide="${index}" ${index===0?'':'inert'}>
+    ${heroSlides.map((slide,index)=>`<article class="quality-hero ref-quality-hero luxury-quality-hero v93-cover hero-slide hero-theme-${slide.theme} ${index===0?'is-active':''}" data-hero-slide="${index}" aria-hidden="${index===0?'false':'true'}" ${index===0?'':'inert'}>
       <div class="hero-copy">
         <div class="hero-badges luxury-hero-badges">
           <span>♛ ${slide.badge}</span>
@@ -8513,9 +8513,8 @@ function setupHeroSlider(){
     slides.forEach((slide,i)=>{
       const active=i===index;
       slide.classList.toggle('is-active',active);
+      slide.setAttribute('aria-hidden',active?'false':'true');
       slide.toggleAttribute('inert',!active);
-      if(active)slide.setAttribute('aria-current','true');
-      else slide.removeAttribute('aria-current');
     });
     dots.forEach((dot,i)=>{
       const active=i===index;
@@ -8526,18 +8525,9 @@ function setupHeroSlider(){
     restartProgress();
   };
   const reducedMotion=Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
-  let firstAutoStart=true;
   const start=()=>{
     if(heroSliderTimer)clearInterval(heroSliderTimer);
     if(reducedMotion){heroSliderTimer=null;return}
-    if(firstAutoStart){
-      firstAutoStart=false;
-      heroSliderTimer=setTimeout(()=>{
-        if(!paused)activate(index+1);
-        heroSliderTimer=setInterval(()=>{if(!paused)activate(index+1)},5600);
-      },12000);
-      return;
-    }
     heroSliderTimer=setInterval(()=>{if(!paused)activate(index+1)},5600);
   };
   root.querySelector('[data-hero-prev]')?.addEventListener('click',()=>{activate(index-1);start()});
