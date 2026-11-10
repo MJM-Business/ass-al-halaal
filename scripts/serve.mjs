@@ -1,15 +1,17 @@
 import http from 'node:http';
-import {readFile, mkdir} from 'node:fs/promises';
+import {readFile, mkdir, writeFile, unlink} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import {DatabaseSync} from 'node:sqlite';
 import {products as catalog, validPhone, validCity} from '../www/shop.js';
 import {createKabshAiService} from './ai-service.mjs';
+import {MAX_UPLOAD_BYTES,validateImageUpload,safeStoredFilename} from './upload-security.mjs';
 
 const projectRoot=fileURLToPath(new URL('../',import.meta.url));
 const root=fileURLToPath(new URL('../www/',import.meta.url));
 const dataDir=fileURLToPath(new URL('../data/',import.meta.url));
+const uploadsDir=path.join(dataDir,'uploads');
 
 async function loadEnv(){
   try{
@@ -30,6 +32,7 @@ async function loadEnv(){
 }
 await loadEnv();
 await mkdir(dataDir,{recursive:true});
+await mkdir(uploadsDir,{recursive:true});
 
 const dbPath=process.env.KABSH_DB_PATH?path.resolve(process.env.KABSH_DB_PATH):path.join(dataDir,'kabsh-najd.sqlite3');
 const db=new DatabaseSync(dbPath);
@@ -884,6 +887,9 @@ function json(res,status,data){
   res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','Content-Length':Buffer.byteLength(payload)});
   res.end(payload);
 }
+function publicError(error,fallback){
+  return IS_PRODUCTION?fallback:String(error?.message||fallback);
+}
 function text(res,status,value){res.writeHead(status,{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store'});res.end(String(value??''))}
 function normalizePhone(value){
   const p=String(value||'').replace(/[^+\d]/g,'');
@@ -1237,6 +1243,18 @@ async function rawBody(req,max=1_000_000){
     if(Buffer.byteLength(raw,'utf8')>max)throw new Error('Payload too large');
   }
   return raw;
+}
+async function rawBuffer(req,max=MAX_UPLOAD_BYTES){
+  const declared=Number(req.headers['content-length']||0);
+  if(Number.isFinite(declared)&&declared>max)throw new Error('Upload exceeds 5 MB limit');
+  const chunks=[];let total=0;
+  for await(const chunk of req){
+    const part=Buffer.isBuffer(chunk)?chunk:Buffer.from(chunk);
+    total+=part.length;
+    if(total>max)throw new Error('Upload exceeds 5 MB limit');
+    chunks.push(part);
+  }
+  return Buffer.concat(chunks,total);
 }
 async function body(req){
   const contentType=String(req.headers['content-type']||'').split(';')[0].trim().toLowerCase();
@@ -2081,7 +2099,7 @@ async function handleApi(req,res,url){
         destination:delivery.masked.join(' + ')
       });
     }catch(e){
-      return json(res,503,{error:e.message||'Unable to send verification code',code:'OTP_DELIVERY_FAILED'});
+      return json(res,503,{error:publicError(e,'Unable to send verification code'),code:'OTP_DELIVERY_FAILED'});
     }
   }
 
@@ -2110,7 +2128,7 @@ async function handleApi(req,res,url){
       setAdminPreauth(res,challengeId,user.id,expires);
       adminAuthAudit('admin.auth.otp_resent',user.id,{ip:adminRequestIp(req),channels:delivery.channels});
       return json(res,200,{ok:true,expires_in:ADMIN_OTP_MINUTES*60,resend_after:ADMIN_OTP_RESEND_SECONDS,channels:delivery.channels,destination:delivery.masked.join(' + ')});
-    }catch(e){return json(res,503,{error:e.message||'Unable to resend verification code',code:'OTP_DELIVERY_FAILED'})}
+    }catch(e){return json(res,503,{error:publicError(e,'Unable to resend verification code'),code:'OTP_DELIVERY_FAILED'})}
   }
 
   if(req.method==='POST'&&pathname==='/api/admin/auth/verify'){
@@ -2151,7 +2169,7 @@ async function handleApi(req,res,url){
         );
       adminAuthAudit('admin.auth.login_success',user.id,{ip:adminRequestIp(req),channels:verifiedChannels});
       return json(res,200,{ok:true,authenticated:true,session_expires_at:sessionExpires,...adminSessionSnapshot(user)});
-    }catch(e){return json(res,400,{error:e.message||'Unable to verify code'})}
+    }catch(e){return json(res,400,{error:publicError(e,'Unable to verify code')})}
   }
 
   if(req.method==='POST'&&pathname==='/api/admin/auth/logout'){
@@ -2178,7 +2196,7 @@ async function handleApi(req,res,url){
       const payload=raw?JSON.parse(raw):{};
       const result=processWhatsAppWebhook(payload,raw);
       return json(res,200,{ok:true,...result,signature_verified:!check.skipped});
-    }catch(e){return json(res,400,{error:e.message||'Invalid webhook payload'})}
+    }catch(e){return json(res,400,{error:publicError(e,'Invalid webhook payload')})}
   }
 
   if(req.method==='POST'&&pathname==='/api/ai/chat'){
@@ -2196,7 +2214,7 @@ async function handleApi(req,res,url){
       });
       return json(res,200,{ok:true,ai:result});
     }catch(e){
-      return json(res,400,{error:e.message||'Unable to generate AI reply'});
+      return json(res,400,{error:publicError(e,'Unable to generate AI reply')});
     }
   }
 
@@ -2237,7 +2255,7 @@ async function handleApi(req,res,url){
 
       return json(res,200,{ok:true,ai,sent});
     }catch(e){
-      return json(res,502,{error:e.message||'Unable to generate or send WhatsApp AI reply'});
+      return json(res,502,{error:publicError(e,'Unable to generate or send WhatsApp AI reply')});
     }
   }
 
@@ -2271,7 +2289,7 @@ async function handleApi(req,res,url){
         VALUES(?,?,?,?,?,'password',NULL,'active',?,?)`).run(id,name,email,phone,hashCustomerPassword(password),now,now);
       setCustomerSession(res,id);
       return json(res,201,{ok:true,user:publicCustomer(db.prepare('SELECT * FROM customer_accounts WHERE id=?').get(id))});
-    }catch(e){return json(res,400,{error:e.message||'Unable to create account'})}
+    }catch(e){return json(res,400,{error:publicError(e,'Unable to create account')})}
   }
   if(req.method==='POST'&&pathname==='/api/customer/login'){
     try{
@@ -2307,7 +2325,7 @@ async function handleApi(req,res,url){
       authRateClear('customer-login-pair',pairKey);
       setCustomerSession(res,customer.id);
       return json(res,200,{ok:true,user:publicCustomer(customer)});
-    }catch(e){return json(res,400,{error:e.message||'Unable to sign in'})}
+    }catch(e){return json(res,400,{error:publicError(e,'Unable to sign in')})}
   }
   if(req.method==='POST'&&pathname==='/api/customer/google'){
     try{
@@ -2325,7 +2343,7 @@ async function handleApi(req,res,url){
       customer=db.prepare('SELECT * FROM customer_accounts WHERE id=?').get(customer.id);
       setCustomerSession(res,customer.id);
       return json(res,200,{ok:true,user:publicCustomer(customer)});
-    }catch(e){return json(res,401,{error:e.message||'Google sign-in failed'})}
+    }catch(e){return json(res,401,{error:publicError(e,'Google sign-in failed')})}
   }
   if(req.method==='POST'&&pathname==='/api/customer/logout'){
     clearCustomerSession(req,res);
@@ -2342,7 +2360,7 @@ async function handleApi(req,res,url){
       if(phone&&!validPhone(phone))return json(res,400,{error:'Valid Saudi mobile number is required'});
       db.prepare('UPDATE customer_accounts SET name=?,phone=?,updated_at=? WHERE id=?').run(name,phone,nowIso(),customer.id);
       return json(res,200,{ok:true,user:publicCustomer(db.prepare('SELECT * FROM customer_accounts WHERE id=?').get(customer.id))});
-    }catch(e){return json(res,400,{error:e.message||'Unable to update profile'})}
+    }catch(e){return json(res,400,{error:publicError(e,'Unable to update profile')})}
   }
 
   if(req.method==='GET'&&pathname==='/api/health') return json(res,200,{ok:true,service:'kabsh-najd',database:path.basename(dbPath),whatsapp:publicWaSettings(),ai:aiPublicHealth()});
@@ -2409,7 +2427,7 @@ async function handleApi(req,res,url){
         db.exec('COMMIT');
       }catch(e){db.exec('ROLLBACK');throw e}
       return json(res,201,{ok:true,order:orderWithItems(db.prepare('SELECT * FROM orders WHERE id=?').get(id))});
-    }catch(e){return json(res,400,{error:e.message||'Unable to create order'})}
+    }catch(e){return json(res,400,{error:publicError(e,'Unable to create order')})}
   }
   const customerMatch=pathname.match(/^\/api\/orders\/([^/]+)$/);
   if(customerMatch&&req.method==='GET'){
@@ -2418,6 +2436,39 @@ async function handleApi(req,res,url){
     const key=decodeURIComponent(customerMatch[1]);
     const row=db.prepare('SELECT * FROM orders WHERE customer_id=? AND (id=? OR order_code=?)').get(customer.id,key,key.toUpperCase());
     return row?json(res,200,{order:orderWithItems(row)}):json(res,404,{error:'Order not found'});
+  }
+
+  const storedMediaMatch=pathname.match(/^\/api\/media\/([a-f0-9-]+\.(?:png|jpg|webp))$/i);
+  if(storedMediaMatch&&req.method==='GET'){
+    const storedName=storedMediaMatch[1].toLowerCase();
+    const mediaUrl='/api/media/'+storedName;
+    const media=db.prepare('SELECT * FROM order_media WHERE url=?').get(mediaUrl);
+    if(!media)return json(res,404,{error:'Media not found'});
+    const order=db.prepare('SELECT * FROM orders WHERE id=?').get(media.order_id);
+    if(!order)return json(res,404,{error:'Media not found'});
+
+    const customer=customerFromRequest(req);
+    const admin=adminUserFromRequest(req);
+    const customerAllowed=Boolean(customer&&order.customer_id===customer.id);
+    const adminAllowed=Boolean(admin&&admin.status==='active'&&adminPermission(admin,'orders').view);
+    if(!customerAllowed&&!adminAllowed){
+      return json(res,(customer||admin)?404:401,{error:(customer||admin)?'Media not found':'Authentication required',code:(customer||admin)?'MEDIA_NOT_FOUND':'AUTH_REQUIRED'});
+    }
+
+    try{
+      const file=await readFile(path.join(uploadsDir,storedName));
+      const ext=path.extname(storedName).toLowerCase();
+      const mime=ext==='.png'?'image/png':ext==='.webp'?'image/webp':'image/jpeg';
+      res.writeHead(200,{
+        'Content-Type':mime,
+        'Content-Length':file.length,
+        'Cache-Control':'private, max-age=300, no-transform',
+        'Content-Disposition':'inline'
+      });
+      return res.end(file);
+    }catch{
+      return json(res,404,{error:'Media not found'});
+    }
   }
 
   if(pathname.startsWith('/api/admin/')){
@@ -2467,7 +2518,7 @@ async function handleApi(req,res,url){
         authRateClear('admin-security-password',req.adminUser.id);
         const fresh=db.prepare('SELECT * FROM admin_users WHERE id=?').get(req.adminUser.id);
         return json(res,200,{ok:true,security:adminSecuritySnapshot(req,fresh)});
-      }catch(e){return json(res,400,{error:e.message||'Unable to change password'})}
+      }catch(e){return json(res,400,{error:publicError(e,'Unable to change password')})}
     }
 
     if(pathname==='/api/admin/security/contact/start'&&req.method==='POST'){
@@ -2508,7 +2559,7 @@ async function handleApi(req,res,url){
         authRateClear('admin-security-contact',`${req.adminUser.id}:${field}`);
         governanceEvent('admin.security.contact_verification_sent','admin_user',req.adminUser.id,{actor:adminActorName(req.adminUser),details:{field,destination:delivery.masked}});
         return json(res,200,{ok:true,challenge_id:id,field,channel:delivery.channel,destination:delivery.masked,expires_in:ADMIN_OTP_MINUTES*60,resend_after:ADMIN_OTP_RESEND_SECONDS});
-      }catch(e){return json(res,503,{error:e.message||'Unable to send verification code',code:'SECURITY_OTP_DELIVERY_FAILED'})}
+      }catch(e){return json(res,503,{error:publicError(e,'Unable to send verification code'),code:'SECURITY_OTP_DELIVERY_FAILED'})}
     }
 
     if(pathname==='/api/admin/security/contact/resend'&&req.method==='POST'){
@@ -2527,7 +2578,7 @@ async function handleApi(req,res,url){
         db.prepare('UPDATE admin_security_challenges SET otp_hash=?,attempts=0,resend_count=resend_count+1,last_sent_at=?,expires_at=? WHERE id=?')
           .run(adminOtpHash(id,otp),sent,expires,id);
         return json(res,200,{ok:true,destination:delivery.masked,expires_in:ADMIN_OTP_MINUTES*60,resend_after:ADMIN_OTP_RESEND_SECONDS});
-      }catch(e){return json(res,503,{error:e.message||'Unable to resend verification code',code:'SECURITY_OTP_DELIVERY_FAILED'})}
+      }catch(e){return json(res,503,{error:publicError(e,'Unable to resend verification code'),code:'SECURITY_OTP_DELIVERY_FAILED'})}
     }
 
     if(pathname==='/api/admin/security/contact/verify'&&req.method==='POST'){
@@ -2562,7 +2613,7 @@ async function handleApi(req,res,url){
         }catch(e){db.exec('ROLLBACK');throw e}
         const fresh=db.prepare('SELECT * FROM admin_users WHERE id=?').get(req.adminUser.id);
         return json(res,200,{ok:true,field,security:adminSecuritySnapshot(req,fresh)});
-      }catch(e){return json(res,400,{error:e.message||'Unable to verify security contact'})}
+      }catch(e){return json(res,400,{error:publicError(e,'Unable to verify security contact')})}
     }
 
     if(pathname==='/api/admin/security/sessions/logout-all'&&req.method==='POST'){
@@ -2577,7 +2628,7 @@ async function handleApi(req,res,url){
         if(includeCurrent)clearAdminSession(req,res);
         const fresh=db.prepare('SELECT * FROM admin_users WHERE id=?').get(req.adminUser.id);
         return json(res,200,{ok:true,logged_out:includeCurrent,revoked:Number(result?.changes||0),security:includeCurrent?null:adminSecuritySnapshot(req,fresh)});
-      }catch(e){return json(res,400,{error:e.message||'Unable to revoke sessions'})}
+      }catch(e){return json(res,400,{error:publicError(e,'Unable to revoke sessions')})}
     }
 
     const securitySessionMatch=pathname.match(/^\/api\/admin\/security\/sessions\/([a-f0-9]{8,32})$/i);
@@ -2593,7 +2644,7 @@ async function handleApi(req,res,url){
         governanceEvent('admin.security.session_revoked','admin_user',req.adminUser.id,{actor:adminActorName(req.adminUser),details:{session:id}});
         const fresh=db.prepare('SELECT * FROM admin_users WHERE id=?').get(req.adminUser.id);
         return json(res,200,{ok:true,security:adminSecuritySnapshot(req,fresh)});
-      }catch(e){return json(res,400,{error:e.message||'Unable to revoke session'})}
+      }catch(e){return json(res,400,{error:publicError(e,'Unable to revoke session')})}
     }
 
     if(pathname==='/api/admin/audit'&&req.method==='GET'){
@@ -2643,7 +2694,7 @@ async function handleApi(req,res,url){
           db.exec('COMMIT');
         }catch(e){db.exec('ROLLBACK');throw e}
         return json(res,201,{ok:true,user:governanceUserRow(db.prepare('SELECT * FROM admin_users WHERE id=?').get(id)),summary:governanceSummary()});
-      }catch(e){return json(res,400,{error:e.message||'Unable to create admin user'})}
+      }catch(e){return json(res,400,{error:publicError(e,'Unable to create admin user')})}
     }
     const governanceUserMatch=pathname.match(/^\/api\/admin\/governance\/users\/([^/]+)$/);
     if(governanceUserMatch&&req.method==='PATCH'){
@@ -2697,7 +2748,7 @@ async function handleApi(req,res,url){
           db.exec('COMMIT');
         }catch(e){db.exec('ROLLBACK');throw e}
         return json(res,200,{ok:true,user:governanceUserRow(db.prepare('SELECT * FROM admin_users WHERE id=?').get(id)),summary:governanceSummary()});
-      }catch(e){return json(res,400,{error:e.message||'Unable to update administrative user'})}
+      }catch(e){return json(res,400,{error:publicError(e,'Unable to update administrative user')})}
     }
 
     if(pathname==='/api/admin/governance/approvals'&&req.method==='GET'){
@@ -2723,7 +2774,7 @@ async function handleApi(req,res,url){
           db.exec('COMMIT');
         }catch(e){db.exec('ROLLBACK');throw e}
         return json(res,201,{ok:true,approval:governanceApprovalRow(db.prepare('SELECT * FROM governance_approvals WHERE id=?').get(id)),summary:governanceSummary()});
-      }catch(e){return json(res,400,{error:e.message||'Unable to create approval request'})}
+      }catch(e){return json(res,400,{error:publicError(e,'Unable to create approval request')})}
     }
     const approvalMatch=pathname.match(/^\/api\/admin\/governance\/approvals\/([^/]+)$/);
     if(approvalMatch&&req.method==='PATCH'){
@@ -2744,7 +2795,7 @@ async function handleApi(req,res,url){
           db.exec('COMMIT');
         }catch(e){db.exec('ROLLBACK');throw e}
         return json(res,200,{ok:true,approval:governanceApprovalRow(db.prepare('SELECT * FROM governance_approvals WHERE id=?').get(id)),summary:governanceSummary()});
-      }catch(e){return json(res,400,{error:e.message||'Unable to review approval request'})}
+      }catch(e){return json(res,400,{error:publicError(e,'Unable to review approval request')})}
     }
 
     if(pathname==='/api/admin/ai/quick-replies'&&req.method==='GET'){
@@ -2781,7 +2832,7 @@ async function handleApi(req,res,url){
         db.prepare('UPDATE whatsapp_settings SET phone_number_id=?,waba_id=?,display_phone_number=?,graph_version=?,enabled=?,updated_at=? WHERE id=1').run(next.phone_number_id,next.waba_id,next.display_phone_number,next.graph_version,next.enabled,nowIso());
         waBroadcast('settings.updated',{settings:publicWaSettings()});
         return json(res,200,{ok:true,settings:publicWaSettings()});
-      }catch(e){return json(res,400,{error:e.message||'Unable to update WhatsApp settings'})}
+      }catch(e){return json(res,400,{error:publicError(e,'Unable to update WhatsApp settings')})}
     }
     if(pathname==='/api/admin/whatsapp/conversations'&&req.method==='GET') return json(res,200,{conversations:waConversations()});
     if(pathname==='/api/admin/whatsapp/messages'&&req.method==='GET'){
@@ -2795,7 +2846,7 @@ async function handleApi(req,res,url){
         const d=await body(req);
         const sent=await sendWhatsAppText(d.phone,d.text,d.order_id||'');
         return json(res,201,{ok:true,...sent});
-      }catch(e){return json(res,502,{error:e.message||'Unable to send WhatsApp message'})}
+      }catch(e){return json(res,502,{error:publicError(e,'Unable to send WhatsApp message')})}
     }
 
 
@@ -2848,7 +2899,7 @@ async function handleApi(req,res,url){
 
         const ledger=financeOrderLedger().find(r=>r.order_id===orderId);
         return json(res,201,{ok:true,payment:db.prepare('SELECT * FROM finance_payments WHERE id=?').get(id),invoice:ledger,summary:financeSummary()});
-      }catch(e){return json(res,400,{error:e.message||'Unable to record payment'})}
+      }catch(e){return json(res,400,{error:publicError(e,'Unable to record payment')})}
     }
     if(pathname==='/api/admin/finance/settlements'&&req.method==='GET'){
       return json(res,200,{settlements:financeSettlementsList(),summary:financeSummary()});
@@ -2878,7 +2929,7 @@ async function handleApi(req,res,url){
           db.exec('COMMIT');
         }catch(e){db.exec('ROLLBACK');throw e}
         return json(res,201,{ok:true,settlement:db.prepare('SELECT * FROM finance_settlements WHERE id=?').get(id),summary:financeSummary()});
-      }catch(e){return json(res,400,{error:e.message||'Unable to create settlement'})}
+      }catch(e){return json(res,400,{error:publicError(e,'Unable to create settlement')})}
     }
     const settlementMatch=pathname.match(/^\/api\/admin\/finance\/settlements\/([^/]+)$/);
     if(settlementMatch&&req.method==='PATCH'){
@@ -2897,7 +2948,7 @@ async function handleApi(req,res,url){
           db.exec('COMMIT');
         }catch(e){db.exec('ROLLBACK');throw e}
         return json(res,200,{ok:true,settlement:db.prepare('SELECT * FROM finance_settlements WHERE id=?').get(row.id),summary:financeSummary()});
-      }catch(e){return json(res,400,{error:e.message||'Unable to update settlement'})}
+      }catch(e){return json(res,400,{error:publicError(e,'Unable to update settlement')})}
     }
     if(pathname==='/api/admin/finance/events'&&req.method==='GET'){
       const limit=Math.max(1,Math.min(200,Number(url.searchParams.get('limit')||100)));
@@ -3016,7 +3067,43 @@ async function handleApi(req,res,url){
 
         const fresh=db.prepare('SELECT * FROM orders WHERE id=?').get(order.id);
         return json(res,200,{ok:true,delivery:deliveryForOrder(order.id),order:orderWithItems(fresh),summary:deliverySummary(),finance:financeSummary()});
-      }catch(e){return json(res,400,{error:e.message||'Unable to update delivery'})}
+      }catch(e){return json(res,400,{error:publicError(e,'Unable to update delivery')})}
+    }
+
+    const orderMediaUploadMatch=pathname.match(/^\/api\/admin\/orders\/([^/]+)\/media\/upload$/);
+    if(orderMediaUploadMatch&&req.method==='POST'){
+      let storedName='';
+      try{
+        if(!adminPermission(req.adminUser,'orders').manage){
+          recordRbacDenied(req,req.adminUser,pathname,{module:'orders',access:'manage'},'order_media_upload_denied');
+          return json(res,403,{error:'Order media upload is not allowed for this role',code:'RBAC_FORBIDDEN',module:'orders',required:'manage'});
+        }
+        const order=db.prepare('SELECT * FROM orders WHERE id=?').get(orderMediaUploadMatch[1]);
+        if(!order)return json(res,404,{error:'Order not found'});
+
+        const contentType=String(req.headers['content-type']||'');
+        const file=await rawBuffer(req,MAX_UPLOAD_BYTES);
+        const info=validateImageUpload({contentType,buffer:file});
+        storedName=safeStoredFilename(crypto.randomUUID(),info.ext);
+        const destination=path.join(uploadsDir,storedName);
+        await writeFile(destination,file,{flag:'wx'});
+
+        const captionAr=String(url.searchParams.get('caption_ar')||'').trim().slice(0,220);
+        const captionEn=String(url.searchParams.get('caption_en')||'').trim().slice(0,220);
+        const actor=adminActorName(req.adminUser)||'System Administrator';
+        const mediaUrl='/api/media/'+storedName;
+        const created=nowIso();
+        const result=db.prepare(`INSERT INTO order_media(order_id,media_type,url,caption_ar,caption_en,created_by,created_at)
+          VALUES(?,?,?,?,?,?,?)`).run(order.id,'image',mediaUrl,captionAr,captionEn,actor,created);
+        operationEvent(order.id,'operation.media.uploaded',null,String(result.lastInsertRowid),{
+          actor,
+          details:{media_type:'image',mime:info.mime,size:info.size,url:mediaUrl}
+        });
+        return json(res,201,{ok:true,media:mediaForOrder(order.id),order:orderWithItems(order),upload:{mime:info.mime,size:info.size}});
+      }catch(e){
+        if(storedName)await unlink(path.join(uploadsDir,storedName)).catch(()=>{});
+        return json(res,400,{error:publicError(e,'Unable to upload image')});
+      }
     }
 
     const orderMediaCollectionMatch=pathname.match(/^\/api\/admin\/orders\/([^/]+)\/media$/);
@@ -3046,7 +3133,7 @@ async function handleApi(req,res,url){
           VALUES(?,?,?,?,?,?,?)`).run(order.id,mediaType,mediaUrl,captionAr,captionEn,actor,created);
         operationEvent(order.id,'operation.media.added',null,String(result.lastInsertRowid),{actor,details:{media_type:mediaType,url:mediaUrl}});
         return json(res,201,{ok:true,media:mediaForOrder(order.id),order:orderWithItems(order)});
-      }catch(e){return json(res,400,{error:e.message||'Unable to add order media'})}
+      }catch(e){return json(res,400,{error:publicError(e,'Unable to add order media')})}
     }
     const orderMediaItemMatch=pathname.match(/^\/api\/admin\/orders\/([^/]+)\/media\/(\d+)$/);
     if(orderMediaItemMatch&&req.method==='DELETE'){
@@ -3062,9 +3149,13 @@ async function handleApi(req,res,url){
         if(!row) return json(res,404,{error:'Media item not found'});
         const actor=adminActorName(req.adminUser)||'System Administrator';
         db.prepare('DELETE FROM order_media WHERE id=? AND order_id=?').run(mediaId,order.id);
+        if(String(row.url||'').startsWith('/api/media/')){
+          const storedName=path.basename(String(row.url));
+          if(/^[a-f0-9-]+\.(?:png|jpg|webp)$/i.test(storedName))await unlink(path.join(uploadsDir,storedName)).catch(()=>{});
+        }
         operationEvent(order.id,'operation.media.removed',String(mediaId),null,{actor,details:{media_type:row.media_type,url:row.url}});
         return json(res,200,{ok:true,media:mediaForOrder(order.id),order:orderWithItems(order)});
-      }catch(e){return json(res,400,{error:e.message||'Unable to remove order media'})}
+      }catch(e){return json(res,400,{error:publicError(e,'Unable to remove order media')})}
     }
 
     if(pathname==='/api/admin/slaughterhouses'&&req.method==='GET'){
@@ -3154,7 +3245,7 @@ async function handleApi(req,res,url){
 
         const fresh=db.prepare('SELECT * FROM orders WHERE id=?').get(order.id);
         return json(res,200,{ok:true,operation:operationForOrder(order.id),order:orderWithItems(fresh),summary:operationsSummary()});
-      }catch(e){return json(res,400,{error:e.message||'Unable to update order operations'})}
+      }catch(e){return json(res,400,{error:publicError(e,'Unable to update order operations')})}
     }
 
     if(pathname==='/api/admin/orders'&&req.method==='GET'){
@@ -3215,7 +3306,7 @@ async function handleApi(req,res,url){
           db.exec('COMMIT');
         }catch(e){db.exec('ROLLBACK');throw e}
         return json(res,200,{ok:true,order:orderWithItems(db.prepare('SELECT * FROM orders WHERE id=?').get(row.id))});
-      }catch(e){return json(res,400,{error:e.message||'Unable to update status'})}
+      }catch(e){return json(res,400,{error:publicError(e,'Unable to update status')})}
     }
   }
   return json(res,404,{error:'API route not found'});
