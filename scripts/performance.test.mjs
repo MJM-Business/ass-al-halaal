@@ -20,9 +20,9 @@ test('static assets use browser caching policies',()=>{
   assert.match(server,/max-age=86400, stale-while-revalidate=604800/);
 });
 
-test('critical stylesheet is preloaded and heavy app boot is deferred',()=>{
-  assert.match(index,/rel="preload" href="style\.css\?v=421" as="style"/);
-  assert.match(index,/src="bootstrap\.js\?v=421"/);
+test('critical stylesheet is loaded normally and heavy app boot is deferred',()=>{
+  assert.match(index,/rel="stylesheet" href="style\.css\?v=423"/);
+  assert.match(index,/src="bootstrap\.js\?v=424"/);
   assert.doesNotMatch(index,/rel="modulepreload" href="app\.js/);
 });
 
