@@ -21,8 +21,8 @@ test('static assets use browser caching policies',()=>{
 });
 
 test('critical stylesheet and module use resource hints',()=>{
-  assert.match(index,/rel="preload" href="style\.css\?v=533" as="style"/);
-  assert.match(index,/rel="modulepreload" href="app\.js\?v=533"/);
+  assert.match(index,/rel="preload" href="style\.css\?v=534" as="style"/);
+  assert.match(index,/rel="modulepreload" href="app\.js\?v=534"/);
 });
 
 test('google identity origin is preconnected',()=>{
