@@ -3412,7 +3412,9 @@ const server=http.createServer(async(req,res)=>{
     if(rejectUntrustedBrowserOrigin(req,res,url))return;
     if(url.pathname.startsWith('/api/')) return await handleApi(req,res,url);
     const pathname=decodeURIComponent(url.pathname);
-    const target=pathname==='/'?'/index.html':pathname;
+    let target=pathname==='/'?'/index.html':pathname;
+    if(IS_PRODUCTION&&target==='/app.js')target='/dist/app.min.js';
+    if(IS_PRODUCTION&&target==='/style.css')target='/dist/style.min.css';
     const file=path.resolve(root,'.'+target);
     const relative=path.relative(root,file);
     if(relative.startsWith('..')||path.isAbsolute(relative)){res.writeHead(403);return res.end('Forbidden')}
