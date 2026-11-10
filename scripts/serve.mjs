@@ -3414,8 +3414,10 @@ const server=http.createServer(async(req,res)=>{
     if(url.pathname.startsWith('/api/')) return await handleApi(req,res,url);
     const pathname=decodeURIComponent(url.pathname);
     let target=pathname==='/'?'/index.html':pathname;
-    if(IS_PRODUCTION&&target==='/app.js')target='/dist/app.min.js';
-    if(IS_PRODUCTION&&target==='/style.css')target='/dist/style.min.css';
+    // npm run dev builds dist first, so serve the same optimized JS/CSS bundles
+    // locally as production. This keeps Lighthouse performance tests representative.
+    if(target==='/app.js')target='/dist/app.min.js';
+    if(target==='/style.css')target='/dist/style.min.css';
     // Prefer generated optimized images in both development and production.
     // This keeps local Lighthouse representative of production without forcing
     // development to use the minified JS/CSS bundles.
