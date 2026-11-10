@@ -5,6 +5,8 @@ import {mkdtemp,rm} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import net from 'node:net';
+import crypto from 'node:crypto';
+import {DatabaseSync} from 'node:sqlite';
 
 async function freePort(){
   return await new Promise((resolve,reject)=>{
@@ -411,4 +413,80 @@ test('production API errors hide internal parser details',async t=>{
   const payload=await response.json();
   assert.equal(payload.error,'Unable to sign in');
   assert.doesNotMatch(JSON.stringify(payload),/Content-Type must be application\/json/);
+});
+
+
+test('customer passwords use bcrypt and legacy scrypt hashes upgrade after login',async t=>{
+  const temp=await mkdtemp(path.join(os.tmpdir(),'ahl-bcrypt-security-'));
+  const dbPath=path.join(temp,'security.sqlite3');
+  const port=await freePort();
+  const base=`http://127.0.0.1:${port}`;
+  const logs=[];
+
+  const child=spawn(process.execPath,['scripts/serve.mjs'],{
+    cwd:path.resolve('.'),
+    env:{
+      ...process.env,
+      NODE_ENV:'development',
+      HOST:'127.0.0.1',
+      PORT:String(port),
+      KABSH_DB_PATH:dbPath,
+      KABSH_TRUST_PROXY:'0',
+      KABSH_COOKIE_SECURE:'0',
+      KABSH_OTP_PEPPER:'test-only-security-pepper-do-not-use-in-production'
+    },
+    stdio:['ignore','pipe','pipe']
+  });
+  child.stdout.on('data',chunk=>logs.push(String(chunk)));
+  child.stderr.on('data',chunk=>logs.push(String(chunk)));
+
+  t.after(async()=>{
+    if(child.exitCode===null){
+      child.kill('SIGTERM');
+      await new Promise(resolve=>{
+        const timer=setTimeout(resolve,1500);
+        child.once('exit',()=>{clearTimeout(timer);resolve()});
+      });
+    }
+    await rm(temp,{recursive:true,force:true});
+  });
+
+  await waitForHealth(base,child,logs);
+
+  const password='Migration!Pass123';
+  const register=await jsonRequest(`${base}/api/customer/register`,{
+    method:'POST',
+    body:{
+      name:'Bcrypt Customer',
+      email:'bcrypt-customer@example.test',
+      phone:'0500000004',
+      password
+    }
+  });
+  assert.equal(register.response.status,201);
+
+  const db=new DatabaseSync(dbPath);
+  const customerId=register.payload.user.id;
+  let row=db.prepare('SELECT password_hash FROM customer_accounts WHERE id=?').get(customerId);
+  assert.match(row.password_hash,/^\$2[aby]\$12\$/);
+
+  await jsonRequest(`${base}/api/customer/logout`,{
+    method:'POST',
+    cookie:cookieFrom(register.response),
+    body:{}
+  });
+
+  const salt=crypto.randomBytes(16).toString('hex');
+  const legacyHash=crypto.scryptSync(password,salt,64).toString('hex');
+  db.prepare('UPDATE customer_accounts SET password_hash=? WHERE id=?').run(`scrypt$${salt}$${legacyHash}`,customerId);
+
+  const login=await jsonRequest(`${base}/api/customer/login`,{
+    method:'POST',
+    body:{identifier:'bcrypt-customer@example.test',password}
+  });
+  assert.equal(login.response.status,200);
+
+  row=db.prepare('SELECT password_hash FROM customer_accounts WHERE id=?').get(customerId);
+  assert.match(row.password_hash,/^\$2[aby]\$12\$/);
+  db.close();
 });
