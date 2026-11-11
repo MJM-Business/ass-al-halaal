@@ -22,7 +22,7 @@ test('static assets use browser caching policies',()=>{
 
 test('critical stylesheet and module use resource hints',()=>{
   assert.match(index,/rel="stylesheet" href="critical\.css\?v=545"/);
-  assert.match(index,/rel="modulepreload" href="dist\/app\.min\.js\?v=556"/);
+  assert.match(index,/rel="modulepreload" href="dist\/app\.min\.js\?v=557"/);
 });
 
 test('google identity origin is preconnected',()=>{
@@ -177,4 +177,11 @@ test('legacy nav reflow boots are retired from initial load',async()=>{
   ]){
     assert.doesNotMatch(app,new RegExp('const\\s+'+name+'='));
   }
+});
+
+
+test('mobile render uses only the base shell plus v528 carousel engine',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.match(app,/if\(window\.matchMedia\('\(max-width: 900px\)'\)\.matches\)\{\s*if\(typeof setupV528MobileCarousel==='function'\) setupV528MobileCarousel\(\);\s*\}else\{\s*if\(typeof setupV487StableCarousel==='function'\) setupV487StableCarousel\(\);\s*\}/);
+  assert.match(app,/Mobile centering is owned by v528/);
 });
