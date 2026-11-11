@@ -9617,10 +9617,23 @@ if(view()==='admin'){
 
   function px(n){ return `${Math.max(0,Math.round(n))}px`; }
 
-  window.applyV443LockedTopNav=function applyV443LockedTopNav(){
+  let v443LastLayoutAt=0;
+  let v443LastShell=null;
+
+  window.applyV443LockedTopNav=function applyV443LockedTopNav(force=false){
     ensureV443Style();
 
+    const now=performance.now();
     const shell=document.querySelector('.app-shell:not(.admin-shell)');
+
+    // Many historical UI patches call this function during the same startup
+    // burst. Avoid repeating synchronous layout reads/writes for the same
+    // shell within a short window; render/resize still performs a fresh pass.
+    if(!force && shell && shell===v443LastShell && (now-v443LastLayoutAt)<250){
+      return;
+    }
+    v443LastShell=shell;
+    v443LastLayoutAt=now;
     if(!shell){
       document.documentElement.style.setProperty('--v443-locked-nav-height','0px');
       return;
@@ -9680,7 +9693,7 @@ if(view()==='admin'){
   let raf=0;
   const schedule=()=>{
     cancelAnimationFrame(raf);
-    raf=requestAnimationFrame(()=>requestAnimationFrame(()=>window.applyV443LockedTopNav()));
+    raf=requestAnimationFrame(()=>requestAnimationFrame(()=>window.applyV443LockedTopNav(true)));
   };
 
   if(document.readyState==='loading'){
@@ -9692,10 +9705,8 @@ if(view()==='admin'){
   window.addEventListener('resize',schedule,{passive:true});
   window.addEventListener('orientationchange',schedule,{passive:true});
 
-  const app=document.querySelector('#app');
-  if(app){
-    new MutationObserver(schedule).observe(app,{childList:true,subtree:false});
-  }
+  // render() already schedules a fresh navigation measurement.
+  // Avoid a second MutationObserver-triggered layout pass for the same render.
 })();
 
 ;(()=>{
