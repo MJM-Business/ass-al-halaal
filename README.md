@@ -1,4 +1,4 @@
-# Ass Al Halaal / Kabsh Najd — Operational Application
+# Ass Al Halaal — Operational Application
 
 This project is a local-first ordering and operations platform with a shared Node.js backend, SQLite database, customer storefront, admin portal, real admin 2FA, RBAC, audit history, slaughterhouse operations, delivery/courier workflows, finance records, WhatsApp integration hooks and a local business-grounded AI assistant.
 
@@ -123,7 +123,7 @@ Customer sessions use HttpOnly cookies and include login throttling and producti
 SQLite is created automatically at:
 
 ```text
-data/kabsh-najd.sqlite3
+data/ass-al-halaal.sqlite3
 ```
 
 The application also uses SQLite WAL mode.
@@ -212,7 +212,7 @@ Optional hosted-provider keys can remain blank unless a hosted model is intentio
 - `www/app.js` — customer storefront and admin UI logic.
 - `www/shop.js` — product catalogue metadata and validation helpers.
 - `www/assets/` — local visual assets.
-- `data/kabsh-najd.sqlite3` — generated local SQLite database.
+- `data/ass-al-halaal.sqlite3` — generated local SQLite database.
 - `.env` — private local secrets/configuration; never commit.
 - `.env.example` — safe environment template.
 - `.gitignore` — excludes secrets, database files, logs and generated folders.
