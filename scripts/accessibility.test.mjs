@@ -91,3 +91,10 @@ test('empty order lookup clearly distinguishes no orders from showing all orders
   assert.match(app,/No orders are linked to this account yet\./);
   assert.match(app,/state:myOrders\.length\?'success':'empty'/);
 });
+
+
+test('order lookup feedback stays silent until the user searches',()=>{
+  assert.match(app,/ordersLookupTouched=false/);
+  assert.match(app,/ordersLookupTouched\?safe\(ordersLookupStatus\.message\|\|''\):''/);
+  assert.match(app,/ordersLookupTouched=true;ordersLookupQuery=code/);
+});
