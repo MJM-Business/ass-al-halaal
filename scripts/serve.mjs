@@ -838,9 +838,19 @@ function normalizeOrigin(value){
   try{return new URL(String(value||'')).origin}catch{return ''}
 }
 function isLoopbackHost(value){
-  const host=String(value||'').trim().toLowerCase().replace(/^\[|\]$/g,'');
-  const name=host.split(':')[0];
-  return name==='localhost'||name==='127.0.0.1'||name==='::1';
+  const raw=String(value||'').trim().toLowerCase();
+  if(!raw)return false;
+  if(/^localhost(?::\d+)?$/.test(raw))return true;
+  if(/^127\.0\.0\.1(?::\d+)?$/.test(raw))return true;
+  if(/^\[::1\](?::\d+)?$/.test(raw)||raw==='::1')return true;
+  return false;
+}
+function requestIsLoopback(req){
+  const remote=String(req?.socket?.remoteAddress||'').toLowerCase();
+  return isLoopbackHost(req?.headers?.host||'')
+    ||remote==='127.0.0.1'
+    ||remote==='::1'
+    ||remote==='::ffff:127.0.0.1';
 }
 function isAllowedOrigin(value,req=null){
   const origin=normalizeOrigin(value);
@@ -2666,7 +2676,7 @@ async function handleApi(req,res,url){
         governanceEvent('admin.security.contact_verification_sent','admin_user',req.adminUser.id,{actor:adminActorName(req.adminUser),details:{field,destination:delivery.masked}});
         return json(res,200,{ok:true,challenge_id:id,field,channel:delivery.channel,destination:delivery.masked,expires_in:ADMIN_OTP_MINUTES*60,resend_after:ADMIN_OTP_RESEND_SECONDS});
       }catch(e){
-        const localDiagnostics=isLoopbackHost(req.headers.host||'');
+        const localDiagnostics=requestIsLoopback(req);
         return json(res,503,{
           error:localDiagnostics?String(e?.message||'Unable to send verification code'):publicError(e,'Unable to send verification code'),
           code:'SECURITY_OTP_DELIVERY_FAILED'
