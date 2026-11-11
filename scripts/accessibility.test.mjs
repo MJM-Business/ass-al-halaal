@@ -68,3 +68,19 @@ test('icon-only controls keep accessible names and custom buttons support keyboa
 test('muted foreground colors meet AA contrast baseline',()=>{
   assert.doesNotMatch(style,/#74827b|#819087|#75847d|#78837e|#7b8982|#6b7d76/i);
 });
+
+
+test('profile edit uses localized validation busy and inline status states',()=>{
+  assert.match(app,/if\(!validateLocalizedForm\(profile\)\)return/);
+  assert.match(app,/setFormBusy\(profile,true/);
+  assert.match(app,/setFormStatus\(profile,t\('جاري حفظ التغييرات/);
+  assert.match(app,/setFormStatus\(profile,msg,'error'\)/);
+});
+
+test('order lookup preserves input and announces loading result and errors',()=>{
+  assert.match(app,/ordersLookupQuery=''/);
+  assert.match(app,/value="\$\{safe\(ordersLookupQuery\)\}"/);
+  assert.match(app,/aria-busy="\$\{ordersLoading\?'true':'false'\}"/);
+  assert.match(app,/role="status" aria-live="polite"/);
+  assert.match(app,/ordersLookupStatus=\{message:msg,state:'error'\}/);
+});
