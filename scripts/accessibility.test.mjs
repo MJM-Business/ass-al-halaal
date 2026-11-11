@@ -123,3 +123,11 @@ test('admin global search stays inside finance and uses finance query state',()=
   assert.match(app,/if\(adminModule==='finance'\)\{\s*financeTab='overview';\s*render\(\);\s*return;/);
   assert.doesNotMatch(app,/if\(e\.key==='Enter'&&adminCan\('orders','view'\)\)\{adminModule='orders';render\(\)\}/);
 });
+
+
+test('security contact stale errors clear when the admin edits fields',()=>{
+  assert.match(app,/const clearContactStatus=\(\)=>\{/);
+  assert.match(app,/setFormStatus\(form,'','idle'\)/);
+  assert.match(app,/contact\?\.addEventListener\('input',clearContactStatus\)/);
+  assert.match(app,/password\?\.addEventListener\('input',clearContactStatus\)/);
+});
