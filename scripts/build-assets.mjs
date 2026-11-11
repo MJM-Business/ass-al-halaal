@@ -49,7 +49,7 @@ await Promise.all([
   build({
     entryPoints:[path.join(root,'www','app.js')],
     outfile:path.join(outDir,'app.min.js'),
-    bundle:false,
+    bundle:true,
     minify:true,
     legalComments:'none',
     charset:'utf8',
