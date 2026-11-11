@@ -8768,7 +8768,7 @@ function bind(){
   document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareProduct(b.dataset.share));
   const search=document.querySelector('#search');if(search)search.oninput=e=>{query=e.target.value;renderProducts()};
   const orderForm=document.querySelector('#orders-form');if(orderForm)orderForm.onsubmit=e=>{e.preventDefault();const code=new FormData(orderForm).get('code');loadMyOrders(String(code||''))};
-  bindCustomerAuth();
+  if(view()==='account') bindCustomerAuth();
   document.querySelectorAll('[data-customer-invoice]').forEach(b=>b.onclick=()=>openCustomerInvoice(b.dataset.customerInvoice));
   document.querySelectorAll('[data-customer-verify]').forEach(b=>b.onclick=()=>openOrderVerification(b.dataset.customerVerify));
   document.querySelectorAll('[data-customer-support]').forEach(b=>b.onclick=()=>openCustomerSupport(b.dataset.customerSupport));
