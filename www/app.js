@@ -8222,32 +8222,16 @@ function render(){
   let content=v==='home'?homePage():v==='orders'?ordersPage():v==='account'?accountPage():v==='admin'?adminPage():v.startsWith('livestock/')?livestockCategoryPage(decodeURIComponent(v.slice(10))):v.startsWith('hashi/')?hashiVariantPage(productById('hashi-camel')||products.find(isHashiCamelProduct),decodeURIComponent(v.slice(6))):v.startsWith('product/')?productDetailPage(decodeURIComponent(v.slice(8))):homePage();
   const appRoot=document.querySelector('#app');
   appRoot.innerHTML=shell(content,{admin:v==='admin'});
-
-  // Keep essential interaction binding in the initial render task.
+  applyAccessibilityHardening(appRoot);
+  applyBatch2UxHardening(appRoot);
   bind();
-
-  // Split non-critical DOM scans and layout setup across later frames/tasks.
-  // This prevents one very large main-thread task from dominating Lighthouse TBT.
-  requestAnimationFrame(()=>{
-    applyAccessibilityHardening(appRoot);
-    applyBatch2UxHardening(appRoot);
-
-    setTimeout(()=>{
-      applyV469MobileExperience();
-      setupV485MostRequestedSlider();
-      if(typeof setupV487StableCarousel==='function') setupV487StableCarousel();
-      if(typeof setupV490RequestSection==='function') setupV490RequestSection();
-    },0);
-
-    setTimeout(()=>{
-      if(typeof setupV527MobileProductCarousel==='function') setupV527MobileProductCarousel();
-      if(typeof setupV528MobileCarousel==='function') setupV528MobileCarousel();
-    },16);
-
-    requestAnimationFrame(()=>{
-      if(typeof applyV443LockedTopNav==='function') applyV443LockedTopNav();
-    });
-  });
+  applyV469MobileExperience();
+  setupV485MostRequestedSlider();
+  if(typeof setupV487StableCarousel==='function') setupV487StableCarousel();
+  if(typeof setupV527MobileProductCarousel==='function') setupV527MobileProductCarousel();
+  if(typeof setupV528MobileCarousel==='function') setupV528MobileCarousel();
+  if(typeof setupV490RequestSection==='function') setupV490RequestSection();
+  requestAnimationFrame(()=>{ if(typeof applyV443LockedTopNav==='function') applyV443LockedTopNav(); });
 }
 
 
