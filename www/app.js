@@ -2253,6 +2253,14 @@ function customerIcon(name){
   return icons[name] || '';
 }
 
+function desktopHeaderIcon(name){
+  const common='viewBox="0 0 24 24" fill="none" stroke="#f6d36f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"';
+  if(name==='search')return `<svg ${common} width="22" height="22"><circle cx="10.7" cy="10.7" r="5.6"></circle><path d="m15 15 4.2 4.2"></path></svg>`;
+  if(name==='bell')return `<svg ${common} width="22" height="22"><path d="M18 9.7a6 6 0 0 0-12 0c0 6-2.2 6.3-2.2 6.3h16.4S18 15.7 18 9.7Z"></path><path d="M10 19h4"></path></svg>`;
+  if(name==='bag')return `<svg ${common} width="22" height="22"><path d="M6.4 8.2h11.2l-.6 11H7Z"></path><path d="M9.1 8.3V7a2.9 2.9 0 0 1 5.8 0v1.3"></path></svg>`;
+  return '';
+}
+
 function header(){const v=view();return `<header class="app-header ref-customer-header">
   <div class="mobile-reference-header">
     <div class="mobile-reference-topbar">
@@ -2319,10 +2327,10 @@ function header(){const v=view();return `<header class="app-header ref-customer-
   </nav>
 
   <div class="top-actions ref-top-actions premium-action-dock" aria-label="${t('إجراءات سريعة','Quick actions')}">
-    <button id="top-search" class="top-action top-search" aria-label="${t('بحث','Search')}" title="${t('بحث','Search')}"><span class="action-icon">${customerIcon('search')}</span><span class="top-search-copy">${t('ابحث عن الذبائح واللحوم…','Search livestock, meat, categories…')}</span></button>
-    <button id="top-bell" class="bell top-action top-bell" aria-label="${t('التنبيهات','Notifications')}" title="${t('التنبيهات','Notifications')}"><span class="action-icon">${customerIcon('bell')}</span><i></i></button>
+    <button id="top-search" class="top-action top-search" aria-label="${t('بحث','Search')}" title="${t('بحث','Search')}"><span class="action-icon desktop-explicit-icon">${desktopHeaderIcon('search')}</span><span class="top-search-copy">${t('ابحث عن الذبائح واللحوم…','Search livestock, meat, categories…')}</span></button>
+    <button id="top-bell" class="bell top-action top-bell" aria-label="${t('التنبيهات','Notifications')}" title="${t('التنبيهات','Notifications')}"><span class="action-icon desktop-explicit-icon">${desktopHeaderIcon('bell')}</span><i></i></button>
     <button id="language" class="lang-btn top-action top-language ${langMode==='auto'?'is-auto':''}" aria-label="${t('لغة التطبيق','App language')}" title="${langMode==='auto'?t('تلقائي · لغة الجهاز','Auto · Device language'):t('لغة يدوية','Manual language')}"><span class="lang-code">${lang==='ar'?'AR':'EN'}</span></button>
-    <button id="header-cart" class="profile-logo ref-cart top-action top-cart" aria-label="${t('السلة','Cart')}" title="${t('السلة','Cart')}"><span class="action-icon">${customerIcon('bag')}</span>${cartCount()?`<b>${cartCount()}</b>`:''}</button>
+    <button id="header-cart" class="profile-logo ref-cart top-action top-cart" aria-label="${t('السلة','Cart')}" title="${t('السلة','Cart')}"><span class="action-icon desktop-explicit-icon">${desktopHeaderIcon('bag')}</span>${cartCount()?`<b>${cartCount()}</b>`:''}</button>
 
   </div>
 </header>`}
