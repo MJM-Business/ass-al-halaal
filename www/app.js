@@ -11083,50 +11083,9 @@ function setupV486MostRequestedInteractions(){
 }
 
 ;(()=>{
-  const installV486CarouselCSS=()=>{
-    if(document.getElementById('v486-active-carousel-controls'))return;
-
-    const style=document.createElement('style');
-    style.id='v486-active-carousel-controls';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
-  };
-
-  const boot=()=>{
-    installV486CarouselCSS();
-    setupV486MostRequestedInteractions();
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',boot,{once:true});
-  }else{
-    boot();
-  }
-
-  // Product rerenders replace children; keep controls/state fresh.
-  if(!window.__v486CarouselObserver){
-    window.__v486CarouselObserver=new MutationObserver(()=>{
-      requestAnimationFrame(setupV486MostRequestedInteractions);
-    });
-
-    const startObserver=()=>{
-      const collection=document.querySelector('#collection.ref-collection');
-      if(collection){
-        window.__v486CarouselObserver.observe(collection,{
-          subtree:true,
-          childList:true
-        });
-      }
-    };
-
-    if(document.readyState==='loading'){
-      document.addEventListener('DOMContentLoaded',startObserver,{once:true});
-    }else{
-      startObserver();
-    }
-  }
+  // v486 is intentionally retired. v487 is the active carousel engine and
+  // render()/renderProducts() already invoke it explicitly.
 })();
-
 
 /* =========================================================
    Ass Al Halaal v487 — STABLE ACTIVE PRODUCT CAROUSEL
@@ -11355,20 +11314,8 @@ function setupV487StableCarousel(){
     boot();
   }
 
-  // Route/language renders can replace the whole section. We only watch for
-  // a NEW #products node; unlike v486 we never replace arrows in a loop.
-  if(!window.__v487RouteObserver){
-    let queued=false;
-    window.__v487RouteObserver=new MutationObserver(()=>{
-      if(queued)return;
-      queued=true;
-      requestAnimationFrame(()=>{
-        queued=false;
-        setupV487StableCarousel();
-      });
-    });
-    window.__v487RouteObserver.observe(document.body,{subtree:true,childList:true});
-  }
+  // Route/language renders are already followed by explicit v487 setup calls
+  // from render() and renderProducts(); no body-wide MutationObserver needed.
 })();
 
 
