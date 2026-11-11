@@ -131,3 +131,10 @@ test('security contact stale errors clear when the admin edits fields',()=>{
   assert.match(app,/contact\?\.addEventListener\('input',clearContactStatus\)/);
   assert.match(app,/password\?\.addEventListener\('input',clearContactStatus\)/);
 });
+
+
+test('legacy project branding is removed from user-facing app copy',()=>{
+  assert.doesNotMatch(app,/Kabsh Najd/);
+  assert.doesNotMatch(app,/kabsh-najd-(?:governance|audit|suppliers|finance)-/);
+  assert.match(app,/ass-al-halaal-(?:governance|audit|suppliers|finance)-/);
+});
