@@ -9419,10 +9419,28 @@ if(view()==='admin'){
   render();
   if(adminAuthReady)await loadAdmin();
 }else{
-  const schedule=window.requestIdleCallback
-    ? cb=>window.requestIdleCallback(cb,{timeout:1200})
-    : cb=>setTimeout(cb,60);
-  schedule(()=>{hydrateInitialCustomerData().catch(()=>{})});
+  let customerHydrationStarted=false;
+  const startCustomerHydration=()=>{
+    if(customerHydrationStarted)return;
+    customerHydrationStarted=true;
+    hydrateInitialCustomerData().catch(()=>{});
+  };
+
+  // Keep the first interaction window free from API hydration + a second
+  // full render. Start immediately on real user intent, otherwise wait for a
+  // later idle window after Lighthouse/initial interactivity has settled.
+  ['pointerdown','keydown','touchstart'].forEach(type=>{
+    window.addEventListener(type,startCustomerHydration,{once:true,passive:type!=='keydown'});
+  });
+
+  const scheduleLater=()=>{
+    if(window.requestIdleCallback){
+      window.requestIdleCallback(startCustomerHydration,{timeout:8000});
+    }else{
+      setTimeout(startCustomerHydration,6000);
+    }
+  };
+  setTimeout(scheduleLater,3000);
 }
 
 
