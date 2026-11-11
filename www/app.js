@@ -8227,6 +8227,8 @@ function render(){
   applyV469MobileExperience();
   setupV485MostRequestedSlider();
   if(typeof setupV487StableCarousel==='function') setupV487StableCarousel();
+  if(typeof setupV527MobileProductCarousel==='function') setupV527MobileProductCarousel();
+  if(typeof setupV528MobileCarousel==='function') setupV528MobileCarousel();
   if(typeof setupV490RequestSection==='function') setupV490RequestSection();
   requestAnimationFrame(()=>{ if(typeof applyV443LockedTopNav==='function') applyV443LockedTopNav(); });
 }
@@ -8823,7 +8825,7 @@ function bind(){
   document.querySelectorAll('[data-admin-status]').forEach(s=>s.onchange=()=>updateAdminStatus(s.dataset.adminStatus,s.value));
   applyRbacUi();
 }
-function renderProducts(){const el=document.querySelector('#products');if(!el)return;el.innerHTML=productCards();applyPortalProductCardVisuals();document.querySelectorAll('[data-product]').forEach(b=>b.onclick=e=>{e.stopPropagation();productDialog(b.dataset.product)});document.querySelectorAll('[data-product-detail-button]').forEach(b=>b.onclick=e=>{e.stopPropagation();setView('product/'+encodeURIComponent(b.dataset.productDetailButton))});document.querySelectorAll('[data-product-detail]').forEach(card=>{card.onclick=e=>{if(e.target.closest('button'))return;setView('product/'+encodeURIComponent(card.dataset.productDetail))}});document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const id=b.dataset.fav;favourites.has(id)?favourites.delete(id):favourites.add(id);persist();renderProducts()});document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareProduct(b.dataset.share));setupCustomBox3DShowcase();setupV485MostRequestedSlider();if(typeof setupV487StableCarousel==='function')setupV487StableCarousel()}
+function renderProducts(){const el=document.querySelector('#products');if(!el)return;el.innerHTML=productCards();applyPortalProductCardVisuals();document.querySelectorAll('[data-product]').forEach(b=>b.onclick=e=>{e.stopPropagation();productDialog(b.dataset.product)});document.querySelectorAll('[data-product-detail-button]').forEach(b=>b.onclick=e=>{e.stopPropagation();setView('product/'+encodeURIComponent(b.dataset.productDetailButton))});document.querySelectorAll('[data-product-detail]').forEach(card=>{card.onclick=e=>{if(e.target.closest('button'))return;setView('product/'+encodeURIComponent(card.dataset.productDetail))}});document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const id=b.dataset.fav;favourites.has(id)?favourites.delete(id):favourites.add(id);persist();renderProducts()});document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareProduct(b.dataset.share));setupCustomBox3DShowcase();setupV485MostRequestedSlider();if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel();if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel()}
 
 
 function productOptionsDialog(id){
@@ -12632,22 +12634,8 @@ function setupV527MobileProductCarousel(){
     boot();
   }
 
-  /* Product/language rerenders can replace the carousel DOM. */
-  if(!window.__v527MobileCarouselObserver){
-    let queued=false;
-    window.__v527MobileCarouselObserver=new MutationObserver(()=>{
-      if(queued)return;
-      queued=true;
-      requestAnimationFrame(()=>{
-        queued=false;
-        setupV527MobileProductCarousel();
-      });
-    });
-    window.__v527MobileCarouselObserver.observe(document.body,{
-      subtree:true,
-      childList:true
-    });
-  }
+  // Product/language rerenders call setup explicitly from render()/renderProducts().
+  // Avoid a body-wide MutationObserver on the performance-critical home page.
 
   window.addEventListener('resize',()=>{
     requestAnimationFrame(setupV527MobileProductCarousel);
@@ -13001,23 +12989,8 @@ function setupV528MobileCarousel(){
     boot();
   }
 
-  /* Re-run after product/language renders replace carousel DOM. */
-  if(!window.__v528CarouselObserver){
-    let queued=false;
-    window.__v528CarouselObserver=new MutationObserver(()=>{
-      if(queued)return;
-      queued=true;
-      requestAnimationFrame(()=>{
-        queued=false;
-        setupV528MobileCarousel();
-      });
-    });
-
-    window.__v528CarouselObserver.observe(document.body,{
-      childList:true,
-      subtree:true
-    });
-  }
+  // Re-renders call setup explicitly from render()/renderProducts(); no
+  // body-wide observer is needed and avoids duplicate mobile carousel work.
 
   window.addEventListener('resize',()=>{
     requestAnimationFrame(setupV528MobileCarousel);
