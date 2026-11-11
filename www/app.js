@@ -8697,6 +8697,12 @@ function bind(){
   document.querySelectorAll('[data-customer-verify]').forEach(b=>b.onclick=()=>openOrderVerification(b.dataset.customerVerify));
   document.querySelectorAll('[data-customer-support]').forEach(b=>b.onclick=()=>openCustomerSupport(b.dataset.customerSupport));
   document.querySelectorAll('[data-customer-refresh]').forEach(b=>b.onclick=async()=>{if(!customerSession)return;await loadMyOrders();toast(t('تم تحديث حالة الطلب','Order status refreshed'))});
+
+  // The remaining bindings are exclusively for the Admin Portal. On customer
+  // views, stop here instead of scanning the entire document dozens of times
+  // for admin-only controls that cannot exist.
+  if(view()!=='admin') return;
+
   const adminLogin=document.querySelector('#admin-login');if(adminLogin)adminLogin.onsubmit=adminSignIn;
   document.querySelector('#admin-refresh')?.addEventListener('click',loadAdmin);
   document.querySelector('#admin-logout')?.addEventListener('click',async()=>{
