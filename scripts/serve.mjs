@@ -7,7 +7,7 @@ import {brotliCompressSync,gzipSync,constants as zlibConstants} from 'node:zlib'
 import bcrypt from 'bcryptjs';
 import {DatabaseSync} from 'node:sqlite';
 import {products as catalog, validPhone, validCity} from '../www/shop.js';
-import {createKabshAiService} from './ai-service.mjs';
+import {createAssAlHalaalAiService} from './ai-service.mjs';
 import {MAX_UPLOAD_BYTES,validateImageUpload,safeStoredFilename} from './upload-security.mjs';
 
 const projectRoot=fileURLToPath(new URL('../',import.meta.url));
@@ -600,12 +600,12 @@ function initDb(){
     id,name_ar,name_en,email,phone,role,scope,mfa,last_login,session_ar,session_en,device,status,created_at,updated_at
   ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`);
   const defaultAdminUsers=[
-    ['ADM-JED-001','سعود بن عبد العزيز السلمي','Saud bin Abdulaziz Al-Sulami','s.alsulami@kabshnajd.sa','0500001001','owner','all','fido2','12 min','جدة - حي الشاطئ','Jeddah - Al Shati','Safari macOS','active'],
-    ['ADM-JED-002','عبدالرحمن الحربي','Abdulrahman Al-Harbi','a.harbi@kabshnajd.sa','0500001002','ops','central','totp','34 min','جدة - الروضة','Jeddah - Al Rawdah','Chrome Windows','active'],
-    ['ADM-JED-003','نورة الغامدي','Noura Al-Ghamdi','n.ghamdi@kabshnajd.sa','0500001003','finance','all','totp','1 h','جدة - الزهراء','Jeddah - Al Zahra','Edge Windows','active'],
-    ['ADM-JED-004','خالد الزهراني','Khalid Al-Zahrani','k.zahrani@kabshnajd.sa','0500001004','slaughterhouse','central','totp','2 h','المسلخ الرئيسي','Main slaughterhouse','Android','active'],
-    ['ADM-JED-005','ريم الشهري','Reem Al-Shahri','r.shahri@kabshnajd.sa','0500001005','compliance','all','fido2','Yesterday','جدة - الحمدانية','Jeddah - Al Hamdaniyah','Safari iOS','active'],
-    ['ADM-JED-006','مازن العمري','Mazen Al-Omari','m.omari@kabshnajd.sa','0500001006','marketing','north','pending','3 d','شمال جدة','North Jeddah','Chrome Windows','suspended']
+    ['ADM-JED-001','سعود بن عبد العزيز السلمي','Saud bin Abdulaziz Al-Sulami','s.alsulami@assalhalaal.local','0500001001','owner','all','fido2','12 min','جدة - حي الشاطئ','Jeddah - Al Shati','Safari macOS','active'],
+    ['ADM-JED-002','عبدالرحمن الحربي','Abdulrahman Al-Harbi','a.harbi@assalhalaal.local','0500001002','ops','central','totp','34 min','جدة - الروضة','Jeddah - Al Rawdah','Chrome Windows','active'],
+    ['ADM-JED-003','نورة الغامدي','Noura Al-Ghamdi','n.ghamdi@assalhalaal.local','0500001003','finance','all','totp','1 h','جدة - الزهراء','Jeddah - Al Zahra','Edge Windows','active'],
+    ['ADM-JED-004','خالد الزهراني','Khalid Al-Zahrani','k.zahrani@assalhalaal.local','0500001004','slaughterhouse','central','totp','2 h','المسلخ الرئيسي','Main slaughterhouse','Android','active'],
+    ['ADM-JED-005','ريم الشهري','Reem Al-Shahri','r.shahri@assalhalaal.local','0500001005','compliance','all','fido2','Yesterday','جدة - الحمدانية','Jeddah - Al Hamdaniyah','Safari iOS','active'],
+    ['ADM-JED-006','مازن العمري','Mazen Al-Omari','m.omari@assalhalaal.local','0500001006','marketing','north','pending','3 d','شمال جدة','North Jeddah','Chrome Windows','suspended']
   ];
   const governanceSeedTime='2026-10-24T12:00:00.000Z';
   for(const u of defaultAdminUsers) seedUser.run(...u,governanceSeedTime,governanceSeedTime);
@@ -1016,7 +1016,7 @@ function verifyPassword(password,stored){
 function passwordHashNeedsUpgrade(stored){
   return !/^\$2[aby]\$12\$/.test(String(stored||''));
 }
-const DUMMY_PASSWORD_HASH=hashPassword(`kabsh-dummy-${crypto.randomBytes(16).toString('hex')}`);
+const DUMMY_PASSWORD_HASH=hashPassword(`ass-al-halaal-dummy-${crypto.randomBytes(16).toString('hex')}`);
 function authBucket(scope,key){
   return crypto.createHash('sha256').update(`${scope}:${String(key||'unknown').trim().toLowerCase()}`).digest('hex');
 }
@@ -1957,7 +1957,7 @@ function auditSnapshot(filters={q:'',category:'all',severity:'all',actor:'all',o
 }
 
 
-const aiService=createKabshAiService({
+const aiService=createAssAlHalaalAiService({
   catalog,
   getOrderById:async(id)=>{
     const row=db.prepare('SELECT * FROM orders WHERE id=?').get(String(id||'').trim());
@@ -1979,7 +1979,7 @@ const aiService=createKabshAiService({
 function aiPublicHealth(){
   return {
     enabled:true,
-    engine:'kabsh-grounded',
+    engine:'ass-al-halaal-grounded',
     external_provider_configured:Boolean(env('OPENAI_API_KEY')||env('GEMINI_API_KEY')),
     website_chat_ready:true,
     whatsapp_reply_ready:true
@@ -2479,7 +2479,7 @@ async function handleApi(req,res,url){
     }catch(e){return json(res,400,{error:publicError(e,'Unable to update profile')})}
   }
 
-  if(req.method==='GET'&&pathname==='/api/health') return json(res,200,{ok:true,service:'kabsh-najd',database:path.basename(dbPath),whatsapp:publicWaSettings(),ai:aiPublicHealth()});
+  if(req.method==='GET'&&pathname==='/api/health') return json(res,200,{ok:true,service:'ass-al-halaal',database:path.basename(dbPath),whatsapp:publicWaSettings(),ai:aiPublicHealth()});
   if(req.method==='GET'&&pathname==='/api/products'){
     const rows=db.prepare('SELECT id,name_ar,name_en,price,kg,category,image FROM products WHERE active=1 ORDER BY rowid').all();
     return json(res,200,{products:rows});
@@ -3474,7 +3474,7 @@ server.keepAliveTimeout=5_000;
 
 server.listen(PORT,HOST,()=>{
   const wa=publicWaSettings();
-  console.log(`Kabsh Najd: http://${HOST}:${PORT}`);
+  console.log(`Ass Al Halaal: http://${HOST}:${PORT}`);
   console.log(`Database: ${dbPath}`);
   console.log(`RBAC default admin: ${DEFAULT_ADMIN_USER_ID}`);
   const otp=otpProviderStatus();
