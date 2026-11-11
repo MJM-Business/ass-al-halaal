@@ -8302,7 +8302,11 @@ function render(){
   if(typeof setupV528MobileCarousel==='function') setupV528MobileCarousel();
   if(typeof setupV490RequestSection==='function') setupV490RequestSection();
   setupHomeProductLazyExpansion();
-  requestAnimationFrame(()=>{ if(typeof applyV443LockedTopNav==='function') applyV443LockedTopNav(); });
+  requestAnimationFrame(()=>{
+    if(typeof applyV443LockedTopNav==='function') applyV443LockedTopNav();
+    window.__v496BindFaq?.();
+    window.__v517SyncBrandContrast?.();
+  });
 }
 
 
@@ -10243,68 +10247,7 @@ if(!window.__v469ResizeBound){
 
 
 
-;(()=>{
-  const installV480TrueCenterHero=()=>{
-    if(document.getElementById('v480-true-center-hero')) return;
-
-    const style=document.createElement('style');
-    style.id='v480-true-center-hero';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
-  };
-
-  const applyV480TrueCenterRuntime=()=>{
-    if(!window.matchMedia?.('(min-width:901px)').matches) return;
-    document.querySelectorAll('.v94-hero-slider .hero-slide.is-active > .hero-copy').forEach(copy=>{
-      Object.assign(copy.style,{
-        position:'absolute',
-        left:'0',
-        right:'0',
-        top:'0',
-        bottom:'0',
-        width:'100%',
-        maxWidth:'none',
-        height:'540px',
-        minHeight:'540px',
-        margin:'0',
-        transform:'none',
-        boxSizing:'border-box',
-        display:'flex',
-        flexDirection:'column',
-        alignItems:'center',
-        justifyContent:'center',
-        textAlign:'center'
-      });
-    });
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',()=>{
-      installV480TrueCenterHero();
-      requestAnimationFrame(applyV480TrueCenterRuntime);
-    },{once:true});
-  }else{
-    installV480TrueCenterHero();
-    requestAnimationFrame(applyV480TrueCenterRuntime);
-  }
-
-  if(!window.__v480HeroCenterObserver){
-    window.__v480HeroCenterObserver=new MutationObserver(()=>{
-      requestAnimationFrame(applyV480TrueCenterRuntime);
-    });
-    window.__v480HeroCenterObserver.observe(document.documentElement,{
-      subtree:true,
-      childList:true,
-      attributes:true,
-      attributeFilter:['class','aria-hidden','dir']
-    });
-  }
-
-  window.addEventListener('resize',()=>{
-    requestAnimationFrame(applyV480TrueCenterRuntime);
-  },{passive:true});
-})();
-
+/* v480 obsolete hero runtime retired; v482 owns the hero system. */
 
 
 /* retired empty runtime style installer */
@@ -11326,14 +11269,12 @@ function setupV490RequestSection(){
       });
     };
 
+    window.__v496BindFaq=bindFaq;
     if(document.readyState==='loading'){
       document.addEventListener('DOMContentLoaded',bindFaq,{once:true});
     }else{
       bindFaq();
     }
-
-    const observer=new MutationObserver(bindFaq);
-    observer.observe(document.body||document.documentElement,{childList:true,subtree:true});
   };
 
   installV496FaqSingleOpen();
@@ -11639,15 +11580,10 @@ function setupV490RequestSection(){
       raf=requestAnimationFrame(syncBrandContrast);
     };
 
+    window.__v517SyncBrandContrast=syncBrandContrast;
     syncBrandContrast();
     window.addEventListener('resize',schedule,{passive:true});
     window.addEventListener('hashchange',schedule);
-
-    const observer=new MutationObserver(schedule);
-    // Do not observe inline style changes here: syncBrandContrast itself writes
-    // an inline CSS variable, so observing "style" creates a self-triggering
-    // MutationObserver -> requestAnimationFrame feedback loop on mobile.
-    observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','dir']});
   };
 
   if(document.readyState==='loading'){
