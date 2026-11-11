@@ -22,7 +22,7 @@ test('static assets use browser caching policies',()=>{
 
 test('critical stylesheet and module use resource hints',()=>{
   assert.match(index,/rel="stylesheet" href="critical\.css\?v=545"/);
-  assert.match(index,/rel="modulepreload" href="dist\/app\.min\.js\?v=551"/);
+  assert.match(index,/rel="modulepreload" href="dist\/app\.min\.js\?v=552"/);
 });
 
 test('google identity origin is preconnected',()=>{
@@ -137,4 +137,14 @@ test('performance-critical home page avoids obsolete body-wide observers',async(
 test('customer account forms are not scanned on the home route',async()=>{
   const app=await readFile('www/app.js','utf8');
   assert.match(app,/if\(view\(\)==='account'\) bindCustomerAuth\(\);/);
+});
+
+
+test('heavy below-fold home sections are lazy-rendered',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.match(app,/id="home-deferred-sections"/);
+  assert.match(app,/function homeDeferredSections\(\)/);
+  assert.match(app,/function setupHomeDeferredSections\(\)/);
+  assert.match(app,/new IntersectionObserver/);
+  assert.match(app,/setupHomeDeferredSections\(\);/);
 });
