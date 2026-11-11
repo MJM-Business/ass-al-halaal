@@ -22,7 +22,7 @@ test('static assets use browser caching policies',()=>{
 
 test('critical stylesheet and module use resource hints',()=>{
   assert.match(index,/rel="stylesheet" href="critical\.css\?v=545"/);
-  assert.match(index,/rel="modulepreload" href="dist\/app\.min\.js\?v=555"/);
+  assert.match(index,/rel="modulepreload" href="dist\/app\.min\.js\?v=556"/);
 });
 
 test('google identity origin is preconnected',()=>{
@@ -159,4 +159,22 @@ test('carousel engines do not duplicate their initial DOMContentLoaded setup',as
   assert.doesNotMatch(app,/installV485ProductSliderCSS\(\);\s*setupV485MostRequestedSlider\(\);/);
   assert.doesNotMatch(app,/installV527MobileProductCarouselCSS\(\);\s*setupV527MobileProductCarousel\(\);/);
   assert.doesNotMatch(app,/installV528MobileCarouselCSS\(\);\s*setupV528MobileCarousel\(\);/);
+});
+
+
+test('legacy nav reflow boots are retired from initial load',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.match(app,/Initial measurement is owned by render\(\)/);
+  assert.match(app,/Initial request-section setup is owned by render\(\)/);
+  for(const name of [
+    'installV444PremiumUtilityBar',
+    'installV445CrispUtilityFont',
+    'installV446MobileBrandNotification',
+    'installV447MobileBrandSafeZone',
+    'installV464MobileThreeZoneHeader',
+    'installV465MobileBrandReadable',
+    'installV466MobileBrandShiftLeft'
+  ]){
+    assert.doesNotMatch(app,new RegExp('const\\s+'+name+'='));
+  }
 });
