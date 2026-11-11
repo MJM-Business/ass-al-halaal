@@ -1,4 +1,4 @@
-import {mkdir,stat} from 'node:fs/promises';
+import {mkdir,stat,readFile} from 'node:fs/promises';
 import sharp from 'sharp';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -10,6 +10,26 @@ const optimizedAssetsDir=path.join(outDir,'assets');
 await mkdir(outDir,{recursive:true});
 await mkdir(optimizedAssetsDir,{recursive:true});
 
+const stripNoopStyleInstallers=source=>{
+  const pieces=source.split('\n;(()=>{');
+  let removed=0;
+  for(let i=1;i<pieces.length;i++){
+    const block=';(()=>{'+pieces[i];
+    const end=block.indexOf('\n})();');
+    if(end<0)continue;
+    const head=block.slice(0,end+6);
+    if(!head.includes('style.textContent=``'))continue;
+    const active=/MutationObserver|setInterval|requestAnimationFrame|addEventListener\((?!'DOMContentLoaded')|window\.|querySelectorAll\(|classList\.|style\.setProperty|setupV|applyV|observe\(/.test(head);
+    if(active)continue;
+    pieces[i]=block.slice(end+6);
+    removed++;
+  }
+  return {code:pieces.join('\n;(()=>{'),removed};
+};
+
+const rawAppSource=await readFile(path.join(root,'www','app.js'),'utf8');
+const strippedApp=stripNoopStyleInstallers(rawAppSource);
+console.log(`Stripped no-op runtime style installers: ${strippedApp.removed}`);
 const imageTargets=[
   'everyday-card-final-v331.webp',
   'najdi-sheep-category-v506.png',
@@ -47,7 +67,12 @@ async function optimizeImage(name){
 
 await Promise.all([
   build({
-    entryPoints:[path.join(root,'www','app.js')],
+    stdin:{
+      contents:strippedApp.code,
+      sourcefile:'app.js',
+      resolveDir:path.join(root,'www'),
+      loader:'js'
+    },
     outfile:path.join(outDir,'app.min.js'),
     bundle:true,
     minify:true,
