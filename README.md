@@ -34,8 +34,8 @@ Important local-development values:
 NODE_ENV=development
 HOST=127.0.0.1
 PORT=5173
-KABSH_COOKIE_SECURE=0
-KABSH_TRUST_PROXY=0
+AHL_COOKIE_SECURE=0
+AHL_TRUST_PROXY=0
 ```
 
 For live HTTPS hosting, use production-safe settings and real secrets only in the private `.env` file.
@@ -157,7 +157,7 @@ Required private environment values:
 
 ```env
 RESEND_API_KEY=
-KABSH_OTP_FROM_EMAIL=
+AHL_OTP_FROM_EMAIL=
 ```
 
 ### SMS OTP
@@ -241,8 +241,8 @@ Use:
 
 ```env
 NODE_ENV=development
-KABSH_COOKIE_SECURE=0
-KABSH_TRUST_PROXY=0
+AHL_COOKIE_SECURE=0
+AHL_TRUST_PROXY=0
 ```
 
 ### Production
@@ -253,15 +253,15 @@ Recommended production configuration includes:
 
 ```env
 NODE_ENV=production
-KABSH_COOKIE_SECURE=1
+AHL_COOKIE_SECURE=1
 ```
 
-Enable `KABSH_TRUST_PROXY=1` only when the deployment is actually behind a trusted reverse proxy that sets the client IP headers correctly.
+Enable `AHL_TRUST_PROXY=1` only when the deployment is actually behind a trusted reverse proxy that sets the client IP headers correctly.
 
 Production also requires:
 
 - Strong unique admin password.
-- Persistent `KABSH_OTP_PEPPER`.
+- Persistent `AHL_OTP_PEPPER`.
 - Verified OTP email domain.
 - Secure provider credentials.
 - Database backup and restore process.
@@ -289,3 +289,8 @@ Recommended next phases:
 8. Integrate the production online payment gateway.
 9. Complete production WhatsApp provider setup.
 10. Prepare live HTTPS deployment.
+
+
+### Legacy configuration compatibility
+
+The runtime still accepts the previous `KABSH_*` environment variable names as temporary backward-compatible aliases. New configuration should use `AHL_*` names only.
