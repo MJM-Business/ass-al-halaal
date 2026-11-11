@@ -22,7 +22,7 @@ test('static assets use browser caching policies',()=>{
 
 test('critical stylesheet and module use resource hints',()=>{
   assert.match(index,/rel="stylesheet" href="critical\.css\?v=545"/);
-  assert.match(index,/rel="modulepreload" href="dist\/app\.min\.js\?v=550"/);
+  assert.match(index,/rel="modulepreload" href="dist\/app\.min\.js\?v=551"/);
 });
 
 test('google identity origin is preconnected',()=>{
@@ -131,4 +131,10 @@ test('performance-critical home page avoids obsolete body-wide observers',async(
   assert.doesNotMatch(app,/observer\.observe\(document\.body,\{childList:true,subtree:true,attributes:true,attributeFilter:\['class','dir'\]\}\)/);
   assert.match(app,/window\.__v496BindFaq=bindFaq/);
   assert.match(app,/window\.__v517SyncBrandContrast=syncBrandContrast/);
+});
+
+
+test('customer account forms are not scanned on the home route',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.match(app,/if\(view\(\)==='account'\) bindCustomerAuth\(\);/);
 });
