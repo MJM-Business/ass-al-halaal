@@ -1,5 +1,5 @@
 import http from 'node:http';
-import {readFile, mkdir, writeFile, unlink} from 'node:fs/promises';
+import {readFile, mkdir, writeFile, unlink, rename} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -36,7 +36,21 @@ await loadEnv();
 await mkdir(dataDir,{recursive:true});
 await mkdir(uploadsDir,{recursive:true});
 
-const dbPath=process.env.KABSH_DB_PATH?path.resolve(process.env.KABSH_DB_PATH):path.join(dataDir,'kabsh-najd.sqlite3');
+function configEnv(primary,legacy=''){
+  return String(process.env[primary]??(legacy?process.env[legacy]:undefined)??'').trim();
+}
+const configuredDbPath=configEnv('AHL_DB_PATH','KABSH_DB_PATH');
+const defaultDbPath=path.join(dataDir,'ass-al-halaal.sqlite3');
+const legacyDbPath=path.join(dataDir,'kabsh-najd.sqlite3');
+async function migrateLegacyDbFilename(){
+  if(configuredDbPath)return;
+  try{await rename(legacyDbPath,defaultDbPath)}catch(e){if(e?.code!=='ENOENT'&&e?.code!=='EEXIST')throw e}
+  for(const suffix of ['-wal','-shm']){
+    try{await rename(legacyDbPath+suffix,defaultDbPath+suffix)}catch(e){if(e?.code!=='ENOENT'&&e?.code!=='EEXIST')throw e}
+  }
+}
+await migrateLegacyDbFilename();
+const dbPath=configuredDbPath?path.resolve(configuredDbPath):defaultDbPath;
 const db=new DatabaseSync(dbPath);
 const PORT=Number(process.env.PORT||5173);
 const hostArgIndex=process.argv.indexOf('--host');
@@ -44,27 +58,27 @@ const HOST=(hostArgIndex>=0&&process.argv[hostArgIndex+1])
   ? process.argv[hostArgIndex+1]
   : (process.env.HOST||'127.0.0.1');
 const IS_PRODUCTION=env('NODE_ENV').toLowerCase()==='production';
-const TRUST_PROXY=env('KABSH_TRUST_PROXY')==='1';
-const COOKIE_SECURE=IS_PRODUCTION||env('KABSH_COOKIE_SECURE')==='1';
-const PUBLIC_ORIGIN=(env('KABSH_PUBLIC_ORIGIN')||(IS_PRODUCTION?'https://ass-al-halaal.onrender.com':'')).replace(/\/+$/,'');
-const ENFORCE_HTTPS=IS_PRODUCTION&&env('KABSH_ENFORCE_HTTPS')!=='0';
-const DEFAULT_ADMIN_USER_ID=process.env.KABSH_DEFAULT_ADMIN_USER_ID||'ADM-JED-001';
-const ADMIN_SESSION_HOURS=Math.max(1,Math.min(24,Number(process.env.KABSH_ADMIN_SESSION_HOURS||8)||8));
-const CUSTOMER_SESSION_DAYS=Math.max(1,Math.min(30,Number(process.env.KABSH_CUSTOMER_SESSION_DAYS||30)||30));
-const ADMIN_OTP_MINUTES=Math.max(2,Math.min(10,Number(process.env.KABSH_ADMIN_OTP_MINUTES||5)||5));
-const ADMIN_OTP_MAX_ATTEMPTS=Math.max(3,Math.min(10,Number(process.env.KABSH_ADMIN_OTP_MAX_ATTEMPTS||5)||5));
-const ADMIN_OTP_RESEND_SECONDS=Math.max(30,Math.min(180,Number(process.env.KABSH_ADMIN_OTP_RESEND_SECONDS||45)||45));
-const ADMIN_OTP_MAX_RESENDS=Math.max(1,Math.min(5,Number(process.env.KABSH_ADMIN_OTP_MAX_RESENDS||3)||3));
+const TRUST_PROXY=configEnv('AHL_TRUST_PROXY','KABSH_TRUST_PROXY')==='1';
+const COOKIE_SECURE=IS_PRODUCTION||configEnv('AHL_COOKIE_SECURE','KABSH_COOKIE_SECURE')==='1';
+const PUBLIC_ORIGIN=(configEnv('AHL_PUBLIC_ORIGIN','KABSH_PUBLIC_ORIGIN')||(IS_PRODUCTION?'https://ass-al-halaal.onrender.com':'')).replace(/\/+$/,'');
+const ENFORCE_HTTPS=IS_PRODUCTION&&configEnv('AHL_ENFORCE_HTTPS','KABSH_ENFORCE_HTTPS')!=='0';
+const DEFAULT_ADMIN_USER_ID=configEnv('AHL_DEFAULT_ADMIN_USER_ID','KABSH_DEFAULT_ADMIN_USER_ID')||'ADM-JED-001';
+const ADMIN_SESSION_HOURS=Math.max(1,Math.min(24,Number(configEnv('AHL_ADMIN_SESSION_HOURS','KABSH_ADMIN_SESSION_HOURS')||8)||8));
+const CUSTOMER_SESSION_DAYS=Math.max(1,Math.min(30,Number(configEnv('AHL_CUSTOMER_SESSION_DAYS','KABSH_CUSTOMER_SESSION_DAYS')||30)||30));
+const ADMIN_OTP_MINUTES=Math.max(2,Math.min(10,Number(configEnv('AHL_ADMIN_OTP_MINUTES','KABSH_ADMIN_OTP_MINUTES')||5)||5));
+const ADMIN_OTP_MAX_ATTEMPTS=Math.max(3,Math.min(10,Number(configEnv('AHL_ADMIN_OTP_MAX_ATTEMPTS','KABSH_ADMIN_OTP_MAX_ATTEMPTS')||5)||5));
+const ADMIN_OTP_RESEND_SECONDS=Math.max(30,Math.min(180,Number(configEnv('AHL_ADMIN_OTP_RESEND_SECONDS','KABSH_ADMIN_OTP_RESEND_SECONDS')||45)||45));
+const ADMIN_OTP_MAX_RESENDS=Math.max(1,Math.min(5,Number(configEnv('AHL_ADMIN_OTP_MAX_RESENDS','KABSH_ADMIN_OTP_MAX_RESENDS')||3)||3));
 const ADMIN_LOGIN_WINDOW_MINUTES=10;
 const ADMIN_LOGIN_MAX_CHALLENGES=5;
 const ADMIN_PASSWORD_MAX_ATTEMPTS=8;
 const CUSTOMER_LOGIN_MAX_ATTEMPTS=10;
 const AUTH_RATE_WINDOW_MINUTES=10;
 const AUTH_BLOCK_MINUTES=15;
-const CAPTCHA_PROVIDER=env('KABSH_CAPTCHA_PROVIDER').toLowerCase();
-const CAPTCHA_SECRET=env('KABSH_CAPTCHA_SECRET');
-const configuredOtpPepper=env('KABSH_OTP_PEPPER');
-if(IS_PRODUCTION&&!configuredOtpPepper) throw new Error('KABSH_OTP_PEPPER is required when NODE_ENV=production');
+const CAPTCHA_PROVIDER=configEnv('AHL_CAPTCHA_PROVIDER','KABSH_CAPTCHA_PROVIDER').toLowerCase();
+const CAPTCHA_SECRET=configEnv('AHL_CAPTCHA_SECRET','KABSH_CAPTCHA_SECRET');
+const configuredOtpPepper=configEnv('AHL_OTP_PEPPER','KABSH_OTP_PEPPER');
+if(IS_PRODUCTION&&!configuredOtpPepper) throw new Error('AHL_OTP_PEPPER is required when NODE_ENV=production');
 const OTP_PEPPER=configuredOtpPepper||crypto.randomBytes(32).toString('hex');
 const DELIVERY_FEE=25;
 const PROMO_CODES={HARRI2026:{percent:7},JEDDAH10:{percent:7}};
@@ -773,8 +787,8 @@ function initAdminAuth(){
   const adminId=DEFAULT_ADMIN_USER_ID;
   const existing=db.prepare('SELECT * FROM admin_users WHERE id=?').get(adminId);
   if(existing){
-    const configuredEmail=env('KABSH_ADMIN_EMAIL').toLowerCase();
-    const configuredPhone=normalizePhone(env('KABSH_ADMIN_PHONE'));
+    const configuredEmail=configEnv('AHL_ADMIN_EMAIL','KABSH_ADMIN_EMAIL').toLowerCase();
+    const configuredPhone=normalizePhone(configEnv('AHL_ADMIN_PHONE','KABSH_ADMIN_PHONE'));
     if(configuredEmail&&validEmail(configuredEmail)&&configuredEmail!==existing.email){
       db.prepare('UPDATE admin_users SET email=?,updated_at=? WHERE id=?').run(configuredEmail,nowIso(),adminId);
     }
@@ -782,12 +796,12 @@ function initAdminAuth(){
       db.prepare('UPDATE admin_users SET phone=?,updated_at=? WHERE id=?').run(configuredPhone,nowIso(),adminId);
     }
 
-    const bootstrapPassword=env('KABSH_ADMIN_BOOTSTRAP_PASSWORD');
-    const resetPassword=env('KABSH_RESET_ADMIN_PASSWORD')==='1';
+    const bootstrapPassword=configEnv('AHL_ADMIN_BOOTSTRAP_PASSWORD','KABSH_ADMIN_BOOTSTRAP_PASSWORD');
+    const resetPassword=configEnv('AHL_RESET_ADMIN_PASSWORD','KABSH_RESET_ADMIN_PASSWORD')==='1';
     const latest=db.prepare('SELECT password_hash FROM admin_users WHERE id=?').get(adminId);
     if(bootstrapPassword&&(resetPassword||!latest?.password_hash)){
       if(bootstrapPassword.length<12){
-        console.warn('KABSH_ADMIN_BOOTSTRAP_PASSWORD must be at least 12 characters; admin password was not changed.');
+        console.warn('AHL_ADMIN_BOOTSTRAP_PASSWORD must be at least 12 characters; admin password was not changed.');
       }else{
         db.prepare('UPDATE admin_users SET password_hash=?,password_updated_at=?,updated_at=? WHERE id=?')
           .run(hashPassword(bootstrapPassword),nowIso(),nowIso(),adminId);
@@ -1225,13 +1239,13 @@ function toSaudiE164(value){
 }
 function otpProviderStatus(){
   return {
-    email:Boolean(env('RESEND_API_KEY')&&env('KABSH_OTP_FROM_EMAIL')),
+    email:Boolean(env('RESEND_API_KEY')&&configEnv('AHL_OTP_FROM_EMAIL','KABSH_OTP_FROM_EMAIL')),
     sms:Boolean(env('TWILIO_ACCOUNT_SID')&&env('TWILIO_AUTH_TOKEN')&&env('TWILIO_FROM_NUMBER'))
   };
 }
 async function sendOtpEmail(user,otp){
   const apiKey=env('RESEND_API_KEY');
-  const from=env('KABSH_OTP_FROM_EMAIL');
+  const from=configEnv('AHL_OTP_FROM_EMAIL','KABSH_OTP_FROM_EMAIL');
   if(!apiKey||!from)throw new Error('Email OTP provider is not configured');
   if(!validEmail(user.email))throw new Error('Admin email is not valid');
   const response=await fetch('https://api.resend.com/emails',{
@@ -3479,7 +3493,7 @@ server.listen(PORT,HOST,()=>{
   console.log(`RBAC default admin: ${DEFAULT_ADMIN_USER_ID}`);
   const otp=otpProviderStatus();
   console.log(`Admin 2FA: password + OTP (${otp.email?'email ready':'email not configured'}, ${otp.sms?'SMS ready':'SMS not configured'})`);
-  if(!configuredOtpPepper)console.warn('KABSH_OTP_PEPPER is not set; OTP challenges will be invalidated by a server restart.');
+  if(!configuredOtpPepper)console.warn('AHL_OTP_PEPPER is not set; OTP challenges will be invalidated by a server restart.');
   console.log(`Security: ${IS_PRODUCTION?'production':'development'} mode, secure cookies ${COOKIE_SECURE?'on':'off'}, trusted proxy ${TRUST_PROXY?'on':'off'}`);
   console.log(`WhatsApp: ${wa.configured?'configured':'not configured'}${wa.display_phone_number?` (${wa.display_phone_number})`:''}`);
   console.log('WhatsApp number/IDs are database-configurable; secrets stay in .env');
