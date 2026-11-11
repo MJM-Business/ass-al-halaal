@@ -95,11 +95,10 @@ test('mobile active hero paints immediately without entrance transitions',async(
 });
 
 
-test('full stylesheet loads directly to avoid late LCP restyles',async()=>{
-  assert.match(index,/rel="stylesheet" href="critical\.css\?v=545"/);
-  assert.match(index,/id="full-style" rel="stylesheet" href="dist\/style\.min\.css\?v=553"/);
-  assert.doesNotMatch(index,/media="print"/);
-  assert.doesNotMatch(index,/style-loader\.js/);
+test('full stylesheet is preloaded and activated without blocking first paint',async()=>{
+  assert.match(index,/rel="preload" as="style" href="dist\/style\.min\.css\?v=554"/);
+  assert.match(index,/id="full-style" rel="stylesheet" href="dist\/style\.min\.css\?v=554" media="print"/);
+  assert.match(index,/style-loader\.js\?v=554/);
 });
 
 
@@ -138,4 +137,14 @@ test('performance-critical home page avoids obsolete body-wide observers',async(
 test('customer account forms are not scanned on the home route',async()=>{
   const app=await readFile('www/app.js','utf8');
   assert.match(app,/if\(view\(\)==='account'\) bindCustomerAuth\(\);/);
+});
+
+
+test('home image build uses right-sized WebP profiles',async()=>{
+  const build=await readFile('scripts/build-assets.mjs','utf8');
+  assert.match(build,/ass-al-halaal-mobile-logo-v519\.png':\{width:360,quality:78\}/);
+  assert.match(build,/kabsh-top-v397\.png':\{width:520,quality:76\}/);
+  assert.match(build,/harri-card-v386\.png':\{width:900,quality:78\}/);
+  assert.match(build,/profile\.width/);
+  assert.match(build,/profile\.quality/);
 });
