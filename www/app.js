@@ -2504,7 +2504,7 @@ function homePage(){
 
 <section id="collection" class="collection ref-collection">
   <div class="section-row most-requested-heading"><div><h2>${t(portalManagerState.home.mostRequestedAr,portalManagerState.home.mostRequestedEn)}</h2></div></div>
-  <div id="products" class="product-list ref-products">${productCards()}</div>
+  <div id="products" class="product-list ref-products">${productCards(homeProductsExpanded?Infinity:4)}</div>
 </section>
 
 <section id="request-fit" class="v490-request-section" aria-labelledby="v490-request-title">
@@ -3263,11 +3263,12 @@ function setupCustomBox3DShowcase(){
   start();
 }
 
-function productCards(){
+function productCards(limit=Infinity){
   const list=products.filter(p=>!isRemovedProduct(p)&&portalProductVisible(p.id)&&(filter==='all'||p.category===filter)&&`${p.ar} ${p.en}`.toLowerCase().includes(query.toLowerCase()));
   if(!list.length)return `<div class="empty">${t('لا توجد منتجات مطابقة','No matching products')}</div>`;
 
-  const cards=list.map(p=>{
+  const renderList=Number.isFinite(limit)?list.slice(0,Math.max(1,limit)):list;
+  const cards=renderList.map(p=>{
     const hashi=isHashiCamelProduct(p);
     const huwar=isHuwarJamlProduct(p);
     const baqar=isBaqarAjlProduct(p);
@@ -8231,6 +8232,7 @@ function render(){
   if(typeof setupV527MobileProductCarousel==='function') setupV527MobileProductCarousel();
   if(typeof setupV528MobileCarousel==='function') setupV528MobileCarousel();
   if(typeof setupV490RequestSection==='function') setupV490RequestSection();
+  setupHomeProductLazyExpansion();
   requestAnimationFrame(()=>{ if(typeof applyV443LockedTopNav==='function') applyV443LockedTopNav(); });
 }
 
@@ -8832,6 +8834,33 @@ function bind(){
   document.querySelectorAll('[data-admin-status]').forEach(s=>s.onchange=()=>updateAdminStatus(s.dataset.adminStatus,s.value));
   applyRbacUi();
 }
+let homeProductsExpanded=false;
+let homeProductsObserver=null;
+
+function setupHomeProductLazyExpansion(){
+  if(view()!=='home'||homeProductsExpanded)return;
+  const collection=document.querySelector('#collection');
+  if(!collection)return;
+
+  homeProductsObserver?.disconnect?.();
+
+  if(!('IntersectionObserver' in window)){
+    homeProductsExpanded=true;
+    renderProducts();
+    return;
+  }
+
+  homeProductsObserver=new IntersectionObserver(entries=>{
+    if(!entries.some(entry=>entry.isIntersecting))return;
+    homeProductsExpanded=true;
+    homeProductsObserver?.disconnect?.();
+    homeProductsObserver=null;
+    renderProducts();
+  },{rootMargin:'500px 0px',threshold:0.01});
+
+  homeProductsObserver.observe(collection);
+}
+
 function renderProducts(){const el=document.querySelector('#products');if(!el)return;el.innerHTML=productCards();applyPortalProductCardVisuals();document.querySelectorAll('[data-product]').forEach(b=>b.onclick=e=>{e.stopPropagation();productDialog(b.dataset.product)});document.querySelectorAll('[data-product-detail-button]').forEach(b=>b.onclick=e=>{e.stopPropagation();setView('product/'+encodeURIComponent(b.dataset.productDetailButton))});document.querySelectorAll('[data-product-detail]').forEach(card=>{card.onclick=e=>{if(e.target.closest('button'))return;setView('product/'+encodeURIComponent(card.dataset.productDetail))}});document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const id=b.dataset.fav;favourites.has(id)?favourites.delete(id):favourites.add(id);persist();renderProducts()});document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareProduct(b.dataset.share));setupCustomBox3DShowcase();setupV485MostRequestedSlider();if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel();if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel()}
 
 
