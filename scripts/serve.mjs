@@ -848,6 +848,11 @@ function initCustomerAuth(){
 initCustomerAuth();
 initAdminAuth();
 
+// One-time branding migration for existing local seed/admin records.
+db.prepare(`UPDATE admin_users
+  SET email=replace(email,'@kabshnajd.sa','@assalhalaal.local'), updated_at=?
+  WHERE lower(email) LIKE '%@kabshnajd.sa'`).run(nowIso());
+
 function normalizeOrigin(value){
   try{return new URL(String(value||'')).origin}catch{return ''}
 }
