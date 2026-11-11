@@ -1202,3 +1202,38 @@ body{background:#f3f6f4;color:#14231e;font-family:Tahoma,Arial,sans-serif}
 @media(max-width:900px){
   .app-shell:not(.admin-shell) .header-quick-actions{display:none!important}
 }
+
+
+/* v560 — Order lookup status visibility */
+.order-code-search .form-status{
+  display:block;
+  margin:10px 0 0;
+  padding:10px 12px;
+  border-radius:10px;
+  font-size:13px;
+  font-weight:700;
+  line-height:1.45;
+}
+.order-code-search .form-status:empty{
+  display:none;
+}
+.order-code-search .form-status[data-state="loading"]{
+  background:#fff7dc;
+  border:1px solid #e6c35a;
+  color:#6f5714;
+}
+.order-code-search .form-status[data-state="success"]{
+  background:#edf8f3;
+  border:1px solid #b8ddcf;
+  color:#0f5f48;
+}
+.order-code-search .form-status[data-state="empty"]{
+  background:#fff8e8;
+  border:1px solid #ead59b;
+  color:#6d5515;
+}
+.order-code-search .form-status[data-state="error"]{
+  background:#fff0f1;
+  border:1px solid #e5b6ba;
+  color:#9f2730;
+}
