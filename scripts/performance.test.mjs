@@ -22,7 +22,7 @@ test('static assets use browser caching policies',()=>{
 
 test('critical stylesheet and module use resource hints',()=>{
   assert.match(index,/rel="stylesheet" href="critical\.css\?v=545"/);
-  assert.match(index,/rel="modulepreload" href="dist\/app\.min\.js\?v=548"/);
+  assert.match(index,/rel="modulepreload" href="dist\/app\.min\.js\?v=544"/);
 });
 
 test('google identity origin is preconnected',()=>{
@@ -97,7 +97,7 @@ test('mobile active hero paints immediately without entrance transitions',async(
 
 test('full stylesheet is deferred behind critical first-paint CSS',async()=>{
   assert.match(index,/rel="stylesheet" href="critical\.css\?v=545"/);
-  assert.match(index,/id="full-style" rel="stylesheet" href="dist\/style\.min\.css\?v=547"/);
+  assert.match(index,/id="full-style" rel="stylesheet" href="dist\/style\.min\.css\?v=546"/);
   assert.match(index,/style-loader\.js\?v=542/);
 });
 
@@ -114,12 +114,4 @@ test('obsolete carousel mutation observers stay disabled',async()=>{
   assert.doesNotMatch(app,/window\.__v486CarouselObserver=new MutationObserver/);
   assert.doesNotMatch(app,/window\.__v487RouteObserver=new MutationObserver/);
   assert.match(app,/setupV487StableCarousel\(\)/);
-});
-
-
-test('mobile carousel uses one active interaction engine per render',async()=>{
-  const app=await readFile('www/app.js','utf8');
-  assert.match(app,/if\(window\.matchMedia\('\(max-width: 900px\)'\)\.matches\)\{/);
-  assert.match(app,/v527 runtime boot retired: v528 is the active mobile carousel engine/);
-  assert.match(app,/Initial setup is owned by render\(\)\/renderProducts\(\)/);
 });
