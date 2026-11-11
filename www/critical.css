@@ -153,7 +153,7 @@ body:has(.reference-admin){
   --a-paper:#ffffff;
   --a-bg:#f5f2e9;
   --a-line:#dfe7e2;
-  --a-muted:#74827b;
+  --a-muted:#5f6f68;
   --a-gold:#c99b43;
   --a-gold-soft:#f7e9c2;
   min-height:100vh;
@@ -389,7 +389,7 @@ body:has(.reference-admin){
 }
 .reference-admin-user div{text-align:end}
 .reference-admin-user b{display:block;font-size:8px}
-.reference-admin-user small{display:block;color:#819087;font-size:6px;margin-top:2px}
+.reference-admin-user small{display:block;color:#5f6f68;font-size:6px;margin-top:2px}
 .reference-admin-user>.admin-svg-icon{
   width:34px !important;
   height:34px !important;
@@ -438,7 +438,7 @@ body:has(.reference-admin){
 }
 .reference-page-heading p{
   margin:0 !important;
-  color:#75847d !important;
+  color:#5f6f68 !important;
   font-size:9px !important;
   line-height:1.7 !important;
   max-width:700px !important;
@@ -546,7 +546,7 @@ body:has(.reference-admin){
 }
 .reference-stats small{
   display:block !important;
-  color:#74827b !important;
+  color:#5f6f68 !important;
   font-size:7px !important;
   margin-bottom:5px !important;
 }
@@ -580,14 +580,14 @@ body:has(.reference-admin){
 }
 .reference-panel-top p{
   margin:4px 0 0 !important;
-  color:#7b8982 !important;
+  color:#5f6f68 !important;
   font-size:7px !important;
 }
 .reference-result-pill{
   display:flex !important;
   align-items:center !important;
   gap:6px !important;
-  color:#74827b !important;
+  color:#5f6f68 !important;
   font-size:7px !important;
 }
 .reference-result-pill b{
