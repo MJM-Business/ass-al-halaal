@@ -8036,6 +8036,13 @@ function bindAdminSecurity(){
       input.addEventListener('input',()=>{input.dataset.securityTouched='1'});
     };
     arm(contact);arm(password);
+
+    const clearContactStatus=()=>{
+      setFormStatus(form,'','idle');
+    };
+    contact?.addEventListener('input',clearContactStatus);
+    password?.addEventListener('input',clearContactStatus);
+
     // Clear late password-manager injection while fields are still untouched/read-only.
     [60,220,700].forEach(delay=>setTimeout(()=>{
       for(const input of [contact,password]){
