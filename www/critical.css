@@ -1086,3 +1086,119 @@ body{background:#f3f6f4;color:#14231e;font-family:Tahoma,Arial,sans-serif}
   display:block!important;
   line-height:1!important;
 }
+
+
+/* v544 — isolated desktop quick actions; intentionally independent of legacy header action CSS */
+.app-shell:not(.admin-shell) .header-quick-actions{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:10px!important;
+  direction:ltr!important;
+  flex:0 0 auto!important;
+}
+.app-shell:not(.admin-shell) .header-quick-actions .header-quick-btn{
+  position:relative!important;
+  width:44px!important;
+  height:44px!important;
+  min-width:44px!important;
+  max-width:44px!important;
+  min-height:44px!important;
+  max-height:44px!important;
+  margin:0!important;
+  padding:0!important;
+  border:1.5px solid #caa437!important;
+  border-radius:14px!important;
+  background:#0d6551!important;
+  color:#f3ce67!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  box-sizing:border-box!important;
+  appearance:none!important;
+  -webkit-appearance:none!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08)!important;
+  overflow:visible!important;
+  line-height:1!important;
+  opacity:1!important;
+  visibility:visible!important;
+}
+.app-shell:not(.admin-shell) .header-quick-actions .header-quick-btn-light{
+  background:#f4f4f1!important;
+  color:#0d6551!important;
+}
+.app-shell:not(.admin-shell) .header-quick-actions .header-quick-icon{
+  width:22px!important;
+  height:22px!important;
+  min-width:22px!important;
+  max-width:22px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  opacity:1!important;
+  visibility:visible!important;
+}
+.app-shell:not(.admin-shell) .header-quick-actions .header-quick-icon svg{
+  display:block!important;
+  width:22px!important;
+  height:22px!important;
+  min-width:22px!important;
+  max-width:22px!important;
+  fill:none!important;
+  stroke:currentColor!important;
+  stroke-width:2!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+  opacity:1!important;
+  visibility:visible!important;
+  overflow:visible!important;
+}
+.app-shell:not(.admin-shell) .header-quick-actions .header-quick-lang{
+  font-size:13px!important;
+  font-weight:900!important;
+  letter-spacing:.02em!important;
+  color:#f3ce67!important;
+}
+.app-shell:not(.admin-shell) .header-quick-actions .header-quick-lang span{
+  display:block!important;
+  opacity:1!important;
+  visibility:visible!important;
+}
+.app-shell:not(.admin-shell) .header-quick-actions .header-quick-dot{
+  position:absolute!important;
+  top:7px!important;
+  right:7px!important;
+  width:7px!important;
+  height:7px!important;
+  border-radius:50%!important;
+  background:#ef4444!important;
+  border:1px solid #fff!important;
+  display:block!important;
+  opacity:1!important;
+  visibility:visible!important;
+}
+.app-shell:not(.admin-shell) .header-quick-actions .header-quick-count{
+  position:absolute!important;
+  top:-5px!important;
+  right:-5px!important;
+  min-width:18px!important;
+  height:18px!important;
+  padding:0 5px!important;
+  border-radius:999px!important;
+  background:#e0ae37!important;
+  color:#103d31!important;
+  border:2px solid #0d6551!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  font-size:10px!important;
+  font-weight:900!important;
+  line-height:1!important;
+}
+.app-shell:not(.admin-shell) .header-quick-actions .header-quick-btn:hover{
+  transform:translateY(-1px)!important;
+  filter:brightness(1.05)!important;
+}
+@media(max-width:900px){
+  .app-shell:not(.admin-shell) .header-quick-actions{display:none!important}
+}
