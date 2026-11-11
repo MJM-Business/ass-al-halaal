@@ -54,3 +54,12 @@ test('batch 2 navigation and search accessibility are wired',()=>{
   assert.match(app,/window\.__batch2SearchShortcutBound/);
   assert.match(app,/e\.ctrlKey\|\|e\.metaKey/);
 });
+
+
+test('icon-only controls keep accessible names and custom buttons support keyboard activation',()=>{
+  assert.match(app,/function accessibleNameFallback|const accessibleNameFallback/);
+  assert.match(app,/querySelectorAll\('button,a,\[role="button"\]'\)/);
+  assert.match(app,/setAttribute\('aria-label',fallback\)/);
+  assert.match(app,/event\.key!=='Enter'&&event\.key!==' '/);
+  assert.match(app,/el\.click\(\)/);
+});
