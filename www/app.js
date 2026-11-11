@@ -12206,8 +12206,14 @@ function setupV490RequestSection(){
       document.querySelectorAll('.ref-customer-header').forEach(header=>{
         const rgb=detectedHeaderRgb(header);
         const dark=relativeLuminance(rgb)<0.42;
-        header.style.setProperty('--mobile-brand-text',dark?'#ffffff':'#0b5f49');
-        header.dataset.mobileBrandTone=dark?'dark':'light';
+        const nextText=dark?'#ffffff':'#0b5f49';
+        const nextTone=dark?'dark':'light';
+        if(header.style.getPropertyValue('--mobile-brand-text')!==nextText){
+          header.style.setProperty('--mobile-brand-text',nextText);
+        }
+        if(header.dataset.mobileBrandTone!==nextTone){
+          header.dataset.mobileBrandTone=nextTone;
+        }
       });
     };
 
@@ -12222,7 +12228,10 @@ function setupV490RequestSection(){
     window.addEventListener('hashchange',schedule);
 
     const observer=new MutationObserver(schedule);
-    observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','style','dir']});
+    // Do not observe inline style changes here: syncBrandContrast itself writes
+    // an inline CSS variable, so observing "style" creates a self-triggering
+    // MutationObserver -> requestAnimationFrame feedback loop on mobile.
+    observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','dir']});
   };
 
   if(document.readyState==='loading'){
