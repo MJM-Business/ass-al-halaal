@@ -597,3 +597,58 @@ test('customer registration and login endpoints enforce rate limiting',async t=>
   assert.equal(loginPayload.code,'CUSTOMER_LOGIN_RATE_LIMITED');
   assert.ok(Number(loginPayload.retry_after)>0);
 });
+
+
+test('loopback origin is allowed only when the request itself reaches the local server',async t=>{
+  const temp=await mkdtemp(path.join(os.tmpdir(),'ahl-loopback-origin-'));
+  const dbPath=path.join(temp,'security.sqlite3');
+  const port=await freePort();
+  const base=`http://127.0.0.1:${port}`;
+  const logs=[];
+
+  const child=spawn(process.execPath,['scripts/serve.mjs'],{
+    cwd:path.resolve('.'),
+    env:{
+      ...process.env,
+      NODE_ENV:'production',
+      HOST:'127.0.0.1',
+      PORT:String(port),
+      KABSH_DB_PATH:dbPath,
+      KABSH_TRUST_PROXY:'0',
+      KABSH_COOKIE_SECURE:'0',
+      KABSH_ENFORCE_HTTPS:'0',
+      KABSH_PUBLIC_ORIGIN:'https://ass-al-halaal.onrender.com',
+      KABSH_OTP_PEPPER:'production-test-pepper-not-a-real-secret'
+    },
+    stdio:['ignore','pipe','pipe']
+  });
+  child.stdout.on('data',chunk=>logs.push(String(chunk)));
+  child.stderr.on('data',chunk=>logs.push(String(chunk)));
+
+  t.after(async()=>{
+    if(child.exitCode===null){
+      child.kill('SIGTERM');
+      await new Promise(resolve=>{
+        const timer=setTimeout(resolve,1500);
+        child.once('exit',()=>{clearTimeout(timer);resolve()});
+      });
+    }
+    await rm(temp,{recursive:true,force:true});
+  });
+
+  await waitForHealth(base,child,logs);
+
+  const response=await fetch(`${base}/api/customer/register`,{
+    method:'POST',
+    headers:{Origin:base,'Content-Type':'application/json'},
+    body:JSON.stringify({
+      name:'Local Origin Customer',
+      email:'local-origin@example.test',
+      phone:'0500000099',
+      password:'Local!Pass123'
+    })
+  });
+  const payload=await response.json();
+  assert.equal(response.status,201);
+  assert.equal(payload?.user?.email,'local-origin@example.test');
+});
