@@ -98,3 +98,20 @@ test('order lookup feedback stays silent until the user searches',()=>{
   assert.match(app,/ordersLookupTouched\?safe\(ordersLookupStatus\.message\|\|''\):''/);
   assert.match(app,/ordersLookupTouched=true;ordersLookupQuery=code/);
 });
+
+
+test('admin security forms use localized validation busy and inline status states',()=>{
+  assert.match(app,/if\(!validateLocalizedForm\(passwordForm\)\)return/);
+  assert.match(app,/setFormBusy\(passwordForm,true/);
+  assert.match(app,/setFormStatus\(passwordForm,msg,'error'\)/);
+  assert.match(app,/if\(!validateLocalizedForm\(form\)\)return/);
+  assert.match(app,/Sending verification code/);
+});
+
+test('admin searches avoid full rerender on every keystroke and submit on Enter',()=>{
+  assert.match(app,/adminSearch\.oninput=e=>\{adminQuery=e\.target\.value\}/);
+  assert.match(app,/financeSearchEl\.oninput=e=>\{financeQuery=e\.target\.value\}/);
+  assert.match(app,/govSearch\.oninput=e=>\{ugQuery=e\.target\.value\}/);
+  assert.match(app,/waSearchInput\.oninput=e=>\{waSearch=e\.target\.value\}/);
+  assert.match(app,/if\(e\.key==='Enter'\)\{e\.preventDefault\(\);render\(\)\}/);
+});
