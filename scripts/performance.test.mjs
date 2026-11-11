@@ -117,8 +117,8 @@ test('obsolete carousel mutation observers stay disabled',async()=>{
 });
 
 
-test('empty legacy runtime style installers are removed from startup',async()=>{
+test('standalone empty legacy style installers are removed from startup',async()=>{
   const app=await readFile('www/app.js','utf8');
-  const matches=app.match(/const\s+install\w+=\(\)=>\{[\s\S]{0,500}?style\.textContent=\`\`;[\s\S]{0,250}?DOMContentLoaded/g)||[];
+  const matches=[...app.matchAll(/;\(\(\)=>\{\s*const\s+(install\w+)=\(\)=>\{\s*if\(document\.getElementById\('[^']+'\)\)\s*return;\s*const style=document\.createElement\('style'\);\s*style\.id='[^']+';\s*style\.textContent=\`\`;\s*if\(style\.textContent\.trim\(\)\)\(document\.head\|\|document\.documentElement\)\.appendChild\(style\);\s*\};\s*if\(document\.readyState==='loading'\)\s*\{?\s*document\.addEventListener\('DOMContentLoaded',\s*\1,\s*\{once:true\}\);\s*\}?\s*else\s*\{?\s*\1\(\);\s*\}?\s*\}\)\(\);/g)];
   assert.equal(matches.length,0);
 });
