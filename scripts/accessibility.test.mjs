@@ -84,3 +84,10 @@ test('order lookup preserves input and announces loading result and errors',()=>
   assert.match(app,/role="status" aria-live="polite"/);
   assert.match(app,/ordersLookupStatus=\{message:msg,state:'error'\}/);
 });
+
+
+test('empty order lookup clearly distinguishes no orders from showing all orders',()=>{
+  assert.match(app,/Showing all your orders\./);
+  assert.match(app,/No orders are linked to this account yet\./);
+  assert.match(app,/state:myOrders\.length\?'success':'empty'/);
+});
