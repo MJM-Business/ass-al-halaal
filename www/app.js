@@ -9707,12 +9707,7 @@ if(view()==='admin'){
     raf=requestAnimationFrame(()=>requestAnimationFrame(()=>window.applyV443LockedTopNav(true)));
   };
 
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',schedule,{once:true});
-  }else{
-    schedule();
-  }
-
+  // Initial measurement is owned by render(); keep only responsive re-measurements.
   window.addEventListener('resize',schedule,{passive:true});
   window.addEventListener('orientationchange',schedule,{passive:true});
 
@@ -9720,73 +9715,22 @@ if(view()==='admin'){
   // Avoid a second MutationObserver-triggered layout pass for the same render.
 })();
 
-;(()=>{
-  const installV444PremiumUtilityBar=()=>{
-    if(document.getElementById('v444-premium-utility-bar')) return;
-    const style=document.createElement('style');
-    style.id='v444-premium-utility-bar';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
-    requestAnimationFrame(()=>{
-      if(typeof window.applyV443LockedTopNav==='function') window.applyV443LockedTopNav();
-    });
-  };
 
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',installV444PremiumUtilityBar,{once:true});
-  }else{
-    installV444PremiumUtilityBar();
-  }
-})();
-
-;(()=>{
-  const installV445CrispUtilityFont=()=>{
-    if(document.getElementById('v445-crisp-utility-font')) return;
-    const style=document.createElement('style');
-    style.id='v445-crisp-utility-font';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
-    requestAnimationFrame(()=>{
-      if(typeof window.applyV443LockedTopNav==='function') window.applyV443LockedTopNav();
-    });
-  };
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',installV445CrispUtilityFont,{once:true});
-  else installV445CrispUtilityFont();
-})();
-
-;(()=>{
-  const installV446MobileBrandNotification=()=>{
-    if(document.getElementById('v446-mobile-brand-notification')) return;
-    const style=document.createElement('style');
-    style.id='v446-mobile-brand-notification';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
-    requestAnimationFrame(()=>{
-      if(typeof window.applyV443LockedTopNav==='function') window.applyV443LockedTopNav();
-    });
-  };
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',installV446MobileBrandNotification,{once:true});
-  }else{
-    installV446MobileBrandNotification();
-  }
-})();
+/* installV444PremiumUtilityBar retired: empty style + duplicate nav reflow */
 
 
-;(()=>{
-  const installV447MobileBrandSafeZone=()=>{
-    if(document.getElementById('v447-mobile-brand-safe-zone')) return;
-    const style=document.createElement('style');
-    style.id='v447-mobile-brand-safe-zone';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
-    requestAnimationFrame(()=>{
-      if(typeof window.applyV443LockedTopNav==='function') window.applyV443LockedTopNav();
-    });
-  };
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',installV447MobileBrandSafeZone,{once:true});
-  else installV447MobileBrandSafeZone();
-})();
+
+/* installV445CrispUtilityFont retired: empty style + duplicate nav reflow */
+
+
+
+/* installV446MobileBrandNotification retired: empty style + duplicate nav reflow */
+
+
+
+
+/* installV447MobileBrandSafeZone retired: empty style + duplicate nav reflow */
+
 
 
 
@@ -10021,70 +9965,19 @@ if(view()==='admin'){
 
 
 
-;(()=>{
-  const installV464MobileThreeZoneHeader=()=>{
-    if(document.getElementById('v464-mobile-three-zone-header')) return;
 
-    const style=document.createElement('style');
-    style.id='v464-mobile-three-zone-header';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
-
-    requestAnimationFrame(()=>{
-      if(typeof window.applyV443LockedTopNav==='function') window.applyV443LockedTopNav();
-    });
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',installV464MobileThreeZoneHeader,{once:true});
-  }else{
-    installV464MobileThreeZoneHeader();
-  }
-})();
+/* installV464MobileThreeZoneHeader retired: empty style + duplicate nav reflow */
 
 
-;(()=>{
-  const installV465MobileBrandReadable=()=>{
-    if(document.getElementById('v465-mobile-brand-readable')) return;
-
-    const style=document.createElement('style');
-    style.id='v465-mobile-brand-readable';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
-
-    requestAnimationFrame(()=>{
-      if(typeof window.applyV443LockedTopNav==='function') window.applyV443LockedTopNav();
-    });
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',installV465MobileBrandReadable,{once:true});
-  }else{
-    installV465MobileBrandReadable();
-  }
-})();
 
 
-;(()=>{
-  const installV466MobileBrandShiftLeft=()=>{
-    if(document.getElementById('v466-mobile-brand-shift-left')) return;
+/* installV465MobileBrandReadable retired: empty style + duplicate nav reflow */
 
-    const style=document.createElement('style');
-    style.id='v466-mobile-brand-shift-left';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
 
-    requestAnimationFrame(()=>{
-      if(typeof window.applyV443LockedTopNav==='function') window.applyV443LockedTopNav();
-    });
-  };
 
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',installV466MobileBrandShiftLeft,{once:true});
-  }else{
-    installV466MobileBrandShiftLeft();
-  }
-})();
+
+/* installV466MobileBrandShiftLeft retired: empty style + duplicate nav reflow */
+
 
 
 
@@ -11193,16 +11086,7 @@ function setupV490RequestSection(){
     if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
-  const boot=()=>{
-    installV490RequestCSS();
-    setupV490RequestSection();
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',boot,{once:true});
-  }else{
-    boot();
-  }
+  // Initial request-section setup is owned by render(); avoid duplicate startup binding.
 })();
 
 
