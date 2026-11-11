@@ -837,11 +837,25 @@ initAdminAuth();
 function normalizeOrigin(value){
   try{return new URL(String(value||'')).origin}catch{return ''}
 }
-function isAllowedOrigin(value){
+function isLoopbackHost(value){
+  const host=String(value||'').trim().toLowerCase().replace(/^\[|\]$/g,'');
+  const name=host.split(':')[0];
+  return name==='localhost'||name==='127.0.0.1'||name==='::1';
+}
+function isAllowedOrigin(value,req=null){
   const origin=normalizeOrigin(value);
   if(!origin)return false;
   if(PUBLIC_ORIGIN&&origin===PUBLIC_ORIGIN)return true;
-  if(!IS_PRODUCTION&&/^https?:\/\/(localhost|127\.0\.0\.1)(:\d{1,5})?$/i.test(origin))return true;
+
+  // Local development remains usable even when a developer's .env sets
+  // NODE_ENV=production. Only trust a loopback browser origin when this
+  // request itself reached the loopback server, so the deployed site never
+  // broadens its production origin policy.
+  const localOrigin=/^https?:\/\/(localhost|127\.0\.0\.1)(:\d{1,5})?$/i.test(origin);
+  const localRequest=isLoopbackHost(req?.headers?.host||'');
+  if(localOrigin&&localRequest)return true;
+
+  if(!IS_PRODUCTION&&localOrigin)return true;
   return false;
 }
 function requestIsSecure(req){
@@ -885,7 +899,7 @@ function applySecurityHeaders(req,res){
   if(IS_PRODUCTION)csp.push('upgrade-insecure-requests');
   res.setHeader('Content-Security-Policy',csp.join('; '));
   const origin=String(req.headers.origin||'').trim();
-  if(origin&&isAllowedOrigin(origin)){
+  if(origin&&isAllowedOrigin(origin,req)){
     res.setHeader('Access-Control-Allow-Origin',normalizeOrigin(origin));
     res.setHeader('Access-Control-Allow-Credentials','true');
     res.setHeader('Vary','Origin');
@@ -895,7 +909,7 @@ function applySecurityHeaders(req,res){
 function handleCorsPreflight(req,res,url){
   if(req.method!=='OPTIONS'||!url.pathname.startsWith('/api/'))return false;
   const origin=String(req.headers.origin||'').trim();
-  if(origin&&!isAllowedOrigin(origin)){
+  if(origin&&!isAllowedOrigin(origin,req)){
     json(res,403,{error:'Origin not allowed',code:'ORIGIN_FORBIDDEN'});
     return true;
   }
@@ -918,7 +932,7 @@ function rejectUntrustedBrowserOrigin(req,res,url){
   if(!['POST','PUT','PATCH','DELETE'].includes(req.method||''))return false;
   const origin=String(req.headers.origin||'').trim();
   if(!origin)return false;
-  if(isAllowedOrigin(origin))return false;
+  if(isAllowedOrigin(origin,req))return false;
   json(res,403,{error:'Origin not allowed',code:'ORIGIN_FORBIDDEN'});
   return true;
 }
