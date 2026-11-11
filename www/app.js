@@ -10467,15 +10467,8 @@ function setupV485MostRequestedSlider(){
     if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',()=>{
-      installV485ProductSliderCSS();
-      setupV485MostRequestedSlider();
-    },{once:true});
-  }else{
-    installV485ProductSliderCSS();
-    setupV485MostRequestedSlider();
-  }
+  // Initial v485 setup is owned by render()/renderProducts().
+  // Avoid a second DOMContentLoaded carousel pass.
 })();
 
 
@@ -10890,19 +10883,8 @@ function setupV487StableCarousel(){
     if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
-  const boot=()=>{
-    installV487StableCarouselCSS();
-    setupV487StableCarousel();
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',boot,{once:true});
-  }else{
-    boot();
-  }
-
-  // Route/language renders are already followed by explicit v487 setup calls
-  // from render() and renderProducts(); no body-wide MutationObserver needed.
+  // Initial v487 setup is owned by render()/renderProducts().
+  // Route/language renders already call it explicitly; avoid duplicate startup work.
 })();
 
 
@@ -10936,9 +10918,7 @@ function setupV487StableCarousel(){
     installV488OverflowFix();
     requestAnimationFrame(()=>{
       resetHorizontalPageOffset();
-      if(typeof setupV487StableCarousel==='function'){
-        setupV487StableCarousel();
-      }
+      // v487 setup already ran from render(); only reset page offset here.
     });
   };
 
@@ -11857,19 +11837,8 @@ function setupV527MobileProductCarousel(){
     if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
-  const boot=()=>{
-    installV527MobileProductCarouselCSS();
-    setupV527MobileProductCarousel();
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',boot,{once:true});
-  }else{
-    boot();
-  }
-
-  // Product/language rerenders call setup explicitly from render()/renderProducts().
-  // Avoid a body-wide MutationObserver on the performance-critical home page.
+  // Initial v527 setup is owned by render()/renderProducts().
+  // Keep resize rebinding below, but avoid a duplicate DOMContentLoaded pass.
 
   window.addEventListener('resize',()=>{
     requestAnimationFrame(setupV527MobileProductCarousel);
@@ -12212,19 +12181,8 @@ function setupV528MobileCarousel(){
     if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
-  const boot=()=>{
-    installV528MobileCarouselCSS();
-    setupV528MobileCarousel();
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',boot,{once:true});
-  }else{
-    boot();
-  }
-
-  // Re-renders call setup explicitly from render()/renderProducts(); no
-  // body-wide observer is needed and avoids duplicate mobile carousel work.
+  // Initial v528 setup is owned by render()/renderProducts().
+  // Keep resize rebinding below, but avoid a duplicate DOMContentLoaded pass.
 
   window.addEventListener('resize',()=>{
     requestAnimationFrame(setupV528MobileCarousel);
