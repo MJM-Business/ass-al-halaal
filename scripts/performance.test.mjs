@@ -22,7 +22,7 @@ test('static assets use browser caching policies',()=>{
 
 test('critical stylesheet and module use resource hints',()=>{
   assert.match(index,/rel="stylesheet" href="critical\.css\?v=545"/);
-  assert.match(index,/rel="modulepreload" href="dist\/app\.min\.js\?v=549"/);
+  assert.match(index,/rel="modulepreload" href="dist\/app\.min\.js\?v=550"/);
 });
 
 test('google identity origin is preconnected',()=>{
@@ -121,4 +121,14 @@ test('standalone empty legacy style installers are removed from startup',async()
   const app=await readFile('www/app.js','utf8');
   const matches=[...app.matchAll(/;\(\(\)=>\{\s*const\s+(install\w+)=\(\)=>\{\s*if\(document\.getElementById\('[^']+'\)\)\s*return;\s*const style=document\.createElement\('style'\);\s*style\.id='[^']+';\s*style\.textContent=\`\`;\s*if\(style\.textContent\.trim\(\)\)\(document\.head\|\|document\.documentElement\)\.appendChild\(style\);\s*\};\s*if\(document\.readyState==='loading'\)\s*\{?\s*document\.addEventListener\('DOMContentLoaded',\s*\1,\s*\{once:true\}\);\s*\}?\s*else\s*\{?\s*\1\(\);\s*\}?\s*\}\)\(\);/g)];
   assert.equal(matches.length,0);
+});
+
+
+test('performance-critical home page avoids obsolete body-wide observers',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.doesNotMatch(app,/__v480HeroCenterObserver=new MutationObserver/);
+  assert.doesNotMatch(app,/observer\.observe\(document\.body\|\|document\.documentElement,\{childList:true,subtree:true\}\)/);
+  assert.doesNotMatch(app,/observer\.observe\(document\.body,\{childList:true,subtree:true,attributes:true,attributeFilter:\['class','dir'\]\}\)/);
+  assert.match(app,/window\.__v496BindFaq=bindFaq/);
+  assert.match(app,/window\.__v517SyncBrandContrast=syncBrandContrast/);
 });
