@@ -1457,8 +1457,44 @@ function applyAccessibilityHardening(root=document){
     const fallback=field.getAttribute('placeholder')||field.getAttribute('name')||field.id||'Form field';
     field.setAttribute('aria-label',fallback);
   });
+  const accessibleNameFallback=el=>{
+    const id=String(el.id||'').toLowerCase();
+    const dataNav=String(el.dataset?.nav||'').toLowerCase();
+    const key=id||dataNav||String(el.className||'').toLowerCase();
+    if(key.includes('search'))return t('بحث','Search');
+    if(key.includes('bell')||key.includes('notif'))return t('التنبيهات','Notifications');
+    if(key.includes('cart')||key.includes('bag'))return t('السلة','Cart');
+    if(key.includes('language')||key.includes('lang'))return t('لغة التطبيق','App language');
+    if(key.includes('account'))return t('حسابي','Account');
+    if(key.includes('order'))return t('تتبع الطلب','Track order');
+    if(key.includes('home'))return t('الرئيسية','Home');
+    if(key.includes('close'))return t('إغلاق','Close');
+    return '';
+  };
+
+  scope.querySelectorAll('button,a,[role="button"]').forEach(el=>{
+    const hasName=Boolean(
+      el.getAttribute('aria-label')?.trim()||
+      el.getAttribute('aria-labelledby')?.trim()||
+      el.getAttribute('title')?.trim()||
+      el.textContent?.trim()||
+      el.querySelector('img[alt]:not([alt=""])')
+    );
+    if(!hasName){
+      const fallback=accessibleNameFallback(el);
+      if(fallback)el.setAttribute('aria-label',fallback);
+    }
+  });
+
   scope.querySelectorAll('[role="button"]').forEach(el=>{
     if(!el.hasAttribute('tabindex'))el.setAttribute('tabindex','0');
+    if(el.dataset.a11yKeyBound==='1')return;
+    el.dataset.a11yKeyBound='1';
+    el.addEventListener('keydown',event=>{
+      if(event.key!=='Enter'&&event.key!==' ')return;
+      event.preventDefault();
+      el.click();
+    });
   });
 }
 function open(html,klass=''){opener=document.activeElement;modal.className=klass;modal.innerHTML=`<button class="close" type="button" aria-label="${t('إغلاق','Close')}">×</button>${html}`;applyAccessibilityHardening(modal);modal.showModal();modal.querySelector('.close').onclick=()=>modal.close();setTimeout(applyRbacUi,0)}
