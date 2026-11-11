@@ -21,8 +21,8 @@ test('static assets use browser caching policies',()=>{
 });
 
 test('critical stylesheet and module use resource hints',()=>{
-  assert.match(index,/rel="stylesheet" href="critical\.css\?v=535"/);
-  assert.match(index,/rel="modulepreload" href="dist\/app\.min\.js\?v=540"/);
+  assert.match(index,/rel="stylesheet" href="critical\.css\?v=543"/);
+  assert.match(index,/rel="modulepreload" href="dist\/app\.min\.js\?v=543"/);
 });
 
 test('google identity origin is preconnected',()=>{
@@ -96,7 +96,7 @@ test('mobile active hero paints immediately without entrance transitions',async(
 
 
 test('full stylesheet is deferred behind critical first-paint CSS',async()=>{
-  assert.match(index,/rel="stylesheet" href="critical\.css\?v=535"/);
+  assert.match(index,/rel="stylesheet" href="critical\.css\?v=543"/);
   assert.match(index,/id="full-style" rel="stylesheet" href="dist\/style\.min\.css\?v=540"/);
   assert.match(index,/style-loader\.js\?v=542/);
 });
