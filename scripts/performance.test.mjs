@@ -97,7 +97,7 @@ test('mobile active hero paints immediately without entrance transitions',async(
 
 test('full stylesheet is deferred behind critical first-paint CSS',async()=>{
   assert.match(index,/rel="stylesheet" href="critical\.css\?v=545"/);
-  assert.match(index,/id="full-style" rel="stylesheet" href="dist\/style\.min\.css\?v=546"/);
+  assert.match(index,/id="full-style" rel="stylesheet" href="dist\/style\.min\.css\?v=547"/);
   assert.match(index,/style-loader\.js\?v=542/);
 });
 
