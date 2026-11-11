@@ -95,10 +95,11 @@ test('mobile active hero paints immediately without entrance transitions',async(
 });
 
 
-test('full stylesheet is deferred behind critical first-paint CSS',async()=>{
+test('full stylesheet loads directly to avoid late LCP restyles',async()=>{
   assert.match(index,/rel="stylesheet" href="critical\.css\?v=545"/);
-  assert.match(index,/id="full-style" rel="stylesheet" href="dist\/style\.min\.css\?v=547"/);
-  assert.match(index,/style-loader\.js\?v=542/);
+  assert.match(index,/id="full-style" rel="stylesheet" href="dist\/style\.min\.css\?v=553"/);
+  assert.doesNotMatch(index,/media="print"/);
+  assert.doesNotMatch(index,/style-loader\.js/);
 });
 
 
