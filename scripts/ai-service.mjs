@@ -1,4 +1,4 @@
-// Kabsh Najd AI service
+// Ass Al Halaal AI service
 // Business-grounded assistant used by website chat and WhatsApp.
 // Default engine is local/rule-based so it works without exposing any API key.
 // A hosted LLM provider can be added later behind the same reply() interface.
@@ -146,7 +146,7 @@ function publicOrder(order) {
   };
 }
 
-export function createKabshAiService({
+export function createAssAlHalaalAiService({
   catalog = [],
   getOrderById = async () => null,
   getLatestOrderByPhone = async () => null,
@@ -274,8 +274,8 @@ export function createKabshAiService({
       answer = lang === 'ar'
         ? 'وعليكم السلام، أهلاً بك في كبش نجد. أقدر أساعدك في الأسعار، المنتجات، حالة الطلب، التوصيل والتجهيز.'
         : lang === 'ur-roman'
-          ? 'Assalam o Alaikum, Kabsh Najd mein khush aamdeed. Main products, prices, order status, delivery aur preparation mein help kar sakta hoon.'
-          : 'Welcome to Kabsh Najd. I can help with products, prices, order status, delivery and preparation.';
+          ? 'Assalam o Alaikum, Ass Al Halaal mein khush aamdeed. Main products, prices, order status, delivery aur preparation mein help kar sakta hoon.'
+          : 'Welcome to Ass Al Halaal. I can help with products, prices, order status, delivery and preparation.';
       sources.push('assistant:greeting');
     } else {
       const orderHint = order
