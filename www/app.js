@@ -1888,9 +1888,9 @@ function loadGoogleIdentity(){
   if(window.google?.accounts?.id)return Promise.resolve(window.google.accounts.id);
   if(googleIdentityPromise)return googleIdentityPromise;
   googleIdentityPromise=new Promise((resolve,reject)=>{
-    const existing=document.querySelector('script[data-kabsh-google-identity]');
+    const existing=document.querySelector('script[data-ass-al-halaal-google-identity]');
     if(existing){existing.addEventListener('load',()=>resolve(window.google?.accounts?.id));existing.addEventListener('error',reject);return}
-    const script=document.createElement('script');script.src='https://accounts.google.com/gsi/client';script.async=true;script.defer=true;script.dataset.kabshGoogleIdentity='1';script.onload=()=>resolve(window.google?.accounts?.id);script.onerror=()=>reject(new Error('Unable to load Google Identity Services'));document.head.appendChild(script);
+    const script=document.createElement('script');script.src='https://accounts.google.com/gsi/client';script.async=true;script.defer=true;script.dataset.assAlHalaalGoogleIdentity='1';script.onload=()=>resolve(window.google?.accounts?.id);script.onerror=()=>reject(new Error('Unable to load Google Identity Services'));document.head.appendChild(script);
   });
   return googleIdentityPromise;
 }
@@ -7256,7 +7256,7 @@ function ugExportCsv(){
   const csv='\ufeff'+rows.map(r=>r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(',')).join('\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`kabsh-najd-governance-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);
+  const a=document.createElement('a');a.href=url;a.download=`ass-al-halaal-governance-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);
   toast(t('تم تصدير بيانات الحوكمة','Governance data exported'));
 }
 async function loadAuditDataOnly(){
@@ -7447,7 +7447,7 @@ function auditExportCsv(){
   const csv=[cols.join(','),...rows.map(r=>[r.id,r.created_at,r.type,r.category,r.severity,r.actor,r.resource,r.action,r.details].map(esc).join(','))].join('\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`kabsh-najd-audit-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);
+  const a=document.createElement('a');a.href=url;a.download=`ass-al-halaal-audit-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);
   toast(t('تم تصدير سجل التدقيق الحقيقي','Real audit log exported'));
 }
 async function openAuditEvent(id){
@@ -7517,7 +7517,7 @@ function supplierExportCsv(){
   ].map(esc).join(','))].join('\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`kabsh-najd-suppliers-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);
+  const a=document.createElement('a');a.href=url;a.download=`ass-al-halaal-suppliers-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);
   toast(t('تم تصدير سجل الموردين','Suppliers registry exported'));
 }
 function openSupplierModal(){
@@ -7831,7 +7831,7 @@ function financeExportCsv(){
   ].map(esc).join(','))].join('\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download=`kabsh-najd-finance-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);
+  const a=document.createElement('a');a.href=url;a.download=`ass-al-halaal-finance-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(url);
   toast(t('تم تصدير السجل المالي','Finance ledger exported'));
 }
 function openFinanceInvoice(orderId){
