@@ -1368,7 +1368,7 @@ function applyPortalProductCardVisuals(){
 }
 
 let products=portalApplyProductOverrides(withFeaturedProducts(visibleFallbackProducts().map(p=>({...p,image:premiumProductImage(p)||p.image}))).filter(p=>!isRemovedProduct(p)));
-let filter='all',query='',myOrders=[],ordersLoading=false,adminOrders=[],adminStats=null,adminLoading=false,adminFilter='all',adminQuery='',adminModule='dashboard',ordersSubView='overview',ordersFacilityFilter='',ordersCourierFilter='',waMode=read('kn-wa-mode','ai'),waSelected='',waSearch='',waFilter='all',waLocalMessages=read('kn-wa-local-messages',{}),waAiBusy=false,waAiError='',waSettings=null,waSettingsLoading=false;
+let filter='all',query='',myOrders=[],ordersLoading=false,ordersLookupQuery='',ordersLookupStatus={message:'',state:'idle'},adminOrders=[],adminStats=null,adminLoading=false,adminFilter='all',adminQuery='',adminModule='dashboard',ordersSubView='overview',ordersFacilityFilter='',ordersCourierFilter='',waMode=read('kn-wa-mode','ai'),waSelected='',waSearch='',waFilter='all',waLocalMessages=read('kn-wa-local-messages',{}),waAiBusy=false,waAiError='',waSettings=null,waSettingsLoading=false;
 let mktCampaigns=read('kn-mkt-campaigns',[
   {id:'CMP-001',nameAr:'حملة ثلاجة المنزل - خروف حري طازج',nameEn:'Home Fridge Campaign — Fresh Harri Sheep',channel:'Snap / Instagram',productIndex:0,budget:12000,spent:8950,roas:5.2,conversions:248,status:'active'},
   {id:'CMP-002',nameAr:'عقيقة وأضحية موثقة بالفيديو البيطري',nameEn:'Aqiqah & Sacrifice — Veterinary Verified Video',channel:'Google P-Max',productIndex:1,budget:18500,spent:14200,roas:4.6,conversions:312,status:'active'},
@@ -2214,10 +2214,19 @@ function bindCustomerAuth(){
 
   if(profile)profile.onsubmit=async e=>{
     e.preventDefault();
+    if(!validateLocalizedForm(profile))return;
     const d=Object.fromEntries(new FormData(profile));
-    if(d.phone&&!validPhone(d.phone)){toast(t('أدخل رقم جوال سعودي صحيح','Enter a valid Saudi mobile number'));return}
+    const phoneField=profile.querySelector('[name="phone"]');
+    if(d.phone&&!validPhone(d.phone)){
+      const msg=t('أدخل رقم جوال سعودي صحيح','Enter a valid Saudi mobile number');
+      setFormStatus(profile,msg,'error');
+      toast(msg);
+      return showFieldError(profile,phoneField,msg);
+    }
     const nextDistrict=d.district||district;
     delete d.district;
+    setFormStatus(profile,t('جاري حفظ التغييرات…','Saving changes…'),'loading');
+    setFormBusy(profile,true,t('جاري الحفظ…','Saving…'));
     try{
       const data=await api('/api/customer/profile',{method:'PATCH',body:JSON.stringify(d)});
       customerSession=data.user;
@@ -2226,9 +2235,17 @@ function bindCustomerAuth(){
       customerProfilePhoto=pendingProfilePhoto||'';
       write('kn-customer-profile-photo',customerProfilePhoto);
       persist();
+      setFormStatus(profile,t('تم حفظ التغييرات بنجاح','Changes saved successfully'),'success');
+      setFormBusy(profile,false);
       render();
       toast(t('تم تحديث الملف الشخصي','Profile updated'));
-    }catch(err){toast(err.message)}
+    }catch(err){
+      const msg=err.message||t('تعذر تحديث الملف الشخصي. حاول مرة أخرى.','Unable to update profile. Please try again.');
+      setFormStatus(profile,msg,'error');
+      setFormBusy(profile,false);
+      toast(msg);
+      profile.querySelector('input[name="name"]')?.focus();
+    }
   };
   setupGoogleSignin();
 }
@@ -5801,7 +5818,7 @@ function bindReferenceProductDetail(){
 function ordersPage(){
   if(!customerSession)return `<section class="page-head customer-page-head"><button data-nav="home" aria-label="${t('الرجوع للرئيسية','Back to home')}">${t('→','←')}</button><div><small>${t('متابعة مباشرة','LIVE TRACKING')}</small><h1>${t('تتبع طلبك','Track your order')}</h1></div></section><section class="account-card premium-account-card auth-required-card"><span class="auth-lock">⌾</span><h2>${t('تسجيل الدخول مطلوب','Customer login required')}</h2><p>${t('طلباتك مرتبطة بحسابك. سجّل الدخول لعرض رقم الطلب والتتبع والفاتورة.','Your orders are linked to your account. Sign in to view order codes, tracking and invoices.')}</p><button data-nav="account" class="primary-block">${t('تسجيل الدخول / إنشاء حساب','Sign in / Create account')}</button></section>`;
   return `<section class="page-head customer-page-head"><button data-nav="home" aria-label="${t('الرجوع للرئيسية','Back to home')}">${t('→','←')}</button><div><small>${t('متابعة مباشرة','LIVE TRACKING')}</small><h1>${t('طلباتي وتتبع الطلب','My orders & tracking')}</h1></div></section>
-<section class="lookup-card premium-lookup-card order-code-search"><form id="orders-form"><label>${t('البحث برقم / كود الطلب','Find by order number / code')}<div class="lookup-row"><input name="code" dir="ltr" placeholder="KBJ-20261025-XXXXXX"><button>${t('بحث','Search')}</button></div></label></form><p>${t('يتم عرض الطلبات المرتبطة بحسابك فقط. اترك البحث فارغاً لعرض كل طلباتك.','Only orders linked to your account are shown. Leave the search empty to show all your orders.')}</p></section>
+<section class="lookup-card premium-lookup-card order-code-search"><form id="orders-form" aria-busy="${ordersLoading?'true':'false'}"><label>${t('البحث برقم / كود الطلب','Find by order number / code')}<div class="lookup-row"><input name="code" dir="ltr" value="${safe(ordersLookupQuery)}" placeholder="KBJ-20261025-XXXXXX" autocomplete="off"><button type="submit" ${ordersLoading?'disabled':''}>${ordersLoading?t('جاري البحث…','Searching…'):t('بحث','Search')}</button></div></label><p class="form-status" role="status" aria-live="polite" data-state="${safe(ordersLookupStatus.state||'idle')}">${safe(ordersLookupStatus.message||'')}</p></form><p>${t('يتم عرض الطلبات المرتبطة بحسابك فقط. اترك البحث فارغاً لعرض كل طلباتك.','Only orders linked to your account are shown. Leave the search empty to show all your orders.')}</p></section>
 <section class="orders-list premium-orders-list">${ordersLoading?`<div class="loading">${t('جاري تحميل الطلبات…','Loading orders…')}</div>`:myOrders.length?myOrders.map(orderCard).join(''):`<div class="empty">${t('لا توجد طلبات مرتبطة بهذا الحساب حتى الآن.','No orders are linked to this account yet.')}</div>`}</section>`}
 function trackingDate(value){
   if(!value)return t('بانتظار التحديث','Awaiting update');
@@ -8767,12 +8784,12 @@ function bind(){
   document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const id=b.dataset.fav;favourites.has(id)?favourites.delete(id):favourites.add(id);persist();renderProducts()});
   document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareProduct(b.dataset.share));
   const search=document.querySelector('#search');if(search)search.oninput=e=>{query=e.target.value;renderProducts()};
-  const orderForm=document.querySelector('#orders-form');if(orderForm)orderForm.onsubmit=e=>{e.preventDefault();const code=new FormData(orderForm).get('code');loadMyOrders(String(code||''))};
+  const orderForm=document.querySelector('#orders-form');if(orderForm)orderForm.onsubmit=async e=>{e.preventDefault();if(ordersLoading)return;const code=String(new FormData(orderForm).get('code')||'').trim();ordersLookupQuery=code;ordersLookupStatus={message:t('جاري البحث عن الطلبات…','Searching your orders…'),state:'loading'};await loadMyOrders(code)};
   if(view()==='account') bindCustomerAuth();
   document.querySelectorAll('[data-customer-invoice]').forEach(b=>b.onclick=()=>openCustomerInvoice(b.dataset.customerInvoice));
   document.querySelectorAll('[data-customer-verify]').forEach(b=>b.onclick=()=>openOrderVerification(b.dataset.customerVerify));
   document.querySelectorAll('[data-customer-support]').forEach(b=>b.onclick=()=>openCustomerSupport(b.dataset.customerSupport));
-  document.querySelectorAll('[data-customer-refresh]').forEach(b=>b.onclick=async()=>{if(!customerSession)return;await loadMyOrders();toast(t('تم تحديث حالة الطلب','Order status refreshed'))});
+  document.querySelectorAll('[data-customer-refresh]').forEach(b=>b.onclick=async()=>{if(!customerSession)return;await loadMyOrders(ordersLookupQuery);toast(t('تم تحديث حالة الطلب','Order status refreshed'))});
 
   // The remaining bindings are exclusively for the Admin Portal. On customer
   // views, stop here instead of scanning the entire document dozens of times
@@ -9362,9 +9379,32 @@ async function submitCheckout(e){
 }
 
 async function loadMyOrders(code=''){
-  if(!customerSession){myOrders=[];ordersLoading=false;render();return}
-  ordersLoading=true;render();
-  try{const q=String(code||'').trim();const data=await api(`/api/orders${q?`?code=${encodeURIComponent(q)}`:''}`,{method:'GET',headers:{}});myOrders=data.orders||[]}catch(err){if(err.code==='CUSTOMER_AUTH_REQUIRED')customerSession=null;toast(err.message);myOrders=[]}
+  const q=String(code||'').trim();
+  ordersLookupQuery=q;
+  if(!customerSession){
+    myOrders=[];ordersLoading=false;
+    ordersLookupStatus={message:'',state:'idle'};
+    render();return;
+  }
+  ordersLoading=true;
+  if(!ordersLookupStatus.message)ordersLookupStatus={message:t('جاري تحميل الطلبات…','Loading orders…'),state:'loading'};
+  render();
+  try{
+    const data=await api(`/api/orders${q?`?code=${encodeURIComponent(q)}`:''}`,{method:'GET',headers:{}});
+    myOrders=data.orders||[];
+    ordersLookupStatus={
+      message:q
+        ? (myOrders.length?t('تم العثور على الطلب','Order found'):t('لم يتم العثور على طلب بهذا الرقم ضمن حسابك.','No order with this code was found in your account.'))
+        : t('تم تحديث قائمة طلباتك.','Your orders are up to date.'),
+      state:myOrders.length||!q?'success':'empty'
+    };
+  }catch(err){
+    if(err.code==='CUSTOMER_AUTH_REQUIRED')customerSession=null;
+    const msg=err.message||t('تعذر تحميل الطلبات. حاول مرة أخرى.','Unable to load orders. Please try again.');
+    ordersLookupStatus={message:msg,state:'error'};
+    toast(msg);
+    myOrders=[];
+  }
   ordersLoading=false;render();
 }
 async function adminSignIn(e){
