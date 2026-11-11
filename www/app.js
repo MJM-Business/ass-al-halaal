@@ -8151,7 +8151,7 @@ function adminPage(){
           <span class="stitch-approved-count">${adminIcon('verified')}${t('المسالخ المعتمدة','Approved slaughterhouses')}: ${(Array.isArray(slaughterhouses)?slaughterhouses:[]).filter(x=>x&&x.active!==false).length}</span>
         </div>
       `:`
-        <label class="executive-global-search">${adminIcon('search')}<input id="admin-global-search" value="${safe(adminQuery||'')}" placeholder="${t('ابحث في الطلبات والموردين والعملاء…','Search orders, suppliers, customers…')}"><kbd>/</kbd></label>
+        <label class="executive-global-search">${adminIcon('search')}<input id="admin-global-search" value="${safe(adminModule==='finance'?financeQuery:(adminQuery||''))}" placeholder="${adminModule==='finance'?t('ابحث برقم الفاتورة، الطلب، العميل أو الجوال…','Search invoice, order, customer or mobile…'):t('ابحث في الطلبات والموردين والعملاء…','Search orders, suppliers, customers…')}"><kbd>/</kbd></label>
       `}
       <div class="reference-header-actions executive-header-actions">
         ${adminCan('orders','view')?`<button type="button" class="executive-head-icon executive-bell" data-admin-module="orders" title="${t('الطلبات الجديدة','New orders')}">${adminIcon('bell')}<i class="executive-bell-dot"></i>${newOrdersBadge()}</button>`:''}
@@ -8862,8 +8862,23 @@ function bind(){
   document.querySelectorAll('[data-orders-kpi]').forEach(b=>b.onclick=()=>{const k=b.dataset.ordersKpi;if(k==='completed')adminFilter='completed';else if(k==='ready')adminFilter='ready';else if(k==='active')adminFilter='all';else if(k==='all')adminFilter='all';ordersSubView='orders';render()});
   document.querySelectorAll('[data-dashboard-status]').forEach(b=>b.onclick=()=>{if(!rbacGuard('orders','view'))return;adminFilter=b.dataset.dashboardStatus;adminModule='orders';render()});
   const globalAdminSearch=document.querySelector('#admin-global-search');if(globalAdminSearch){
-    globalAdminSearch.oninput=e=>{adminQuery=e.target.value};
-    globalAdminSearch.onkeydown=e=>{if(e.key==='Enter'&&adminCan('orders','view')){adminModule='orders';render()}};
+    globalAdminSearch.oninput=e=>{
+      if(adminModule==='finance')financeQuery=e.target.value;
+      else adminQuery=e.target.value;
+    };
+    globalAdminSearch.onkeydown=e=>{
+      if(e.key!=='Enter')return;
+      e.preventDefault();
+      if(adminModule==='finance'){
+        financeTab='overview';
+        render();
+        return;
+      }
+      if(adminModule==='orders'&&adminCan('orders','view')){
+        ordersSubView='orders';
+        render();
+      }
+    };
   }
   document.querySelectorAll('[data-dashboard-order]').forEach(b=>b.onclick=()=>{if(!rbacGuard('orders','view'))return;adminQuery=String(b.dataset.dashboardOrder||'');adminFilter='all';adminModule='orders';ordersSubView='orders';render()});
   const adminSearch=document.querySelector('#admin-search');if(adminSearch){adminSearch.oninput=e=>{adminQuery=e.target.value};adminSearch.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();render()}}}
