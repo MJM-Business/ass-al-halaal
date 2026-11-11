@@ -66,10 +66,10 @@ test('customer order endpoints enforce ownership and prevent IDOR',async t=>{
       NODE_ENV:'development',
       HOST:'127.0.0.1',
       PORT:String(port),
-      KABSH_DB_PATH:dbPath,
-      KABSH_TRUST_PROXY:'0',
-      KABSH_COOKIE_SECURE:'0',
-      KABSH_OTP_PEPPER:'test-only-security-pepper-do-not-use-in-production'
+      AHL_DB_PATH:dbPath,
+      AHL_TRUST_PROXY:'0',
+      AHL_COOKIE_SECURE:'0',
+      AHL_OTP_PEPPER:'test-only-security-pepper-do-not-use-in-production'
     },
     stdio:['ignore','pipe','pipe']
   });
@@ -175,10 +175,10 @@ test('JSON API input hardening rejects unsafe payloads',async t=>{
       NODE_ENV:'development',
       HOST:'127.0.0.1',
       PORT:String(port),
-      KABSH_DB_PATH:dbPath,
-      KABSH_TRUST_PROXY:'0',
-      KABSH_COOKIE_SECURE:'0',
-      KABSH_OTP_PEPPER:'test-only-security-pepper-do-not-use-in-production'
+      AHL_DB_PATH:dbPath,
+      AHL_TRUST_PROXY:'0',
+      AHL_COOKIE_SECURE:'0',
+      AHL_OTP_PEPPER:'test-only-security-pepper-do-not-use-in-production'
     },
     stdio:['ignore','pipe','pipe']
   });
@@ -265,12 +265,12 @@ test('secure image upload validation and protected media access',async t=>{
       NODE_ENV:'development',
       HOST:'127.0.0.1',
       PORT:String(port),
-      KABSH_DB_PATH:dbPath,
-      KABSH_TRUST_PROXY:'0',
-      KABSH_COOKIE_SECURE:'0',
-      KABSH_OTP_PEPPER:'test-only-security-pepper-do-not-use-in-production',
-      KABSH_ADMIN_BOOTSTRAP_PASSWORD:'SecurityAdmin!123',
-      KABSH_RESET_ADMIN_PASSWORD:'1'
+      AHL_DB_PATH:dbPath,
+      AHL_TRUST_PROXY:'0',
+      AHL_COOKIE_SECURE:'0',
+      AHL_OTP_PEPPER:'test-only-security-pepper-do-not-use-in-production',
+      AHL_ADMIN_BOOTSTRAP_PASSWORD:'SecurityAdmin!123',
+      AHL_RESET_ADMIN_PASSWORD:'1'
     },
     stdio:['ignore','pipe','pipe']
   });
@@ -379,12 +379,12 @@ test('production API errors hide internal parser details',async t=>{
       NODE_ENV:'production',
       HOST:'127.0.0.1',
       PORT:String(port),
-      KABSH_DB_PATH:dbPath,
-      KABSH_TRUST_PROXY:'1',
-      KABSH_COOKIE_SECURE:'1',
-      KABSH_ENFORCE_HTTPS:'0',
-      KABSH_PUBLIC_ORIGIN:base,
-      KABSH_OTP_PEPPER:'production-test-pepper-not-a-real-secret'
+      AHL_DB_PATH:dbPath,
+      AHL_TRUST_PROXY:'1',
+      AHL_COOKIE_SECURE:'1',
+      AHL_ENFORCE_HTTPS:'0',
+      AHL_PUBLIC_ORIGIN:base,
+      AHL_OTP_PEPPER:'production-test-pepper-not-a-real-secret'
     },
     stdio:['ignore','pipe','pipe']
   });
@@ -430,10 +430,10 @@ test('customer passwords use bcrypt and legacy scrypt hashes upgrade after login
       NODE_ENV:'development',
       HOST:'127.0.0.1',
       PORT:String(port),
-      KABSH_DB_PATH:dbPath,
-      KABSH_TRUST_PROXY:'0',
-      KABSH_COOKIE_SECURE:'0',
-      KABSH_OTP_PEPPER:'test-only-security-pepper-do-not-use-in-production'
+      AHL_DB_PATH:dbPath,
+      AHL_TRUST_PROXY:'0',
+      AHL_COOKIE_SECURE:'0',
+      AHL_OTP_PEPPER:'test-only-security-pepper-do-not-use-in-production'
     },
     stdio:['ignore','pipe','pipe']
   });
@@ -506,10 +506,10 @@ test('customer registration and login endpoints enforce rate limiting',async t=>
       NODE_ENV:'development',
       HOST:'127.0.0.1',
       PORT:String(port),
-      KABSH_DB_PATH:dbPath,
-      KABSH_TRUST_PROXY:'0',
-      KABSH_COOKIE_SECURE:'0',
-      KABSH_OTP_PEPPER:'test-only-security-pepper-do-not-use-in-production'
+      AHL_DB_PATH:dbPath,
+      AHL_TRUST_PROXY:'0',
+      AHL_COOKIE_SECURE:'0',
+      AHL_OTP_PEPPER:'test-only-security-pepper-do-not-use-in-production'
     },
     stdio:['ignore','pipe','pipe']
   });
@@ -561,10 +561,10 @@ test('customer registration and login endpoints enforce rate limiting',async t=>
       NODE_ENV:'development',
       HOST:'127.0.0.1',
       PORT:String(port2),
-      KABSH_DB_PATH:dbPath2,
-      KABSH_TRUST_PROXY:'0',
-      KABSH_COOKIE_SECURE:'0',
-      KABSH_OTP_PEPPER:'test-only-security-pepper-do-not-use-in-production'
+      AHL_DB_PATH:dbPath2,
+      AHL_TRUST_PROXY:'0',
+      AHL_COOKIE_SECURE:'0',
+      AHL_OTP_PEPPER:'test-only-security-pepper-do-not-use-in-production'
     },
     stdio:['ignore','pipe','pipe']
   });
@@ -613,12 +613,12 @@ test('loopback origin is allowed only when the request itself reaches the local 
       NODE_ENV:'production',
       HOST:'127.0.0.1',
       PORT:String(port),
-      KABSH_DB_PATH:dbPath,
-      KABSH_TRUST_PROXY:'0',
-      KABSH_COOKIE_SECURE:'0',
-      KABSH_ENFORCE_HTTPS:'0',
-      KABSH_PUBLIC_ORIGIN:'https://ass-al-halaal.onrender.com',
-      KABSH_OTP_PEPPER:'production-test-pepper-not-a-real-secret'
+      AHL_DB_PATH:dbPath,
+      AHL_TRUST_PROXY:'0',
+      AHL_COOKIE_SECURE:'0',
+      AHL_ENFORCE_HTTPS:'0',
+      AHL_PUBLIC_ORIGIN:'https://ass-al-halaal.onrender.com',
+      AHL_OTP_PEPPER:'production-test-pepper-not-a-real-secret'
     },
     stdio:['ignore','pipe','pipe']
   });
