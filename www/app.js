@@ -8297,9 +8297,11 @@ function render(){
   bind();
   applyV469MobileExperience();
   setupV485MostRequestedSlider();
-  if(typeof setupV487StableCarousel==='function') setupV487StableCarousel();
-  if(typeof setupV527MobileProductCarousel==='function') setupV527MobileProductCarousel();
-  if(typeof setupV528MobileCarousel==='function') setupV528MobileCarousel();
+  if(window.matchMedia('(max-width: 900px)').matches){
+    if(typeof setupV528MobileCarousel==='function') setupV528MobileCarousel();
+  }else if(typeof setupV487StableCarousel==='function'){
+    setupV487StableCarousel();
+  }
   if(typeof setupV490RequestSection==='function') setupV490RequestSection();
   setupHomeProductLazyExpansion();
   requestAnimationFrame(()=>{ if(typeof applyV443LockedTopNav==='function') applyV443LockedTopNav(); });
@@ -8563,8 +8565,9 @@ function setupHeroSlider(){
   let paused=false;
   let touchStartX=null;
   const restartProgress=()=>{
+    const wasRunning=root.classList.contains('hero-progress-run');
     root.classList.remove('hero-progress-run');
-    void root.offsetWidth;
+    if(wasRunning)void root.offsetWidth;
     root.classList.add('hero-progress-run');
   };
   const activate=next=>{
@@ -8930,7 +8933,7 @@ function setupHomeProductLazyExpansion(){
   homeProductsObserver.observe(collection);
 }
 
-function renderProducts(){const el=document.querySelector('#products');if(!el)return;el.innerHTML=productCards();applyPortalProductCardVisuals();document.querySelectorAll('[data-product]').forEach(b=>b.onclick=e=>{e.stopPropagation();productDialog(b.dataset.product)});document.querySelectorAll('[data-product-detail-button]').forEach(b=>b.onclick=e=>{e.stopPropagation();setView('product/'+encodeURIComponent(b.dataset.productDetailButton))});document.querySelectorAll('[data-product-detail]').forEach(card=>{card.onclick=e=>{if(e.target.closest('button'))return;setView('product/'+encodeURIComponent(card.dataset.productDetail))}});document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const id=b.dataset.fav;favourites.has(id)?favourites.delete(id):favourites.add(id);persist();renderProducts()});document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareProduct(b.dataset.share));setupCustomBox3DShowcase();setupV485MostRequestedSlider();if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel();if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel()}
+function renderProducts(){const el=document.querySelector('#products');if(!el)return;el.innerHTML=productCards();applyPortalProductCardVisuals();document.querySelectorAll('[data-product]').forEach(b=>b.onclick=e=>{e.stopPropagation();productDialog(b.dataset.product)});document.querySelectorAll('[data-product-detail-button]').forEach(b=>b.onclick=e=>{e.stopPropagation();setView('product/'+encodeURIComponent(b.dataset.productDetailButton))});document.querySelectorAll('[data-product-detail]').forEach(card=>{card.onclick=e=>{if(e.target.closest('button'))return;setView('product/'+encodeURIComponent(card.dataset.productDetail))}});document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const id=b.dataset.fav;favourites.has(id)?favourites.delete(id):favourites.add(id);persist();renderProducts()});document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareProduct(b.dataset.share));setupCustomBox3DShowcase();setupV485MostRequestedSlider();if(window.matchMedia('(max-width: 900px)').matches){if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel()}else if(typeof setupV487StableCarousel==='function')setupV487StableCarousel()}
 
 
 function productOptionsDialog(id){
@@ -11007,26 +11010,9 @@ function setupV485MostRequestedSlider(){
 }
 
 ;(()=>{
-  const installV485ProductSliderCSS=()=>{
-    if(document.getElementById('v485-most-requested-product-slider'))return;
-
-    const style=document.createElement('style');
-    style.id='v485-most-requested-product-slider';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',()=>{
-      installV485ProductSliderCSS();
-      setupV485MostRequestedSlider();
-    },{once:true});
-  }else{
-    installV485ProductSliderCSS();
-    setupV485MostRequestedSlider();
-  }
+  // v485 base carousel setup is owned by render()/renderProducts().
+  // Avoid a second DOMContentLoaded layout pass during initial paint.
 })();
-
 
 /* =========================================================
    Ass Al Halaal v486 — ACTIVE CAROUSEL CONTROLS + MOUSE DRAG
@@ -12748,32 +12734,7 @@ function setupV527MobileProductCarousel(){
 }
 
 ;(()=>{
-  const installV527MobileProductCarouselCSS=()=>{
-    if(document.getElementById('v527-mobile-product-center-swipe'))return;
-
-    const style=document.createElement('style');
-    style.id='v527-mobile-product-center-swipe';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
-  };
-
-  const boot=()=>{
-    installV527MobileProductCarouselCSS();
-    setupV527MobileProductCarousel();
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',boot,{once:true});
-  }else{
-    boot();
-  }
-
-  // Product/language rerenders call setup explicitly from render()/renderProducts().
-  // Avoid a body-wide MutationObserver on the performance-critical home page.
-
-  window.addEventListener('resize',()=>{
-    requestAnimationFrame(setupV527MobileProductCarousel);
-  },{passive:true});
+  // v527 runtime boot retired: v528 is the active mobile carousel engine.
 })();
 
 /* =========================================================
@@ -13112,19 +13073,8 @@ function setupV528MobileCarousel(){
     if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
-  const boot=()=>{
-    installV528MobileCarouselCSS();
-    setupV528MobileCarousel();
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',boot,{once:true});
-  }else{
-    boot();
-  }
-
-  // Re-renders call setup explicitly from render()/renderProducts(); no
-  // body-wide observer is needed and avoids duplicate mobile carousel work.
+  // Initial setup is owned by render()/renderProducts().
+  // Keep only the resize hook below so first paint does not repeat layout work.
 
   window.addEventListener('resize',()=>{
     requestAnimationFrame(setupV528MobileCarousel);
