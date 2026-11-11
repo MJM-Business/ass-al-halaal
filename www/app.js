@@ -9395,8 +9395,8 @@ async function loadMyOrders(code=''){
     ordersLookupStatus={
       message:q
         ? (myOrders.length?t('تم العثور على الطلب','Order found'):t('لم يتم العثور على طلب بهذا الرقم ضمن حسابك.','No order with this code was found in your account.'))
-        : t('تم تحديث قائمة طلباتك.','Your orders are up to date.'),
-      state:myOrders.length||!q?'success':'empty'
+        : (myOrders.length?t('يتم عرض جميع طلباتك.','Showing all your orders.'):t('لا توجد طلبات مرتبطة بهذا الحساب حتى الآن.','No orders are linked to this account yet.')),
+      state:myOrders.length?'success':'empty'
     };
   }catch(err){
     if(err.code==='CUSTOMER_AUTH_REQUIRED')customerSession=null;
