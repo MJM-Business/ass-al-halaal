@@ -1,11 +1,9 @@
 const fullStyle=document.getElementById('full-style');
 if(fullStyle){
   const activate=()=>{fullStyle.media='all'};
-  if(location.hash.startsWith('#admin')){
+  if(fullStyle.sheet){
     activate();
-  }else if(fullStyle.sheet){
-    requestAnimationFrame(()=>requestAnimationFrame(activate));
   }else{
-    fullStyle.addEventListener('load',()=>requestAnimationFrame(()=>requestAnimationFrame(activate)),{once:true});
+    fullStyle.addEventListener('load',activate,{once:true});
   }
 }
