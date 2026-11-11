@@ -22,7 +22,7 @@ test('static assets use browser caching policies',()=>{
 
 test('critical stylesheet and module use resource hints',()=>{
   assert.match(index,/rel="stylesheet" href="critical\.css\?v=545"/);
-  assert.match(index,/rel="modulepreload" href="dist\/app\.min\.js\?v=544"/);
+  assert.match(index,/rel="modulepreload" href="dist\/app\.min\.js\?v=549"/);
 });
 
 test('google identity origin is preconnected',()=>{
@@ -114,4 +114,11 @@ test('obsolete carousel mutation observers stay disabled',async()=>{
   assert.doesNotMatch(app,/window\.__v486CarouselObserver=new MutationObserver/);
   assert.doesNotMatch(app,/window\.__v487RouteObserver=new MutationObserver/);
   assert.match(app,/setupV487StableCarousel\(\)/);
+});
+
+
+test('empty legacy runtime style installers are removed from startup',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  const matches=app.match(/const\s+install\w+=\(\)=>\{[\s\S]{0,500}?style\.textContent=\`\`;[\s\S]{0,250}?DOMContentLoaded/g)||[];
+  assert.equal(matches.length,0);
 });
