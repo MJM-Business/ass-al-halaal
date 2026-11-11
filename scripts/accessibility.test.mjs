@@ -63,3 +63,8 @@ test('icon-only controls keep accessible names and custom buttons support keyboa
   assert.match(app,/event\.key!=='Enter'&&event\.key!==' '/);
   assert.match(app,/el\.click\(\)/);
 });
+
+
+test('muted foreground colors meet AA contrast baseline',()=>{
+  assert.doesNotMatch(style,/#74827b|#819087|#75847d|#78837e|#7b8982|#6b7d76/i);
+});
