@@ -12004,135 +12004,18 @@ function setupV490RequestSection(){
 
 ;(()=>{
   const installProminentOriginalAssAlHalaalFavicon=()=>{
-    const originalLogo='assets/ass-al-halaal-logo-colored.png';
-
-    const setFavicon=(href)=>{
-      document.querySelectorAll('link[rel~="icon"],link[rel="shortcut icon"]').forEach(el=>el.remove());
-
-      const icon=document.createElement('link');
-      icon.rel='icon';
-      icon.type='image/png';
-      icon.sizes='512x512';
-      icon.href=href;
-      document.head.appendChild(icon);
-
-      const shortcut=document.createElement('link');
-      shortcut.rel='shortcut icon';
-      shortcut.type='image/png';
-      shortcut.href=href;
-      document.head.appendChild(shortcut);
-
-      let apple=document.querySelector('link[rel="apple-touch-icon"]');
-      if(!apple){
-        apple=document.createElement('link');
-        apple.rel='apple-touch-icon';
-        document.head.appendChild(apple);
-      }
-      apple.href=href;
-    };
-
-    const img=new Image();
-
-    img.onload=()=>{
-      try{
-        /* First render original asset so transparent/empty margins can be trimmed. */
-        const source=document.createElement('canvas');
-        source.width=img.naturalWidth;
-        source.height=img.naturalHeight;
-        const sctx=source.getContext('2d',{willReadFrequently:true});
-        sctx.drawImage(img,0,0);
-
-        const pixels=sctx.getImageData(0,0,source.width,source.height);
-        const data=pixels.data;
-        let minX=source.width, minY=source.height, maxX=-1, maxY=-1;
-
-        /* Use transparency where available. For opaque assets, ignore near-white outer background. */
-        const cornerIndex=0;
-        const bgR=data[cornerIndex], bgG=data[cornerIndex+1], bgB=data[cornerIndex+2], bgA=data[cornerIndex+3];
-        const cornerIsLight=bgA>220 && bgR>235 && bgG>235 && bgB>235;
-
-        for(let y=0;y<source.height;y++){
-          for(let x=0;x<source.width;x++){
-            const i=(y*source.width+x)*4;
-            const r=data[i], g=data[i+1], b=data[i+2], a=data[i+3];
-
-            let content=a>22;
-            if(content && cornerIsLight){
-              const diff=Math.abs(r-bgR)+Math.abs(g-bgG)+Math.abs(b-bgB);
-              content=diff>38 || a<245;
-            }
-
-            if(content){
-              if(x<minX)minX=x;
-              if(y<minY)minY=y;
-              if(x>maxX)maxX=x;
-              if(y>maxY)maxY=y;
-            }
-          }
-        }
-
-        if(maxX<minX || maxY<minY){
-          minX=0; minY=0; maxX=source.width-1; maxY=source.height-1;
-        }
-
-        const cropW=maxX-minX+1;
-        const cropH=maxY-minY+1;
-
-        /* Create the final favicon with a strong white circular badge. */
-        const size=512;
-        const canvas=document.createElement('canvas');
-        canvas.width=size;
-        canvas.height=size;
-        const ctx=canvas.getContext('2d');
-
-        ctx.clearRect(0,0,size,size);
-
-        /* Soft outer shadow helps the white badge stay visible in both light/dark tabs. */
-        ctx.save();
-        ctx.shadowColor='rgba(0,55,42,.24)';
-        ctx.shadowBlur=18;
-        ctx.shadowOffsetY=4;
-        ctx.beginPath();
-        ctx.arc(256,256,238,0,Math.PI*2);
-        ctx.fillStyle='#ffffff';
-        ctx.fill();
-        ctx.restore();
-
-        ctx.beginPath();
-        ctx.arc(256,256,238,0,Math.PI*2);
-        ctx.lineWidth=10;
-        ctx.strokeStyle='#0b654d';
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.arc(256,256,224,0,Math.PI*2);
-        ctx.lineWidth=4;
-        ctx.strokeStyle='#d7ad45';
-        ctx.stroke();
-
-        /* Make the original logo much larger inside the circle. */
-        const maxW=408;
-        const maxH=396;
-        const ratio=Math.min(maxW/cropW,maxH/cropH);
-        const w=cropW*ratio;
-        const h=cropH*ratio;
-        const x=(size-w)/2;
-        const y=(size-h)/2;
-
-        ctx.drawImage(
-          source,
-          minX,minY,cropW,cropH,
-          x,y,w,h
-        );
-
-        setFavicon(canvas.toDataURL('image/png'));
-      }catch(err){
-        setFavicon(originalLogo);
-      }
-    };
-
-    img.onerror=()=>setFavicon(originalLogo);
-    img.src=originalLogo+'?favicon-prominent=3';
+    const href='apple-touch-icon.png';
+    document.querySelectorAll('link[rel~="icon"],link[rel="shortcut icon"]').forEach(el=>{
+      el.href=href;
+      if(el.rel.includes('icon')) el.type='image/png';
+    });
+    let apple=document.querySelector('link[rel="apple-touch-icon"]');
+    if(!apple){
+      apple=document.createElement('link');
+      apple.rel='apple-touch-icon';
+      document.head.appendChild(apple);
+    }
+    apple.href=href;
   };
 
   if(document.readyState==='loading'){
