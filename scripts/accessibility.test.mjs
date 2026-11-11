@@ -115,3 +115,11 @@ test('admin searches avoid full rerender on every keystroke and submit on Enter'
   assert.match(app,/waSearchInput\.oninput=e=>\{waSearch=e\.target\.value\}/);
   assert.match(app,/if\(e\.key==='Enter'\)\{e\.preventDefault\(\);render\(\)\}/);
 });
+
+
+test('admin global search stays inside finance and uses finance query state',()=>{
+  assert.match(app,/adminModule==='finance'\?financeQuery/);
+  assert.match(app,/if\(adminModule==='finance'\)financeQuery=e\.target\.value/);
+  assert.match(app,/if\(adminModule==='finance'\)\{\s*financeTab='overview';\s*render\(\);\s*return;/);
+  assert.doesNotMatch(app,/if\(e\.key==='Enter'&&adminCan\('orders','view'\)\)\{adminModule='orders';render\(\)\}/);
+});
