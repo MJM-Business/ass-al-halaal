@@ -7992,7 +7992,34 @@ function clearAdminClientSessionState(){
 function bindAdminSecurity(){
   document.querySelector('#security-refresh')?.addEventListener('click',()=>loadAdminSecurity());
   const passwordForm=document.querySelector('#security-password-form');
-  if(passwordForm)passwordForm.onsubmit=async e=>{e.preventDefault();const d=Object.fromEntries(new FormData(passwordForm));if(String(d.new_password||'')!==String(d.confirm_password||'')){toast(t('تأكيد كلمة المرور غير مطابق','Password confirmation does not match'));return}const btn=passwordForm.querySelector('button[type="submit"]');btn.disabled=true;try{const data=await api('/api/admin/security/password',{method:'POST',body:JSON.stringify({current_password:d.current_password,new_password:d.new_password})});adminSecurityData=data.security||adminSecurityData;passwordForm.reset();render();toast(t('تم تغيير كلمة المرور وتسجيل خروج الجلسات الأخرى','Password changed; other sessions were signed out'))}catch(err){toast(err.message);btn.disabled=false}};
+  if(passwordForm)passwordForm.onsubmit=async e=>{
+    e.preventDefault();
+    if(!validateLocalizedForm(passwordForm))return;
+    const d=Object.fromEntries(new FormData(passwordForm));
+    if(String(d.new_password||'')!==String(d.confirm_password||'')){
+      const msg=t('تأكيد كلمة المرور غير مطابق','Password confirmation does not match');
+      setFormStatus(passwordForm,msg,'error');toast(msg);
+      passwordForm.querySelector('[name="confirm_password"]')?.focus();
+      return;
+    }
+    setFormStatus(passwordForm,t('جاري تحديث كلمة المرور…','Updating password…'),'loading');
+    setFormBusy(passwordForm,true,t('جاري التحديث…','Updating…'));
+    try{
+      const data=await api('/api/admin/security/password',{method:'POST',body:JSON.stringify({current_password:d.current_password,new_password:d.new_password})});
+      adminSecurityData=data.security||adminSecurityData;
+      passwordForm.reset();
+      setFormStatus(passwordForm,t('تم تحديث كلمة المرور بنجاح','Password updated successfully'),'success');
+      setFormBusy(passwordForm,false);
+      render();
+      toast(t('تم تغيير كلمة المرور وتسجيل خروج الجلسات الأخرى','Password changed; other sessions were signed out'));
+    }catch(err){
+      const msg=err.message||t('تعذر تحديث كلمة المرور.','Unable to update password.');
+      setFormStatus(passwordForm,msg,'error');
+      setFormBusy(passwordForm,false);
+      toast(msg);
+      passwordForm.querySelector('[name="current_password"]')?.focus();
+    }
+  };
   // Chrome/Google Password Manager may ignore autocomplete="off" on credential-like forms.
   // Keep security contact fields read-only until the administrator explicitly focuses them,
   // use unique field names, and clear any browser-injected value before first edit.
@@ -8016,7 +8043,29 @@ function bindAdminSecurity(){
       }
     },delay));
   });
-  for(const field of ['email','phone']){const form=document.querySelector(`#security-${field}-form`);if(form)form.onsubmit=async e=>{e.preventDefault();const value=String(form.querySelector('[data-security-contact-value]')?.value||'').trim();const currentPassword=String(form.querySelector('[data-security-contact-password]')?.value||'');const btn=form.querySelector('button[type="submit"]');btn.disabled=true;try{const data=await api('/api/admin/security/contact/start',{method:'POST',body:JSON.stringify({field,value,current_password:currentPassword})});openAdminSecurityOtp(data,field)}catch(err){toast(err.message);btn.disabled=false}}}
+  for(const field of ['email','phone']){
+    const form=document.querySelector(`#security-${field}-form`);
+    if(form)form.onsubmit=async e=>{
+      e.preventDefault();
+      if(!validateLocalizedForm(form))return;
+      const value=String(form.querySelector('[data-security-contact-value]')?.value||'').trim();
+      const currentPassword=String(form.querySelector('[data-security-contact-password]')?.value||'');
+      setFormStatus(form,t('جاري إرسال رمز التحقق…','Sending verification code…'),'loading');
+      setFormBusy(form,true,t('جاري الإرسال…','Sending…'));
+      try{
+        const data=await api('/api/admin/security/contact/start',{method:'POST',body:JSON.stringify({field,value,current_password:currentPassword})});
+        setFormStatus(form,t('تم إرسال رمز التحقق','Verification code sent'),'success');
+        setFormBusy(form,false);
+        openAdminSecurityOtp(data,field);
+      }catch(err){
+        const msg=err.message||t('تعذر إرسال رمز التحقق.','Unable to send verification code.');
+        setFormStatus(form,msg,'error');
+        setFormBusy(form,false);
+        toast(msg);
+        form.querySelector('[data-security-contact-value]')?.focus();
+      }
+    }
+  }
   document.querySelectorAll('[data-security-revoke]').forEach(b=>b.onclick=async()=>{if(!confirm(t('هل تريد إنهاء هذه الجلسة؟','Revoke this admin session?')))return;try{const data=await api(`/api/admin/security/sessions/${encodeURIComponent(b.dataset.securityRevoke)}`,{method:'DELETE',body:'{}'});adminSecurityData=data.security||adminSecurityData;render();toast(t('تم إنهاء الجلسة','Session revoked'))}catch(err){toast(err.message)}});
   document.querySelector('#security-logout-others')?.addEventListener('click',async()=>{if(!confirm(t('سيتم تسجيل خروج جميع الأجهزة الأخرى. متابعة؟','Sign out all other devices?')))return;try{const data=await api('/api/admin/security/sessions/logout-all',{method:'POST',body:JSON.stringify({include_current:false})});adminSecurityData=data.security||adminSecurityData;render();toast(t('تم تسجيل خروج الأجهزة الأخرى','Other devices signed out'))}catch(err){toast(err.message)}});
   document.querySelector('#security-logout-all')?.addEventListener('click',async()=>{if(!confirm(t('سيتم تسجيل خروج هذا الجهاز وجميع الأجهزة الأخرى. متابعة؟','This will sign out this device and every other admin session. Continue?')))return;try{await api('/api/admin/security/sessions/logout-all',{method:'POST',body:JSON.stringify({include_current:true})})}catch{}clearAdminClientSessionState();setView('account');render();toast(t('تم تسجيل خروج جميع الأجهزة','All admin sessions signed out'))});
@@ -8817,7 +8866,7 @@ function bind(){
     globalAdminSearch.onkeydown=e=>{if(e.key==='Enter'&&adminCan('orders','view')){adminModule='orders';render()}};
   }
   document.querySelectorAll('[data-dashboard-order]').forEach(b=>b.onclick=()=>{if(!rbacGuard('orders','view'))return;adminQuery=String(b.dataset.dashboardOrder||'');adminFilter='all';adminModule='orders';ordersSubView='orders';render()});
-  const adminSearch=document.querySelector('#admin-search');if(adminSearch)adminSearch.oninput=e=>{adminQuery=e.target.value;render();setTimeout(()=>{const i=document.querySelector('#admin-search');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},0)};
+  const adminSearch=document.querySelector('#admin-search');if(adminSearch){adminSearch.oninput=e=>{adminQuery=e.target.value};adminSearch.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();render()}}}
   document.querySelector('#admin-language')?.addEventListener('click',openLanguagePicker);
   document.querySelector('#admin-export')?.addEventListener('click',()=>toast(t('سيتم ربط التصدير في مرحلة التقارير.','Export will be connected in the reports phase.')));
   document.querySelectorAll('[data-admin-module]').forEach(b=>b.onclick=()=>{const target=b.dataset.adminModule;if(!rbacGuard(target,'view'))return;try{adminModule=target;render()}catch(err){console.error('Admin module render failed:',target,err);const reason=String(err?.message||err||'Render error');adminModule='dashboard';render();toast(`${t('تعذر فتح الوحدة','Unable to open module')}: ${reason}`)}});
@@ -8828,7 +8877,7 @@ function bind(){
   document.querySelectorAll('#finance-export,#finance-export-top').forEach(b=>b.onclick=financeExportCsv);
   document.querySelectorAll('#finance-create-settlement,#finance-create-settlement-2').forEach(b=>b.onclick=openFinanceSettlementModal);
   document.querySelector('#finance-record-payment')?.addEventListener('click',()=>{const due=financeOrderRows().find(r=>r.outstanding>0&&r.status!=='cancelled');if(due)openFinancePaymentModal(due.orderId);else toast(t('لا توجد فواتير مستحقة حالياً.','There are no due invoices right now.'))});
-  const financeSearchEl=document.querySelector('#finance-search');if(financeSearchEl)financeSearchEl.oninput=e=>{financeQuery=e.target.value;render();setTimeout(()=>{const i=document.querySelector('#finance-search');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},0)};
+  const financeSearchEl=document.querySelector('#finance-search');if(financeSearchEl){financeSearchEl.oninput=e=>{financeQuery=e.target.value};financeSearchEl.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();render()}}}
   const financeStatusEl=document.querySelector('#finance-status');if(financeStatusEl)financeStatusEl.onchange=e=>{financeStatus=e.target.value;render()};
   const financeMethodEl=document.querySelector('#finance-method');if(financeMethodEl)financeMethodEl.onchange=e=>{financeMethod=e.target.value;render()};
   document.querySelector('#finance-reset')?.addEventListener('click',()=>{financeQuery='';financeStatus='all';financeMethod='all';render()});
@@ -8863,7 +8912,7 @@ function bind(){
   document.querySelectorAll('[data-gov-tab]').forEach(b=>b.onclick=()=>{ugTab=b.dataset.govTab;render()});
   document.querySelectorAll('#gov-add-user,#gov-add-user-hero').forEach(b=>b.onclick=openGovernanceUserModal);
   document.querySelector('#gov-export')?.addEventListener('click',ugExportCsv);
-  const govSearch=document.querySelector('#gov-search');if(govSearch)govSearch.oninput=e=>{ugQuery=e.target.value;render();setTimeout(()=>{const i=document.querySelector('#gov-search');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},0)};
+  const govSearch=document.querySelector('#gov-search');if(govSearch){govSearch.oninput=e=>{ugQuery=e.target.value};govSearch.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();render()}}}
   const govRole=document.querySelector('#gov-role');if(govRole)govRole.onchange=e=>{ugRole=e.target.value;render()};
   const govScope=document.querySelector('#gov-scope');if(govScope)govScope.onchange=e=>{ugScope=e.target.value;render()};
   const govMfa=document.querySelector('#gov-mfa');if(govMfa)govMfa.onchange=e=>{ugMfa=e.target.value;render()};
@@ -8908,7 +8957,7 @@ function bind(){
   }
 
   document.querySelectorAll('[data-wa-chat]').forEach(b=>b.onclick=()=>{waSelected=b.dataset.waChat;render()});
-  const waSearchInput=document.querySelector('#wa-search');if(waSearchInput)waSearchInput.oninput=e=>{waSearch=e.target.value;render();setTimeout(()=>{const i=document.querySelector('#wa-search');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}},0)};
+  const waSearchInput=document.querySelector('#wa-search');if(waSearchInput){waSearchInput.oninput=e=>{waSearch=e.target.value};waSearchInput.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();render()}}}
   document.querySelectorAll('[data-wa-quick]').forEach(b=>b.onclick=()=>{if(waMode==='ai'){runWaAiChat(b.dataset.waQuick);return}const i=document.querySelector('#wa-message-input');if(i){i.value=b.dataset.waQuick;i.focus()}});
   const waComposer=document.querySelector('#wa-composer');if(waComposer)waComposer.onsubmit=e=>{e.preventDefault();const i=document.querySelector('#wa-message-input');const value=i?.value||'';if(i)i.value='';waSendLocalMessage(value)};
   document.querySelector('#wa-new-chat')?.addEventListener('click',openWaNewConversation);
@@ -9409,15 +9458,25 @@ async function loadMyOrders(code=''){
 }
 async function adminSignIn(e){
   e.preventDefault();
-  const form=new FormData(e.currentTarget);
+  const formEl=e.currentTarget;
+  if(!validateLocalizedForm(formEl))return;
+  const form=new FormData(formEl);
   const userId=String(form.get('userId')||form.get('identifier')||'ADM-JED-001').trim().toUpperCase();
   const password=String(form.get('password')||'');
+  setFormStatus(formEl,t('جاري التحقق من بيانات الإدارة…','Checking admin credentials…'),'loading');
+  setFormBusy(formEl,true,t('جاري التحقق…','Checking…'));
   try{
     await startAdminTwoFactor(userId,password);
+    setFormStatus(formEl,t('تم قبول كلمة المرور. تحقق من رمز الأمان.','Password accepted. Complete the security code.'),'success');
+    setFormBusy(formEl,false);
   }catch(err){
-    if(err.code==='RBAC_ACCOUNT_SUSPENDED')toast(t('هذا الحساب الإداري موقوف.','This administrative account is suspended.'));
-    else if(err.code==='OTP_DELIVERY_FAILED')toast(err.message||t('تعذر إرسال رمز التحقق.','Unable to send the verification code.'));
-    else toast(t('بيانات الدخول الإدارية غير صحيحة.','Administrative sign-in details are incorrect.'));
+    let msg=t('بيانات الدخول الإدارية غير صحيحة.','Administrative sign-in details are incorrect.');
+    if(err.code==='RBAC_ACCOUNT_SUSPENDED')msg=t('هذا الحساب الإداري موقوف.','This administrative account is suspended.');
+    else if(err.code==='OTP_DELIVERY_FAILED')msg=err.message||t('تعذر إرسال رمز التحقق.','Unable to send the verification code.');
+    setFormStatus(formEl,msg,'error');
+    setFormBusy(formEl,false);
+    toast(msg);
+    formEl.querySelector('input[name="userId"],input[name="identifier"]')?.focus();
   }
 }
 
