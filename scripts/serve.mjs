@@ -2665,7 +2665,13 @@ async function handleApi(req,res,url){
         authRateClear('admin-security-contact',`${req.adminUser.id}:${field}`);
         governanceEvent('admin.security.contact_verification_sent','admin_user',req.adminUser.id,{actor:adminActorName(req.adminUser),details:{field,destination:delivery.masked}});
         return json(res,200,{ok:true,challenge_id:id,field,channel:delivery.channel,destination:delivery.masked,expires_in:ADMIN_OTP_MINUTES*60,resend_after:ADMIN_OTP_RESEND_SECONDS});
-      }catch(e){return json(res,503,{error:publicError(e,'Unable to send verification code'),code:'SECURITY_OTP_DELIVERY_FAILED'})}
+      }catch(e){
+        const localDiagnostics=isLoopbackHost(req.headers.host||'');
+        return json(res,503,{
+          error:localDiagnostics?String(e?.message||'Unable to send verification code'):publicError(e,'Unable to send verification code'),
+          code:'SECURITY_OTP_DELIVERY_FAILED'
+        })
+      }
     }
 
     if(pathname==='/api/admin/security/contact/resend'&&req.method==='POST'){
