@@ -2326,12 +2326,36 @@ function header(){const v=view();return `<header class="app-header ref-customer-
     <button data-nav="account" class="${v==='account'?'active':''}"><span class="nav-icon">${customerIcon('account')}</span><small>${t('حسابي','Account')}</small></button>
   </nav>
 
-  <div class="top-actions ref-top-actions premium-action-dock" aria-label="${t('إجراءات سريعة','Quick actions')}">
-    <button id="top-search" class="top-action top-search" aria-label="${t('بحث','Search')}" title="${t('بحث','Search')}"><span class="action-icon desktop-explicit-icon">${desktopHeaderIcon('search')}</span><span class="top-search-copy">${t('ابحث عن الذبائح واللحوم…','Search livestock, meat, categories…')}</span></button>
-    <button id="top-bell" class="bell top-action top-bell" aria-label="${t('التنبيهات','Notifications')}" title="${t('التنبيهات','Notifications')}"><span class="action-icon desktop-explicit-icon">${desktopHeaderIcon('bell')}</span><i></i></button>
-    <button id="language" class="lang-btn top-action top-language ${langMode==='auto'?'is-auto':''}" aria-label="${t('لغة التطبيق','App language')}" title="${langMode==='auto'?t('تلقائي · لغة الجهاز','Auto · Device language'):t('لغة يدوية','Manual language')}"><span class="lang-code">${lang==='ar'?'AR':'EN'}</span></button>
-    <button id="header-cart" class="profile-logo ref-cart top-action top-cart" aria-label="${t('السلة','Cart')}" title="${t('السلة','Cart')}"><span class="action-icon desktop-explicit-icon">${desktopHeaderIcon('bag')}</span>${cartCount()?`<b>${cartCount()}</b>`:''}</button>
-
+  <div class="header-quick-actions" aria-label="${t('إجراءات سريعة','Quick actions')}">
+    <button id="top-search" class="header-quick-btn header-quick-search" type="button" aria-label="${t('بحث','Search')}" title="${t('بحث','Search')}">
+      <span class="header-quick-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <circle cx="10.5" cy="10.5" r="5.5"></circle>
+          <path d="M14.7 14.7 20 20"></path>
+        </svg>
+      </span>
+    </button>
+    <button id="top-bell" class="header-quick-btn header-quick-btn-light header-quick-bell" type="button" aria-label="${t('التنبيهات','Notifications')}" title="${t('التنبيهات','Notifications')}">
+      <span class="header-quick-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M18 16H6l1.2-1.6V10a4.8 4.8 0 1 1 9.6 0v4.4L18 16Z"></path>
+          <path d="M10 19a2 2 0 0 0 4 0"></path>
+        </svg>
+      </span>
+      <span class="header-quick-dot" aria-hidden="true"></span>
+    </button>
+    <button id="language" class="header-quick-btn header-quick-lang ${langMode==='auto'?'is-auto':''}" type="button" aria-label="${t('لغة التطبيق','App language')}" title="${langMode==='auto'?t('تلقائي · لغة الجهاز','Auto · Device language'):t('لغة يدوية','Manual language')}">
+      <span>${lang==='ar'?'AR':'EN'}</span>
+    </button>
+    <button id="header-cart" class="header-quick-btn header-quick-cart" type="button" aria-label="${t('السلة','Cart')}" title="${t('السلة','Cart')}">
+      <span class="header-quick-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M7 8h10l-1 10H8L7 8Z"></path>
+          <path d="M9 8V6.8A3 3 0 0 1 12 4a3 3 0 0 1 3 2.8V8"></path>
+        </svg>
+      </span>
+      ${cartCount()?`<b class="header-quick-count">${cartCount()}</b>`:''}
+    </button>
   </div>
 </header>`}
 function bottomNav(){const v=view();return `<nav class="bottom-nav" aria-label="Main navigation">
