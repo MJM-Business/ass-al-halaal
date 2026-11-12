@@ -7504,7 +7504,10 @@ function render(){
   applyBatch2UxHardening(appRoot);
   bind();
   applyV469MobileExperience();
-  scheduleHomeCarouselNearViewport();
+  setupV485MostRequestedSlider();
+  if(typeof setupV487StableCarousel==='function') setupV487StableCarousel();
+  if(typeof setupV527MobileProductCarousel==='function') setupV527MobileProductCarousel();
+  if(typeof setupV528MobileCarousel==='function') setupV528MobileCarousel();
   if(typeof setupV490RequestSection==='function') setupV490RequestSection();
   setupHomeProductLazyExpansion();
   requestAnimationFrame(()=>{
@@ -8127,36 +8130,6 @@ function bind(){
   document.querySelectorAll('[data-admin-status]').forEach(s=>s.onchange=()=>updateAdminStatus(s.dataset.adminStatus,s.value));
   applyRbacUi();
 }
-let homeCarouselVisibilityObserver=null;
-function runHomeCarouselEngines(){
-  if(view()!=='home')return;
-  setupV485MostRequestedSlider();
-  if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();
-  if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel();
-  if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel();
-}
-function scheduleHomeCarouselNearViewport(){
-  if(view()!=='home')return;
-  const collection=document.querySelector('#collection');
-  if(!collection)return;
-
-  homeCarouselVisibilityObserver?.disconnect?.();
-
-  if(!('IntersectionObserver' in window)){
-    runHomeCarouselEngines();
-    return;
-  }
-
-  homeCarouselVisibilityObserver=new IntersectionObserver(entries=>{
-    if(!entries.some(entry=>entry.isIntersecting))return;
-    homeCarouselVisibilityObserver?.disconnect?.();
-    homeCarouselVisibilityObserver=null;
-    requestAnimationFrame(runHomeCarouselEngines);
-  },{rootMargin:'120px 0px',threshold:0.01});
-
-  homeCarouselVisibilityObserver.observe(collection);
-}
-
 let homeProductsExpanded=false;
 let homeProductsObserver=null;
 
@@ -8179,7 +8152,7 @@ function setupHomeProductLazyExpansion(){
     homeProductsObserver?.disconnect?.();
     homeProductsObserver=null;
     renderProducts();
-  },{rootMargin:'120px 0px',threshold:0.01});
+  },{rootMargin:'500px 0px',threshold:0.01});
 
   homeProductsObserver.observe(collection);
 }
