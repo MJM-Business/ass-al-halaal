@@ -95,11 +95,10 @@ test('mobile active hero paints immediately without entrance transitions',async(
 });
 
 
-test('full stylesheet loads deterministically without media-swap race',async()=>{
-  assert.match(index,/rel="stylesheet" href="dist\/style\.min\.css\?v=\d+"/);
-  assert.doesNotMatch(index,/rel="preload" as="style" href="dist\/style\.min\.css/);
-  assert.doesNotMatch(index,/media="print"/);
-  assert.doesNotMatch(index,/style-loader\.js\?v=\d+/);
+test('full stylesheet is preloaded and activated after critical paint',async()=>{
+  assert.match(index,/rel="preload" as="style" href="dist\/style\.min\.css\?v=\d+"/);
+  assert.match(index,/id="full-style" rel="stylesheet" href="dist\/style\.min\.css\?v=\d+" media="print"/);
+  assert.match(index,/style-loader\.js\?v=\d+/);
 });
 
 
@@ -267,11 +266,14 @@ test('runtime page template styles are moved to static CSS',async()=>{
 });
 
 
-test('production stylesheet loads deterministically without media-swap race',async()=>{
-  const index=await readFile('www/index.html','utf8');
-  assert.match(index,/rel="stylesheet" href="dist\/style\.min\.css\?v=585"/);
-  assert.doesNotMatch(index,/media="print"/);
-  assert.doesNotMatch(index,/style-loader\.js/);
+test('full stylesheet participates in the first stable layout',async()=>{
+  const loader=await readFile('www/style-loader.js','utf8');
+  const app=await readFile('www/app.js','utf8');
+  assert.match(loader,/window\.__activateFullStyle=activate/);
+  assert.match(loader,/fullStyle\.media='all'/);
+  assert.match(loader,/activate\(\);/);
+  assert.doesNotMatch(loader,/setTimeout\(activate,12000\)/);
+  assert.match(app,/window\.__activateFullStyle\?\.\(\)/);
 });
 
 test('accessibility scans are chunked after critical media priority',async()=>{
