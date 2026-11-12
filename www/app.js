@@ -7494,27 +7494,42 @@ function adminOrderCard(o){
   </article>`
 }
 
+let postRenderEnhancementToken=0;
+function schedulePostRenderEnhancements(appRoot){
+  const token=++postRenderEnhancementToken;
+  const queue=[
+    ()=>applyAccessibilityHardening(appRoot),
+    ()=>applyBatch2UxHardening(appRoot),
+    ()=>applyV469MobileExperience(),
+    ()=>setupV485MostRequestedSlider(),
+    ()=>{if(typeof setupV487StableCarousel==='function')setupV487StableCarousel()},
+    ()=>{if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel()},
+    ()=>{if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel()},
+    ()=>{if(typeof setupV490RequestSection==='function')setupV490RequestSection()},
+    ()=>setupHomeProductLazyExpansion(),
+    ()=>{
+      if(typeof applyV443LockedTopNav==='function')applyV443LockedTopNav();
+      window.__v496BindFaq?.();
+      window.__v517SyncBrandContrast?.();
+    }
+  ];
+  let index=0;
+  const runNext=()=>{
+    if(token!==postRenderEnhancementToken||index>=queue.length)return;
+    queue[index++]();
+    if(index<queue.length)setTimeout(runNext,0);
+  };
+  requestAnimationFrame(()=>setTimeout(runNext,0));
+}
+
 function render(){
   document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';document.title=t('عاس الحلال','Ass Al Halaal');
   const v=view();
   let content=v==='home'?homePage():v==='orders'?ordersPage():v==='account'?accountPage():v==='admin'?adminPage():v.startsWith('livestock/')?livestockCategoryPage(decodeURIComponent(v.slice(10))):v.startsWith('hashi/')?hashiVariantPage(productById('hashi-camel')||products.find(isHashiCamelProduct),decodeURIComponent(v.slice(6))):v.startsWith('product/')?productDetailPage(decodeURIComponent(v.slice(8))):homePage();
   const appRoot=document.querySelector('#app');
   appRoot.innerHTML=shell(content,{admin:v==='admin'});
-  applyAccessibilityHardening(appRoot);
-  applyBatch2UxHardening(appRoot);
   bind();
-  applyV469MobileExperience();
-  setupV485MostRequestedSlider();
-  if(typeof setupV487StableCarousel==='function') setupV487StableCarousel();
-  if(typeof setupV527MobileProductCarousel==='function') setupV527MobileProductCarousel();
-  if(typeof setupV528MobileCarousel==='function') setupV528MobileCarousel();
-  if(typeof setupV490RequestSection==='function') setupV490RequestSection();
-  setupHomeProductLazyExpansion();
-  requestAnimationFrame(()=>{
-    if(typeof applyV443LockedTopNav==='function') applyV443LockedTopNav();
-    window.__v496BindFaq?.();
-    window.__v517SyncBrandContrast?.();
-  });
+  schedulePostRenderEnhancements(appRoot);
 }
 
 
