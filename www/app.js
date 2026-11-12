@@ -7528,7 +7528,6 @@ function render(){
   // CLS settle immediately. Only non-visual scans/enhancements are deferred.
   setupV485MostRequestedSlider();
   if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();
-  if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel();
   if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel();
   if(typeof setupV490RequestSection==='function')setupV490RequestSection();
   if(typeof applyV443LockedTopNav==='function')applyV443LockedTopNav();
@@ -8175,7 +8174,7 @@ function setupHomeProductLazyExpansion(){
   homeProductsObserver.observe(collection);
 }
 
-function renderProducts(){const el=document.querySelector('#products');if(!el)return;el.innerHTML=productCards();applyPortalProductCardVisuals();document.querySelectorAll('[data-product]').forEach(b=>b.onclick=e=>{e.stopPropagation();productDialog(b.dataset.product)});document.querySelectorAll('[data-product-detail-button]').forEach(b=>b.onclick=e=>{e.stopPropagation();setView('product/'+encodeURIComponent(b.dataset.productDetailButton))});document.querySelectorAll('[data-product-detail]').forEach(card=>{card.onclick=e=>{if(e.target.closest('button'))return;setView('product/'+encodeURIComponent(card.dataset.productDetail))}});document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const id=b.dataset.fav;favourites.has(id)?favourites.delete(id):favourites.add(id);persist();renderProducts()});document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareProduct(b.dataset.share));setupCustomBox3DShowcase();setupV485MostRequestedSlider();if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel();if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel()}
+function renderProducts(){const el=document.querySelector('#products');if(!el)return;el.innerHTML=productCards();applyPortalProductCardVisuals();document.querySelectorAll('[data-product]').forEach(b=>b.onclick=e=>{e.stopPropagation();productDialog(b.dataset.product)});document.querySelectorAll('[data-product-detail-button]').forEach(b=>b.onclick=e=>{e.stopPropagation();setView('product/'+encodeURIComponent(b.dataset.productDetailButton))});document.querySelectorAll('[data-product-detail]').forEach(card=>{card.onclick=e=>{if(e.target.closest('button'))return;setView('product/'+encodeURIComponent(card.dataset.productDetail))}});document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const id=b.dataset.fav;favourites.has(id)?favourites.delete(id):favourites.add(id);persist();renderProducts()});document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareProduct(b.dataset.share));setupCustomBox3DShowcase();setupV485MostRequestedSlider();if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel()}
 
 
 function productOptionsDialog(id){
@@ -10786,7 +10785,7 @@ function setupV528MobileCarousel(){
   const track=shell?.querySelector('#products.ref-products.v485-product-carousel-track');
   if(!shell || !track)return;
 
-  track.classList.add('v528-pointer-carousel');
+  track.classList.add('v527-mobile-centered-track','v528-pointer-carousel');
 
   const cards=()=>[...track.querySelectorAll(':scope > .product-card')];
   const maxScroll=()=>Math.max(0,track.scrollWidth-track.clientWidth);
