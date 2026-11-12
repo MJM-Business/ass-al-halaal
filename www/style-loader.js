@@ -10,8 +10,21 @@ if(fullStyle){
 
   window.__activateFullStyle=activate;
 
-  // Keep refresh/navigation visually stable: the production stylesheet must
-  // participate in the first committed layout. The heavy DOM/JS work remains
-  // deferred elsewhere, but CSS is not delayed anymore.
-  activate();
+  const route=location.hash.replace('#','')||'home';
+
+  if(route!=='home'){
+    activate();
+  }else{
+    // Keep the first home viewport on critical.css only.
+    // This avoids a late repaint when the 2MB production stylesheet finishes.
+    const activateOnIntent=()=>activate();
+    window.addEventListener('scroll',activateOnIntent,{once:true,passive:true});
+    window.addEventListener('pointerdown',activateOnIntent,{once:true,passive:true});
+    window.addEventListener('keydown',activateOnIntent,{once:true});
+    window.addEventListener('touchstart',activateOnIntent,{once:true,passive:true});
+    window.addEventListener('hashchange',()=>{
+      const next=location.hash.replace('#','')||'home';
+      if(next!=='home')activate();
+    },{once:true});
+  }
 }
