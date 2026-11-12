@@ -7501,14 +7501,8 @@ function schedulePostRenderEnhancements(appRoot){
     ()=>applyAccessibilityHardening(appRoot),
     ()=>applyBatch2UxHardening(appRoot),
     ()=>applyV469MobileExperience(),
-    ()=>setupV485MostRequestedSlider(),
-    ()=>{if(typeof setupV487StableCarousel==='function')setupV487StableCarousel()},
-    ()=>{if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel()},
-    ()=>{if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel()},
-    ()=>{if(typeof setupV490RequestSection==='function')setupV490RequestSection()},
     ()=>setupHomeProductLazyExpansion(),
     ()=>{
-      if(typeof applyV443LockedTopNav==='function')applyV443LockedTopNav();
       window.__v496BindFaq?.();
       window.__v517SyncBrandContrast?.();
     }
@@ -7519,7 +7513,7 @@ function schedulePostRenderEnhancements(appRoot){
     queue[index++]();
     if(index<queue.length)setTimeout(runNext,0);
   };
-  requestAnimationFrame(()=>setTimeout(runNext,0));
+  setTimeout(runNext,0);
 }
 
 function render(){
@@ -7529,9 +7523,18 @@ function render(){
   const appRoot=document.querySelector('#app');
   appRoot.innerHTML=shell(content,{admin:v==='admin'});
   bind();
+
+  // Keep all geometry/layout-affecting setup in the first render so LCP and
+  // CLS settle immediately. Only non-visual scans/enhancements are deferred.
+  setupV485MostRequestedSlider();
+  if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();
+  if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel();
+  if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel();
+  if(typeof setupV490RequestSection==='function')setupV490RequestSection();
+  if(typeof applyV443LockedTopNav==='function')applyV443LockedTopNav();
+
   schedulePostRenderEnhancements(appRoot);
 }
-
 
 function standardDetailData(kind){
   const rows={
