@@ -7160,14 +7160,21 @@ function openGovernanceUserModal(){
   </form></div>`,'gov-dialog');
   const f=document.querySelector('#gov-user-form');
   if(f)f.onsubmit=async e=>{
-    e.preventDefault();if(ugBusy)return;ugBusy=true;
+    e.preventDefault();if(ugBusy)return;
+    if(!validateLocalizedForm(f))return;
+    ugBusy=true;
+    setFormStatus(f,t('جاري حفظ المستخدم…','Saving user…'),'loading');
+    setFormBusy(f,true,t('جاري الحفظ…','Saving…'));
     const d=Object.fromEntries(new FormData(f));
     for(const mid of Object.keys(ugModuleMeta))delete d[`perm_${mid}`];
     d.permissions=ugPermissionsFromForm(f);
     try{
       await api('/api/admin/governance/users',{method:'POST',headers:{},body:JSON.stringify({...d,actor:adminActor()})});
       await Promise.all([ugReload(),loadAuditDataOnly()]);modal.close();render();toast(t('تمت إضافة المستخدم وحفظ صلاحياته','User and access permissions saved'));
-    }catch(err){toast(err.message||t('تعذر إضافة المستخدم','Unable to add user'))}finally{ugBusy=false}
+    }catch(err){
+      const msg=err.message||t('تعذر إضافة المستخدم','Unable to add user');
+      setFormStatus(f,msg,'error');toast(msg);
+    }finally{ugBusy=false;setFormBusy(f,false)}
   };
 }
 function openGovernanceEditModal(id){
@@ -7192,14 +7199,21 @@ function openGovernanceEditModal(id){
   </div>`,'gov-dialog');
   const f=document.querySelector('#gov-edit-form');
   if(f)f.onsubmit=async e=>{
-    e.preventDefault();if(ugBusy)return;ugBusy=true;
+    e.preventDefault();if(ugBusy)return;
+    if(!validateLocalizedForm(f))return;
+    ugBusy=true;
+    setFormStatus(f,t('جاري حفظ التغييرات…','Saving changes…'),'loading');
+    setFormBusy(f,true,t('جاري الحفظ…','Saving…'));
     const d=Object.fromEntries(new FormData(f));
     for(const mid of Object.keys(ugModuleMeta))delete d[`perm_${mid}`];
     if(!isOwner)d.permissions=ugPermissionsFromForm(f);
     try{
       await api(`/api/admin/governance/users/${encodeURIComponent(u.id)}`,{method:'PATCH',headers:{},body:JSON.stringify({...d,actor:adminActor()})});
       await Promise.all([ugReload(),loadAuditDataOnly()]);modal.close();render();toast(t('تم تحديث المستخدم والصلاحيات','User and access permissions updated'));
-    }catch(err){toast(err.message||t('تعذر تحديث الحساب','Unable to update account'))}finally{ugBusy=false}
+    }catch(err){
+      const msg=err.message||t('تعذر تحديث الحساب','Unable to update account');
+      setFormStatus(f,msg,'error');toast(msg);
+    }finally{ugBusy=false;setFormBusy(f,false)}
   };
   document.querySelector('#gov-delete-user')?.addEventListener('click',()=>ugDeleteUser(u.id));
 }
@@ -7760,9 +7774,10 @@ async function openFinancePaymentModal(orderId){
   const f=document.querySelector('#finance-payment-form');
   if(f)f.onsubmit=async e=>{
     e.preventDefault();
+    if(!validateLocalizedForm(f))return;
     const d=Object.fromEntries(new FormData(f));
-    const btn=f.querySelector('button[type="submit"],.checkout-cta');
-    btn.disabled=true;
+    setFormStatus(f,t('جاري حفظ الدفعة…','Saving payment…'),'loading');
+    setFormBusy(f,true,t('جاري الحفظ…','Saving…'));
     try{
       await api('/api/admin/finance/payments',{
         method:'POST',
@@ -7777,10 +7792,15 @@ async function openFinancePaymentModal(orderId){
         })
       });
       await fetchFinanceData({silent:true});
+      setFormStatus(f,t('تم حفظ الدفعة بنجاح','Payment saved successfully'),'success');
+      setFormBusy(f,false);
       modal.close();render();toast(t('تم تسجيل الدفعة في قاعدة البيانات','Payment saved to the database'));
     }catch(err){
-      btn.disabled=false;
-      toast(err.message||t('تعذر تسجيل الدفعة','Unable to record payment'));
+      const msg=err.message||t('تعذر تسجيل الدفعة','Unable to record payment');
+      setFormStatus(f,msg,'error');
+      setFormBusy(f,false);
+      toast(msg);
+      f.querySelector('[name="amount"]')?.focus();
     }
   };
 }
@@ -7799,9 +7819,10 @@ function openFinanceSettlementModal(){
   const f=document.querySelector('#finance-settlement-form');
   if(f)f.onsubmit=async e=>{
     e.preventDefault();
+    if(!validateLocalizedForm(f))return;
     const d=Object.fromEntries(new FormData(f));
-    const btn=f.querySelector('button[type="submit"],.checkout-cta');
-    btn.disabled=true;
+    setFormStatus(f,t('جاري إنشاء التسوية…','Creating settlement…'),'loading');
+    setFormBusy(f,true,t('جاري الإنشاء…','Creating…'));
     try{
       await api('/api/admin/finance/settlements',{
         method:'POST',
@@ -7815,10 +7836,15 @@ function openFinanceSettlementModal(){
         })
       });
       await fetchFinanceData({silent:true});
+      setFormStatus(f,t('تم إنشاء التسوية بنجاح','Settlement created successfully'),'success');
+      setFormBusy(f,false);
       modal.close();render();toast(t('تم إنشاء التسوية في قاعدة البيانات','Settlement saved to the database'));
     }catch(err){
-      btn.disabled=false;
-      toast(err.message||t('تعذر إنشاء التسوية','Unable to create settlement'));
+      const msg=err.message||t('تعذر إنشاء التسوية','Unable to create settlement');
+      setFormStatus(f,msg,'error');
+      setFormBusy(f,false);
+      toast(msg);
+      f.querySelector('[name="amount"]')?.focus();
     }
   };
 }
@@ -12717,9 +12743,14 @@ function setupV530PortalManagerBindings(){
   if(homeForm)homeForm.onsubmit=async e=>{
     e.preventDefault();
     if(!rbacGuard('portal','manage'))return;
+    if(!validateLocalizedForm(homeForm))return;
     const d=Object.fromEntries(new FormData(homeForm));
     portalManagerState.home={...portalManagerState.home,...d};
-    await portalManagerSyncToServer({silent:false});
+    setFormStatus(homeForm,t('جاري حفظ المحتوى…','Saving content…'),'loading');
+    setFormBusy(homeForm,true,t('جاري الحفظ…','Saving…'));
+    const synced=await portalManagerSyncToServer({silent:false});
+    setFormStatus(homeForm,synced?t('تم حفظ المحتوى بنجاح','Content saved successfully'):t('تم الحفظ محلياً','Saved locally'),synced?'success':'warning');
+    setFormBusy(homeForm,false);
     render();
     toast(t('تم حفظ محتوى الصفحة الرئيسية','Home-page content saved'));
   };
@@ -12737,7 +12768,11 @@ function setupV530PortalManagerBindings(){
         image:String(d.image||'').trim(),
         visible:Boolean(form.querySelector('input[name="visible"]')?.checked)
       };
-      await portalManagerSyncToServer({silent:false});
+      setFormStatus(form,t('جاري تحديث الفئة…','Updating category…'),'loading');
+      setFormBusy(form,true,t('جاري الحفظ…','Saving…'));
+      const synced=await portalManagerSyncToServer({silent:false});
+      setFormStatus(form,synced?t('تم تحديث الفئة بنجاح','Category updated successfully'):t('تم الحفظ محلياً','Saved locally'),synced?'success':'warning');
+      setFormBusy(form,false);
       render();
       toast(t('تم تحديث الفئة','Category updated'));
     };
@@ -12747,6 +12782,7 @@ function setupV530PortalManagerBindings(){
   if(faqForm)faqForm.onsubmit=async e=>{
     e.preventDefault();
     if(!rbacGuard('portal','manage'))return;
+    if(!validateLocalizedForm(faqForm))return;
     const fd=new FormData(faqForm);
     portalManagerState.faqs=(portalManagerState.faqs||[]).map((row,i)=>({
       ...row,
@@ -12755,7 +12791,11 @@ function setupV530PortalManagerBindings(){
       aAr:String(fd.get(`aAr_${i}`)||'').trim(),
       aEn:String(fd.get(`aEn_${i}`)||'').trim()
     }));
-    await portalManagerSyncToServer({silent:false});
+    setFormStatus(faqForm,t('جاري حفظ الأسئلة الشائعة…','Saving FAQ content…'),'loading');
+    setFormBusy(faqForm,true,t('جاري الحفظ…','Saving…'));
+    const synced=await portalManagerSyncToServer({silent:false});
+    setFormStatus(faqForm,synced?t('تم حفظ الأسئلة الشائعة بنجاح','FAQ content saved successfully'):t('تم الحفظ محلياً','Saved locally'),synced?'success':'warning');
+    setFormBusy(faqForm,false);
     render();
     toast(t('تم حفظ الأسئلة الشائعة','FAQ content saved'));
   };
