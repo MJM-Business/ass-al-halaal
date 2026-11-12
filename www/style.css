@@ -32,3 +32,16 @@
     animation:none!important;
   }
 }
+
+
+/* v533 — mobile below-the-fold rendering containment */
+@media(max-width:900px){
+  .app-shell:not(.admin-shell) .categories,
+  .app-shell:not(.admin-shell) .collection,
+  .app-shell:not(.admin-shell) .standards,
+  .app-shell:not(.admin-shell) .request-section,
+  .app-shell:not(.admin-shell) .mini-footer{
+    content-visibility:auto;
+    contain-intrinsic-size:700px;
+  }
+}
