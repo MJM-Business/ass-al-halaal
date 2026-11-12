@@ -152,19 +152,21 @@ test('home image build uses right-sized WebP profiles',async()=>{
 
 test('carousel engines do not duplicate their initial DOMContentLoaded setup',async()=>{
   const app=await readFile('www/app.js','utf8');
-  assert.match(app,/Initial v485 setup is owned by render\(\)\/renderProducts\(\)/);
-  assert.match(app,/Initial v487 setup is owned by render\(\)\/renderProducts\(\)/);
-  assert.match(app,/Initial v527 setup is owned by render\(\)\/renderProducts\(\)/);
-  assert.match(app,/Initial v528 setup is owned by render\(\)\/renderProducts\(\)/);
-  assert.doesNotMatch(app,/installV485ProductSliderCSS\(\);\s*setupV485MostRequestedSlider\(\);/);
-  assert.doesNotMatch(app,/installV527MobileProductCarouselCSS\(\);\s*setupV527MobileProductCarousel\(\);/);
-  assert.doesNotMatch(app,/installV528MobileCarouselCSS\(\);\s*setupV528MobileCarousel\(\);/);
+  assert.match(app,/function setupV485MostRequestedSlider\(\)/);
+  assert.match(app,/function setupV487StableCarousel\(\)/);
+  assert.match(app,/function setupV527MobileProductCarousel\(\)/);
+  assert.match(app,/function setupV528MobileCarousel\(\)/);
+  assert.doesNotMatch(app,/DOMContentLoaded[^\n]{0,240}setupV485MostRequestedSlider/);
+  assert.doesNotMatch(app,/DOMContentLoaded[^\n]{0,240}setupV487StableCarousel/);
+  assert.doesNotMatch(app,/DOMContentLoaded[^\n]{0,240}setupV527MobileProductCarousel/);
+  assert.doesNotMatch(app,/DOMContentLoaded[^\n]{0,240}setupV528MobileCarousel/);
 });
 
 
 test('legacy nav reflow boots are retired from initial load',async()=>{
   const app=await readFile('www/app.js','utf8');
-  assert.match(app,/Initial request-section setup is owned by render\(\)/);
+  assert.match(app,/function setupV490RequestSection\(\)/);
+  assert.doesNotMatch(app,/DOMContentLoaded[^\n]{0,240}setupV490RequestSection/);
   for(const name of [
     'installV444PremiumUtilityBar',
     'installV445CrispUtilityFont',
