@@ -18,6 +18,10 @@ if(fullStyle){
     window.addEventListener('scroll',activateOnIntent,{once:true,passive:true});
     window.addEventListener('pointerdown',activateOnIntent,{once:true,passive:true});
     window.addEventListener('keydown',activateOnIntent,{once:true});
+    window.addEventListener('hashchange',()=>{
+      const next=location.hash.replace('#','')||'home';
+      if(next!=='home')activate();
+    },{once:true});
 
     // Safety fallback for users who leave the home page open without interaction.
     setTimeout(activate,12000);
