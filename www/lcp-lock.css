@@ -1,0 +1,36 @@
+/* Ass Al Halaal — mobile LCP paint lock
+   Loaded after the full stylesheet link so the initial hero cannot be
+   re-animated or re-hidden when the large stylesheet finishes loading. */
+@media (max-width:900px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active,
+  .app-shell:not(.admin-shell) .v94-hero-slider .quality-hero.is-active,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active .hero-copy,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active .hero-copy>*,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active .luxury-hero-title,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active .hero-title-gold,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active p,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active .luxury-feature-row,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active .luxury-hero-actions{
+    opacity:1!important;
+    visibility:visible!important;
+    transform:none!important;
+    transition:none!important;
+    animation:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide:not(.is-active){
+    transition:none!important;
+    animation:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-progress i{
+    animation:none!important;
+    transition:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide .luxury-hero-media img,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active .luxury-hero-media img{
+    transition:none!important;
+    animation:none!important;
+  }
+}
