@@ -266,13 +266,12 @@ test('runtime page template styles are moved to static CSS',async()=>{
 });
 
 
-test('idle home avoids late full stylesheet repaint',async()=>{
+test('full stylesheet participates in the first stable layout',async()=>{
   const loader=await readFile('www/style-loader.js','utf8');
   const app=await readFile('www/app.js','utf8');
   assert.match(loader,/window\.__activateFullStyle=activate/);
-  assert.match(loader,/route!=='home'/);
-  assert.match(loader,/addEventListener\('scroll',activateOnIntent/);
-  assert.match(loader,/addEventListener\('pointerdown',activateOnIntent/);
+  assert.match(loader,/fullStyle\.media='all'/);
+  assert.match(loader,/activate\(\);/);
   assert.doesNotMatch(loader,/setTimeout\(activate,12000\)/);
   assert.match(app,/window\.__activateFullStyle\?\.\(\)/);
 });
