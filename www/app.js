@@ -7501,10 +7501,6 @@ function schedulePostRenderEnhancements(appRoot){
     ()=>applyAccessibilityHardening(appRoot),
     ()=>applyBatch2UxHardening(appRoot),
     ()=>applyV469MobileExperience(),
-    ()=>setupV485MostRequestedSlider(),
-    ()=>{if(typeof setupV487StableCarousel==='function')setupV487StableCarousel()},
-    ()=>{if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel()},
-    ()=>{if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel()},
     ()=>setupHomeProductLazyExpansion(),
     ()=>{
       window.__v496BindFaq?.();
@@ -7528,8 +7524,12 @@ function render(){
   appRoot.innerHTML=shell(content,{admin:v==='admin'});
   bind();
 
-  // Only geometry-critical work stays synchronous so the hero/LCP settles
-  // immediately. Carousel and non-visual enhancement engines run later.
+  // Keep all geometry/layout-affecting setup in the first render so LCP and
+  // CLS settle immediately. Only non-visual scans/enhancements are deferred.
+  setupV485MostRequestedSlider();
+  if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();
+  if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel();
+  if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel();
   if(typeof setupV490RequestSection==='function')setupV490RequestSection();
   if(typeof applyV443LockedTopNav==='function')applyV443LockedTopNav();
 
