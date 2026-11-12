@@ -2485,7 +2485,7 @@ function productCards(limit=Infinity){
     if(hashi){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card hashi-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل السلالة','View breed details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual hashi-final-visual">
-          <img src="assets/hashi-card-final-v344.webp" alt="${safe(t(p.ar,p.en))}" loading="lazy" decoding="async" fetchpriority="low">
+          <img src="${safe(portalProductOverride(p.id).image||'assets/hashi-card-final-v344.webp')}" alt="${safe(t(p.ar,p.en))}" loading="lazy" decoding="async" fetchpriority="low">
         </div>
 
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
@@ -2542,7 +2542,7 @@ function productCards(limit=Infinity){
     if(huwar){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card hashi-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual hashi-final-visual">
-          <img src="assets/huwar-jaml-card-v362.png" alt="${safe(t(p.ar,p.en))}" loading="lazy">
+          <img src="${safe(portalProductOverride(p.id).image||'assets/huwar-jaml-card-v362.png')}" alt="${safe(t(p.ar,p.en))}" loading="lazy">
         </div>
 
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
@@ -2598,7 +2598,7 @@ function productCards(limit=Infinity){
     if(baqar){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card hashi-final-card baqar-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual hashi-final-visual">
-          <img src="assets/baqar-ajl-card-v368.png" alt="${safe(t(p.ar,p.en))}" loading="lazy">
+          <img src="${safe(portalProductOverride(p.id).image||'assets/baqar-ajl-card-v368.png')}" alt="${safe(t(p.ar,p.en))}" loading="lazy">
         </div>
 
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
@@ -2654,7 +2654,7 @@ function productCards(limit=Infinity){
     if(beshi){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card hashi-final-card beshi-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual hashi-final-visual">
-          <img src="assets/beshi-card-v371.png" alt="${safe(t(p.ar,p.en))}" loading="lazy">
+          <img src="${safe(portalProductOverride(p.id).image||'assets/beshi-card-v371.png')}" alt="${safe(t(p.ar,p.en))}" loading="lazy">
         </div>
 
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
@@ -2710,7 +2710,7 @@ function productCards(limit=Infinity){
     if(barbari){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card hashi-final-card barbari-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual hashi-final-visual">
-          <img src="assets/barbari-card-v373.png" alt="${safe(t(p.ar,p.en))}" loading="lazy">
+          <img src="${safe(portalProductOverride(p.id).image||'assets/barbari-card-v373.png')}" alt="${safe(t(p.ar,p.en))}" loading="lazy">
         </div>
 
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
@@ -2766,7 +2766,7 @@ function productCards(limit=Infinity){
     if(rufaidi){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card hashi-final-card rufaidi-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual hashi-final-visual">
-          <img src="assets/rufaidi-card-v375.png" alt="${safe(t(p.ar,p.en))}" loading="lazy">
+          <img src="${safe(portalProductOverride(p.id).image||'assets/rufaidi-card-v375.png')}" alt="${safe(t(p.ar,p.en))}" loading="lazy">
         </div>
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
           <button class="harri-tool-button ${favourites.has(p.id)?'saved':''}" data-fav="${p.id}" type="button" aria-label="${t('المفضلة','Favourite')}">${favourites.has(p.id)?'♥':'♡'}</button>
@@ -2790,7 +2790,7 @@ function productCards(limit=Infinity){
     if(teeth){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card hashi-final-card teeth-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual hashi-final-visual">
-          <img src="assets/teeth-card-v382.png" alt="${safe(t(p.ar,p.en))}" loading="lazy">
+          <img src="${safe(portalProductOverride(p.id).image||'assets/teeth-card-v382.png')}" alt="${safe(t(p.ar,p.en))}" loading="lazy">
         </div>
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
           <button class="harri-tool-button ${favourites.has(p.id)?'saved':''}" data-fav="${p.id}" type="button" aria-label="${t('المفضلة','Favourite')}">${favourites.has(p.id)?'♥':'♡'}</button>
@@ -2814,7 +2814,7 @@ function productCards(limit=Infinity){
     if(najdiBreed){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card hashi-final-card najdi-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual hashi-final-visual">
-          <img src="assets/najdi-card-v383.png" alt="${safe(t(p.ar,p.en))}" loading="lazy">
+          <img src="${safe(portalProductOverride(p.id).image||'assets/najdi-card-v383.png')}" alt="${safe(t(p.ar,p.en))}" loading="lazy">
         </div>
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
           <button class="harri-tool-button ${favourites.has(p.id)?'saved':''}" data-fav="${p.id}" type="button" aria-label="${t('المفضلة','Favourite')}">${favourites.has(p.id)?'♥':'♡'}</button>
@@ -2839,7 +2839,7 @@ function productCards(limit=Infinity){
     if(sawakni){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card hashi-final-card sawakni-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual hashi-final-visual">
-          <img src="assets/sawakni-card-v384.png" alt="${safe(t(p.ar,p.en))}" loading="lazy">
+          <img src="${safe(portalProductOverride(p.id).image||'assets/sawakni-card-v384.png')}" alt="${safe(t(p.ar,p.en))}" loading="lazy">
         </div>
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
           <button class="harri-tool-button ${favourites.has(p.id)?'saved':''}" data-fav="${p.id}" type="button" aria-label="${t('المفضلة','Favourite')}">${favourites.has(p.id)?'♥':'♡'}</button>
@@ -2863,7 +2863,7 @@ function productCards(limit=Infinity){
     if(naimiBreed){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card hashi-final-card naimi-breed-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual hashi-final-visual">
-          <img src="assets/naimi-card-v385.png" alt="${safe(t(p.ar,p.en))}" loading="lazy">
+          <img src="${safe(portalProductOverride(p.id).image||'assets/naimi-card-v385.png')}" alt="${safe(t(p.ar,p.en))}" loading="lazy">
         </div>
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
           <button class="harri-tool-button ${favourites.has(p.id)?'saved':''}" data-fav="${p.id}" type="button" aria-label="${t('المفضلة','Favourite')}">${favourites.has(p.id)?'♥':'♡'}</button>
@@ -2887,7 +2887,7 @@ function productCards(limit=Infinity){
     if(harriBreed){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card hashi-final-card harri-breed-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual hashi-final-visual">
-          <img src="assets/harri-card-v386.png" alt="${safe(t(p.ar,p.en))}" loading="lazy">
+          <img src="${safe(portalProductOverride(p.id).image||'assets/harri-card-v386.png')}" alt="${safe(t(p.ar,p.en))}" loading="lazy">
         </div>
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
           <button class="harri-tool-button ${favourites.has(p.id)?'saved':''}" data-fav="${p.id}" type="button" aria-label="${t('المفضلة','Favourite')}">${favourites.has(p.id)?'♥':'♡'}</button>
@@ -2911,7 +2911,7 @@ function productCards(limit=Infinity){
     if(harri){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual">
-          <img src="assets/harri-card-final-v320.webp" alt="${safe(t(p.ar,p.en))}" loading="lazy">
+          <img src="${safe(portalProductOverride(p.id).image||'assets/harri-card-final-v320.webp')}" alt="${safe(t(p.ar,p.en))}" loading="lazy">
         </div>
 
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
@@ -2967,7 +2967,7 @@ function productCards(limit=Infinity){
     if(ardi){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card ardi-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual ardi-final-visual">
-          <img src="assets/ardi-card-final-v327.webp" alt="${safe(t(p.ar,p.en))}" loading="lazy">
+          <img src="${safe(portalProductOverride(p.id).image||'assets/ardi-card-final-v327.webp')}" alt="${safe(t(p.ar,p.en))}" loading="lazy">
         </div>
 
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
@@ -3024,7 +3024,7 @@ function productCards(limit=Infinity){
     if(naimi){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card naimi-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual naimi-final-visual">
-          <img src="assets/naimi-card-final-v328.webp" alt="${safe(t(p.ar,p.en))}" loading="lazy">
+          <img src="${safe(portalProductOverride(p.id).image||'assets/naimi-card-final-v328.webp')}" alt="${safe(t(p.ar,p.en))}" loading="lazy">
         </div>
 
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
@@ -3082,7 +3082,7 @@ function productCards(limit=Infinity){
     if(family){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card family-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual family-final-visual">
-          <img src="assets/family-card-final-v329.webp" alt="${safe(t(p.ar,p.en))}" loading="lazy">
+          <img src="${safe(portalProductOverride(p.id).image||'assets/family-card-final-v329.webp')}" alt="${safe(t(p.ar,p.en))}" loading="lazy">
         </div>
 
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
@@ -3138,7 +3138,7 @@ function productCards(limit=Infinity){
     if(grill){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card grill-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual grill-final-visual">
-          <img src="assets/grill-card-final-v330.webp" alt="${safe(t(p.ar,p.en))}" loading="lazy">
+          <img src="${safe(portalProductOverride(p.id).image||'assets/grill-card-final-v330.webp')}" alt="${safe(t(p.ar,p.en))}" loading="lazy">
         </div>
 
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
@@ -3195,7 +3195,7 @@ function productCards(limit=Infinity){
     if(everyday){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card everyday-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual everyday-final-visual">
-          <img src="assets/everyday-card-final-v331.webp" alt="${safe(t(p.ar,p.en))}" loading="lazy">
+          <img src="${safe(portalProductOverride(p.id).image||'assets/everyday-card-final-v331.webp')}" alt="${safe(t(p.ar,p.en))}" loading="lazy">
         </div>
 
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
