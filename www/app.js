@@ -35,12 +35,6 @@ let financeMethodLabelCore,financeStatusLabelCore,renderAdminFinanceContent;
 let whatsappSettingsStatusFor,buildWhatsAppRows,maskedPhoneDisplay,buildWaConversationMessages,renderAdminWhatsAppContent;
 let marketingProductForCampaignCore,marketingMetricsCore,marketingGenerateCopyCore,renderAdminMarketingContent;
 let adminRendererModulesPromise=null;
-let homeDeferredModulePromise=null;
-function ensureHomeDeferredModule(){
-  if(!homeDeferredModulePromise)homeDeferredModulePromise=import('./modules/home-deferred.js');
-  return homeDeferredModulePromise;
-}
-
 
 async function ensureAdminRendererModules(){
   if(adminRendererModulesPromise)return adminRendererModulesPromise;
@@ -612,107 +606,6 @@ function applyAccessibilityHardening(root=document){
     });
   });
 }
-function applyCriticalMediaPriority(root=document){
-  const scope=root&&root.querySelector?root:document;
-  const priority=scope.querySelector('.ref-customer-header img,.mobile-reference-header img,.v94-hero-slider img,.quality-hero img,.simple-auth-logo-wrap img');
-  if(!priority)return;
-  priority.setAttribute('loading','eager');
-  priority.setAttribute('fetchpriority','high');
-  priority.setAttribute('decoding','sync');
-  priority.dataset.criticalPriority='1';
-}
-
-function scheduleAccessibilityHardening(root=document){
-  const scope=root&&root.querySelectorAll?root:document;
-  const groups=[
-    [...scope.querySelectorAll('img')],
-    [...scope.querySelectorAll('input:not([type="hidden"]),select,textarea')],
-    [...scope.querySelectorAll('button,a,[role="button"]')],
-    [...scope.querySelectorAll('[role="button"]')]
-  ];
-  let group=0,index=0;
-  let priorityAssigned=Boolean(scope.querySelector('img[data-critical-priority="1"]'));
-
-  const accessibleNameFallback=el=>{
-    const id=String(el.id||'').toLowerCase();
-    const dataNav=String(el.dataset?.nav||'').toLowerCase();
-    const key=id||dataNav||String(el.className||'').toLowerCase();
-    if(key.includes('search'))return t('بحث','Search');
-    if(key.includes('bell')||key.includes('notif'))return t('التنبيهات','Notifications');
-    if(key.includes('cart')||key.includes('bag'))return t('السلة','Cart');
-    if(key.includes('language')||key.includes('lang'))return t('لغة التطبيق','App language');
-    if(key.includes('account'))return t('حسابي','Account');
-    if(key.includes('order'))return t('تتبع الطلب','Track order');
-    if(key.includes('home'))return t('الرئيسية','Home');
-    if(key.includes('close'))return t('إغلاق','Close');
-    return '';
-  };
-
-  const handle=(el,g)=>{
-    if(g===0){
-      if(!el.hasAttribute('alt'))el.setAttribute('alt','');
-      if(el.dataset.criticalPriority==='1')return;
-      const aboveFold=Boolean(el.closest('.ref-customer-header,.mobile-reference-header,.v94-hero-slider,.quality-hero,.simple-auth-logo-wrap'));
-      if(aboveFold&&!priorityAssigned){
-        el.setAttribute('loading','eager');
-        el.setAttribute('fetchpriority','high');
-        el.setAttribute('decoding','sync');
-        priorityAssigned=true;
-      }else{
-        if(!el.hasAttribute('loading'))el.setAttribute('loading','lazy');
-        if(!el.hasAttribute('decoding'))el.setAttribute('decoding','async');
-        if(!el.hasAttribute('fetchpriority'))el.setAttribute('fetchpriority','low');
-      }
-      return;
-    }
-    if(g===1){
-      if(el.hasAttribute('aria-label')||el.hasAttribute('aria-labelledby')||el.closest('label'))return;
-      const fallback=el.getAttribute('placeholder')||el.getAttribute('name')||el.id||'Form field';
-      el.setAttribute('aria-label',fallback);
-      return;
-    }
-    if(g===2){
-      const hasName=Boolean(
-        el.getAttribute('aria-label')?.trim()||
-        el.getAttribute('aria-labelledby')?.trim()||
-        el.getAttribute('title')?.trim()||
-        el.textContent?.trim()||
-        el.querySelector('img[alt]:not([alt=""])')
-      );
-      if(!hasName){
-        const fallback=accessibleNameFallback(el);
-        if(fallback)el.setAttribute('aria-label',fallback);
-      }
-      return;
-    }
-    if(!el.hasAttribute('tabindex'))el.setAttribute('tabindex','0');
-    if(el.dataset.a11yKeyBound==='1')return;
-    el.dataset.a11yKeyBound='1';
-    el.addEventListener('keydown',event=>{
-      if(event.key!=='Enter'&&event.key!==' ')return;
-      event.preventDefault();
-      el.click();
-    });
-  };
-
-  const runChunk=()=>{
-    const started=performance.now();
-    while(group<groups.length){
-      const list=groups[group];
-      while(index<list.length){
-        handle(list[index++],group);
-        if(performance.now()-started>=6){
-          setTimeout(runChunk,0);
-          return;
-        }
-      }
-      group++;
-      index=0;
-    }
-  };
-  setTimeout(runChunk,0);
-}
-
 function open(html,klass=''){opener=document.activeElement;modal.className=klass;modal.innerHTML=`<button class="close" type="button" aria-label="${t('إغلاق','Close')}">×</button>${html}`;applyAccessibilityHardening(modal);modal.showModal();modal.querySelector('.close').onclick=()=>modal.close();setTimeout(applyRbacUi,0)}
 modal.addEventListener('close',()=>opener?.focus());
 function openLanguagePicker(){
@@ -1732,7 +1625,66 @@ function homePage(){
 
 
 <section class="categories ref-categories">
-  
+  <style>
+    .ref-categories .category-row{
+      display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;
+      align-items:stretch!important;gap:14px!important;margin-top:16px!important
+    }
+    .ref-categories .livestock-type-card{
+      width:100%!important;min-width:0!important;height:auto!important;padding:0!important;
+      border:0!important;border-radius:22px!important;overflow:visible!important;
+      background:transparent!important;box-shadow:none!important;
+      transition:transform .2s ease,filter .2s ease!important;position:relative!important
+    }
+    .ref-categories .livestock-type-card::before,
+    .ref-categories .livestock-type-card::after{display:none!important}
+    .ref-categories .livestock-type-card:hover{
+      transform:translateY(-5px)!important;filter:drop-shadow(0 12px 14px rgba(8,58,43,.18))!important
+    }
+    .ref-categories .livestock-type-card .category-photo{
+      display:block!important;width:100%!important;height:auto!important;aspect-ratio:auto!important;
+      margin:0!important;border:0!important;border-radius:22px!important;overflow:hidden!important;
+      background:transparent!important;box-shadow:none!important;position:relative!important
+    }
+    .ref-categories .livestock-type-card .category-photo::before{display:none!important}
+    .ref-categories .livestock-type-card .category-photo img{
+      width:100%!important;height:auto!important;object-fit:contain!important;object-position:center!important;
+      display:block!important;visibility:visible!important;opacity:1!important;filter:none!important;border-radius:22px!important
+    }
+    .ref-categories .livestock-type-card .category-photo i{display:none!important}
+    /* v398: keep the actual image span visible. In v397, >span:last-child also
+       matched .category-photo because it was the button's only span. */
+    .ref-categories .livestock-type-card > .category-photo{
+      display:block!important;padding:0!important;margin:0!important;line-height:0!important;
+    }
+    /* v409: keep category artwork text-free; language-aware name is a real coded button below the image. */
+    .ref-categories .livestock-type-card{
+      display:flex!important;flex-direction:column!important;align-items:center!important;gap:10px!important
+    }
+    .ref-categories .livestock-type-card .category-image-button{
+      width:100%!important;padding:0!important;margin:0!important;border:0!important;background:transparent!important;
+      border-radius:22px!important;cursor:pointer!important;display:block!important;line-height:0!important
+    }
+    .ref-categories .livestock-type-card .category-name-button{
+      width:84%!important;min-height:44px!important;margin:0 auto!important;padding:8px 18px!important;
+      border:2px solid #d9b64a!important;border-radius:999px!important;box-sizing:border-box!important;
+      background:linear-gradient(180deg,#0d654a 0%,#004632 100%)!important;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 5px 12px rgba(0,50,36,.18)!important;
+      color:#f4cd64!important;font-size:clamp(17px,1.8vw,25px)!important;font-weight:900!important;line-height:1.1!important;
+      text-align:center!important;letter-spacing:0!important;white-space:nowrap!important;cursor:pointer!important;
+      font-family:inherit!important;transition:transform .18s ease,box-shadow .18s ease!important
+    }
+    .ref-categories .livestock-type-card .category-name-button:hover{
+      transform:translateY(-2px)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 8px 16px rgba(0,50,36,.22)!important
+    }
+    @media(max-width:900px){
+      .ref-categories .category-row{
+        display:flex!important;gap:12px!important;overflow-x:auto!important;padding:4px 2px 12px!important;
+        scroll-snap-type:x mandatory!important
+      }
+      .ref-categories .livestock-type-card{width:220px!important;min-width:220px!important;scroll-snap-align:start!important}
+    }
+  </style>
   <div class="section-row"><div><h2>${t('أنواع الحلالات والذبائح','Livestock & meat categories')}</h2><p>${t('اختيارات سريعة من الأكثر طلباً','Quick access to our most popular selections')}</p></div><button id="view-all">${t('عرض الكل','View all')} →</button></div>
   <div class="category-row">
     ${portalCategoryRows().map(([id,img,ar,en])=>`<article class="category ref-category livestock-type-card" aria-label="${safe(t(ar,en))}">
@@ -1746,10 +1698,405 @@ function homePage(){
 
 <section id="collection" class="collection ref-collection">
   <div class="section-row most-requested-heading"><div><h2>${t(portalManagerState.home.mostRequestedAr,portalManagerState.home.mostRequestedEn)}</h2></div></div>
-  <div id="products" class="product-list ref-products">${productCards(homeProductsExpanded?Infinity:1)}</div>
+  <div id="products" class="product-list ref-products">${productCards(homeProductsExpanded?Infinity:4)}</div>
 </section>
 
-<div id="home-deferred-root" class="home-deferred-root" data-home-deferred aria-live="off"></div>
+<section id="request-fit" class="v490-request-section" aria-labelledby="v490-request-title">
+  <div class="v490-request-layout">
+    <div class="v490-request-main">
+      <div class="v490-request-heading">
+        <span>${t('اختيار مناسب لاحتياجك','PERSONALISED CHOICE')}</span>
+        <h2 id="v490-request-title">${t('ما الذي يناسب طلبك؟','What Suits Your Request?')}</h2>
+        <p>${t('اختر طريقة الاستخدام وسنساعدك على الوصول إلى الاختيار الأنسب.','Choose how you plan to use your order and we will guide you to a suitable option.')}</p>
+      </div>
+
+      <div class="v490-request-cards">
+        <article class="v490-request-card" data-v490-request="camping">
+          <div class="v490-request-art v490-art-camping" aria-hidden="true">
+            <svg viewBox="0 0 320 220">
+              <defs>
+                <linearGradient id="campSky" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#fbf1d8"/>
+                  <stop offset="1" stop-color="#f4e5bf"/>
+                </linearGradient>
+              </defs>
+              <rect width="320" height="220" rx="22" fill="url(#campSky)"/>
+              <circle cx="253" cy="49" r="25" fill="#e7bd55" opacity=".45"/>
+              <path d="M40 173 115 90l69 83Z" fill="#0b654f" opacity=".16"/>
+              <path d="M174 173 231 112l52 61Z" fill="#0b654f" opacity=".10"/>
+              <path d="M73 178 144 65l70 113Z" fill="#fff8e9" stroke="#d6ab43" stroke-width="4"/>
+              <path d="M144 65v113" stroke="#0a5946" stroke-width="4"/>
+              <path d="M144 65 95 178h49Z" fill="#0a5946" opacity=".92"/>
+              <rect x="47" y="124" width="28" height="47" rx="8" fill="#f7d878" stroke="#9b731d" stroke-width="3"/>
+              <path d="M51 131h20M51 158h20" stroke="#9b731d" stroke-width="3"/>
+              <path d="M61 112v15M52 118h18" stroke="#9b731d" stroke-width="3"/>
+              <path d="M236 125c15-5 27 8 27 23v27h-54v-27c0-15 12-28 27-23Z" fill="#0a5946" opacity=".92"/>
+              <path d="M229 129c0-15 14-25 14-25s13 10 13 25" fill="none" stroke="#d8ad43" stroke-width="4"/>
+              <path d="M29 182h261" stroke="#ddc99a" stroke-width="3"/>
+            </svg>
+          </div>
+          <div class="v490-card-copy">
+            <h3>${t('الرحلات والتخييم','Camping')}</h3>
+            <p>${t('اختيار عملي للرحلات والطبخ الخارجي','Practical choices for outdoor cooking and trips')}</p>
+          </div>
+          <button type="button" class="v490-card-arrow" aria-label="${safe(t('عرض خيارات التخييم','View camping options'))}">→</button>
+        </article>
+
+        <article class="v490-request-card" data-v490-request="gathering">
+          <div class="v490-request-art v490-art-gathering" aria-hidden="true">
+            <svg viewBox="0 0 320 220">
+              <rect width="320" height="220" rx="22" fill="#fbf3df"/>
+              <path d="M39 172c45-62 88-96 132-103 35-6 69 7 110 53v50Z" fill="#0b654f" opacity=".08"/>
+              <path d="M64 54c18 25 22 48 14 70M91 44c5 28 3 52-7 73M241 51c-18 28-24 52-17 77" fill="none" stroke="#d7b34f" stroke-width="4" stroke-linecap="round" opacity=".65"/>
+              <path d="M78 57c15-3 28 0 39 10M236 56c-15-3-27 1-39 11" fill="none" stroke="#0a5946" stroke-width="5" stroke-linecap="round" opacity=".35"/>
+              <ellipse cx="158" cy="161" rx="91" ry="17" fill="#e8d3a0"/>
+              <path d="M104 152c8-45 31-69 54-69s47 24 55 69Z" fill="#f7df9a" stroke="#b78722" stroke-width="4"/>
+              <path d="M114 142h88" stroke="#b78722" stroke-width="4"/>
+              <path d="M127 115c15 12 48 12 63 0" fill="none" stroke="#0a5946" stroke-width="5" stroke-linecap="round"/>
+              <path d="M140 88c0-11 8-18 18-18s18 7 18 18" fill="none" stroke="#b78722" stroke-width="4"/>
+              <circle cx="99" cy="167" r="15" fill="#0a5946" opacity=".78"/>
+              <circle cx="218" cy="167" r="15" fill="#0a5946" opacity=".78"/>
+              <path d="M88 167h22M207 167h22" stroke="#f8dd84" stroke-width="3"/>
+            </svg>
+          </div>
+          <div class="v490-card-copy">
+            <h3>${t('التجمعات والمناسبات','Gatherings & Celebrations')}</h3>
+            <p>${t('خيارات مناسبة للعائلة والضيوف','Suitable selections for family and guests')}</p>
+          </div>
+          <button type="button" class="v490-card-arrow" aria-label="${safe(t('عرض خيارات المناسبات','View gathering options'))}">→</button>
+        </article>
+
+        <article class="v490-request-card" data-v490-request="household">
+          <div class="v490-request-art v490-art-household" aria-hidden="true">
+            <svg viewBox="0 0 320 220">
+              <rect width="320" height="220" rx="22" fill="#fbf2dc"/>
+              <circle cx="251" cy="48" r="26" fill="#e6bd56" opacity=".28"/>
+              <path d="M53 169h216" stroke="#d6c599" stroke-width="3"/>
+              <path d="M93 106 115 61M214 110l25-48M116 64c-19-18-42-13-47 5 19 9 34 7 47-5ZM236 64c18-17 39-12 45 6-18 8-33 6-45-6Z" fill="#0b654f" opacity=".22"/>
+              <path d="M79 115h165l-17 65H96Z" fill="#f6e2ad" stroke="#b88927" stroke-width="4"/>
+              <path d="M111 115c3-33 21-53 48-53s45 20 49 53" fill="none" stroke="#0a5946" stroke-width="6" stroke-linecap="round"/>
+              <path d="M98 133h128M103 151h118" stroke="#c39631" stroke-width="3"/>
+              <path d="M123 118v62M157 118v62M191 118v62" stroke="#c39631" stroke-width="3" opacity=".75"/>
+              <rect x="181" y="124" width="54" height="33" rx="5" fill="#0a5946" opacity=".86"/>
+              <path d="M190 136h35M190 145h23" stroke="#f5d674" stroke-width="3"/>
+            </svg>
+          </div>
+          <div class="v490-card-copy">
+            <h3>${t('احتياجات المنزل','Household Supplies')}</h3>
+            <p>${t('لوجباتك اليومية وتخزين أسهل','For everyday meals and easier storage')}</p>
+          </div>
+          <button type="button" class="v490-card-arrow" aria-label="${safe(t('عرض خيارات المنزل','View household options'))}">→</button>
+        </article>
+      </div>
+    </div>
+
+    <aside class="v490-advisor-card">
+      <div class="v490-advisor-head">
+        <span>${t('مساعد الاختيار','SELECTION ADVISOR')}</span>
+        <h3>${t('مستشار عاس الحلال','Ass Al Halaal Advisor')}</h3>
+        <p>${t('اختيارك يصبح أسهل مع توصية سريعة حسب احتياجك.','Your choice becomes easier with a quick recommendation based on your needs.')}</p>
+      </div>
+
+      <div class="v490-advisor-art" aria-hidden="true">
+        <svg viewBox="0 0 320 230">
+          <rect width="320" height="230" rx="24" fill="#f7edd5"/>
+          <path d="M77 174c15-56 49-88 99-95 37-5 67 6 93 34v61Z" fill="#0b654f" opacity=".07"/>
+          <path d="M75 79c15 24 20 46 14 69M244 78c-16 24-21 45-16 68" fill="none" stroke="#d2ae52" stroke-width="4" stroke-linecap="round" opacity=".5"/>
+          <rect x="86" y="55" width="104" height="127" rx="11" transform="rotate(-8 86 55)" fill="#fff9ea" stroke="#d9c797" stroke-width="3"/>
+          <rect x="153" y="68" width="95" height="128" rx="11" transform="rotate(8 153 68)" fill="#fff6e0" stroke="#d9c797" stroke-width="3"/>
+          <circle cx="116" cy="90" r="24" fill="#0a654f"/>
+          <path d="m104 90 9 9 17-24" fill="none" stroke="#f4c956" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="184" cy="109" r="8" fill="#d9c797"/>
+          <circle cx="184" cy="136" r="8" fill="#d9c797"/>
+          <path d="M202 109h28M202 136h22M105 139h53M105 155h43" stroke="#c6ad6b" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <button type="button" class="v490-advisor-button" data-v490-advisor>
+        <span aria-hidden="true">←</span>
+        ${t('ابدأ مع المستشار','Start with the advisor')}
+      </button>
+    </aside>
+  </div>
+</section>
+
+<section class="standards ref-standards premium-safety-standards">
+  <div class="standards-title">
+    <span class="standards-title-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 2.8 14.2 7l4.6 2.1-4.6 2.1L12 15.4l-2.2-4.2-4.6-2.1L9.8 7 12 2.8Z" fill="currentColor"/>
+        <path d="m17.1 14.2 1.1 2.1 2.2 1-2.2 1-1.1 2.1-1.1-2.1-2.2-1 2.2-1 1.1-2.1Z" fill="currentColor" opacity=".72"/>
+      </svg>
+    </span>
+    <div>
+      <small class="standards-eyebrow">${t('ضمان الجودة','QUALITY ASSURANCE')}</small>
+      <h2>${t('معايير الذبح والسلامة المعتمدة','Certified slaughter & safety standards')}</h2>
+      <p>${t('جودة موثوقة من المصدر حتى التسليم','Trusted quality from farm to delivery')}</p>
+    </div>
+    <span class="standards-certified-pill">${t('معتمد','Certified')}</span>
+  </div>
+
+  <div class="standards-grid">
+    <article class="standard-card standard-green" data-standard-detail="facility" role="button" tabindex="0" aria-label="${t('تفاصيل المسلخ المعتمد','Approved slaughterhouse details')}">
+      <span class="standard-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M5.5 5.5h13v13h-13z" fill="none" stroke="currentColor" stroke-width="1.7" rx="1"/>
+          <path d="M9 9h6v6H9z" fill="currentColor" opacity=".2"/>
+          <path d="m9.5 12 1.7 1.7 3.6-3.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      <div class="standard-copy">
+        <small class="standard-kicker">${t('اعتماد وتشغيل','APPROVED FACILITY')}</small>
+        <b>${t('مسلخ معتمد','Approved slaughterhouse')}</b>
+        <small>${t('رقابة بيطرية وتوثيق إجراءات السلامة','Veterinary supervision & documented safety')}</small>
+      </div>
+      <span class="standard-verified">✓ ${t('موثق','Verified')}</span><span class="standard-card-arrow" aria-hidden="true">→</span>
+    </article>
+
+    <article class="standard-card standard-blue" data-standard-detail="cold" role="button" tabindex="0" aria-label="${t('تفاصيل سلسلة التبريد','Cold chain details')}">
+      <span class="standard-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 4v16M5.1 8l13.8 8M18.9 8 5.1 16" stroke="currentColor" stroke-width="1.65" stroke-linecap="round"/>
+          <circle cx="12" cy="12" r="2.4" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+      </span>
+      <div class="standard-copy">
+        <small class="standard-kicker">${t('سلسلة تبريد','COLD CHAIN')}</small>
+        <b>${t('تبريد مستمر 4°C','Continuous 4°C chilling')}</b>
+        <small>${t('درجة حرارة مضبوطة حتى التسليم','Controlled temperature until delivery')}</small>
+      </div>
+      <span class="standard-verified">✓ ${t('مراقب','Monitored')}</span><span class="standard-card-arrow" aria-hidden="true">→</span>
+    </article>
+
+    <article class="standard-card standard-gold" data-standard-detail="pack" role="button" tabindex="0" aria-label="${t('تفاصيل التغليف','Packaging details')}">
+      <span class="standard-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="m12 4 6 3.2v9.6L12 20l-6-3.2V7.2L12 4Z" fill="none" stroke="currentColor" stroke-width="1.65"/>
+          <path d="m6 7.2 6 3.2 6-3.2M12 10.4V20" fill="none" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+      </span>
+      <div class="standard-copy">
+        <small class="standard-kicker">${t('حماية المنتج','SAFE PACKAGING')}</small>
+        <b>${t('تغليف احترافي','Professional packaging')}</b>
+        <small>${t('تغليف نظيف ومحكم وآمن للنقل','Clean, sealed & protected for transport')}</small>
+      </div>
+      <span class="standard-verified">✓ ${t('آمن','Protected')}</span><span class="standard-card-arrow" aria-hidden="true">→</span>
+    </article>
+
+    <article class="standard-card standard-purple" data-standard-detail="cut" role="button" tabindex="0" aria-label="${t('تفاصيل التجهيز والتقطيع','Preparation details')}">
+      <span class="standard-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <circle cx="7.2" cy="7.3" r="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+          <circle cx="7.2" cy="16.7" r="2.2" fill="none" stroke="currentColor" stroke-width="1.6"/>
+          <path d="m9 8.5 9 5.7M9 15.5l9-5.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <div class="standard-copy">
+        <small class="standard-kicker">${t('تجهيز حسب الطلب','CUSTOM PREPARATION')}</small>
+        <b>${t('تقطيع حسب رغبتك','Cut your way')}</b>
+        <small>${t('خيارات متعددة للتقطيع والتجهيز','Multiple cutting & preparation choices')}</small>
+      </div>
+      <span class="standard-verified">✓ ${t('مرن','Flexible')}</span><span class="standard-card-arrow" aria-hidden="true">→</span>
+    </article>
+  </div>
+</section>
+
+
+<section class="v500-proof-section" aria-labelledby="v500-proof-title">
+  <div class="v500-section-heading">
+    <small>${t('تجربة موثوقة','TRUSTED EXPERIENCE')}</small>
+    <h2 id="v500-proof-title">${t('لماذا يختار العملاء عاس الحلال؟','Why customers choose Ass Al Halaal')}</h2>
+    <span class="v500-heading-rule" aria-hidden="true"><i></i><b></b><i></i></span>
+  </div>
+  <div class="v500-proof-grid">
+    <article>
+      <span>✓</span>
+      <div><b>${t('اختيار وتجهيز موثق','Verified selection & preparation')}</b><p>${t('اختيارات واضحة وتجهيز منظم قبل التسليم.','Clear selections and organised preparation before delivery.')}</p></div>
+    </article>
+    <article>
+      <span>❄</span>
+      <div><b>${t('توصيل مبرد داخل جدة','Chilled delivery across Jeddah')}</b><p>${t('الحفاظ على سلسلة التبريد حتى وصول الطلب.','Cold-chain handling maintained until your order arrives.')}</p></div>
+    </article>
+    <article>
+      <span>⌖</span>
+      <div><b>${t('تجربة طلب واحدة','One connected ordering experience')}</b><p>${t('الاختيار والسلة والحساب وتتبع الطلب من نفس المنصة.','Selection, cart, account and order tracking from the same platform.')}</p></div>
+    </article>
+  </div>
+</section>
+
+<section class="v500-guide-section" aria-labelledby="v500-guide-title">
+  <div class="v500-section-heading">
+    <small>${t('دليل الاختيار','BUYING GUIDE')}</small>
+    <h2 id="v500-guide-title">${t('دليلك لاختيار الذبائح واللحوم','Your guide to choosing livestock & meat')}</h2>
+    <p>${t('تعرّف على طريقة الاختيار والتجهيز والتوصيل قبل تأكيد طلبك.','Understand selection, preparation and delivery before confirming your order.')}</p>
+    <span class="v500-heading-rule" aria-hidden="true"><i></i><b></b><i></i></span>
+  </div>
+  <div class="v500-guide-copy">
+    <p>${t(
+      'عاس الحلال منصة سعودية للذبائح واللحوم الطازجة داخل جدة. يمكنك اختيار نوع الحلال، مراجعة تفاصيل المنتج، تحديد الكمية وخيارات التجهيز المتاحة، ثم إضافة اختيارك إلى السلة ومتابعة الطلب من حسابك.',
+      'Ass Al Halaal is a Saudi platform for livestock and fresh meat in Jeddah. Choose your livestock type, review product details, select the available quantity and preparation options, add your choice to cart, and track the order from your account.'
+    )}</p>
+  </div>
+</section>
+
+<section class="v500-faq-section" aria-labelledby="v500-faq-title">
+  <div class="v500-section-heading">
+    <small>${t('معلومات سريعة','HELP & FAQ')}</small>
+    <h2 id="v500-faq-title">${t(portalManagerState.home.faqTitleAr,portalManagerState.home.faqTitleEn)}</h2>
+    <span class="v500-heading-rule" aria-hidden="true"><i></i><b></b><i></i></span>
+  </div>
+  <div class="v500-faq-grid">
+    ${portalFaqRows().map(row=>`<details><summary>${safe(t(row.qAr,row.qEn))}</summary><p>${safe(t(row.aAr,row.aEn))}</p></details>`).join('')}
+  </div>
+</section>
+
+<footer class="customer-mega-footer" aria-label="${t('معلومات عاس الحلال','Ass Al Halaal information')}">
+  <div class="customer-mega-footer-inner">
+
+    <section class="mega-footer-brand">
+      <div class="mega-footer-brand-head">
+        <img src="assets/ass-al-halaal-logo-colored.png" alt="Ass Al Halaal">
+        <div>
+          <small>${t('عاس الحلال','ASS AL HALAAL')}</small>
+          <h3>${t('مؤسسة عاس الحلال','Ass Al Halaal Establishment')}</h3>
+        </div>
+      </div>
+
+      <p>${t(
+        'متجر سعودي للذبائح واللحوم الطازجة، مع خيارات تجهيز وتقطيع وتغليف مبرد داخل جدة.',
+        'Saudi livestock and fresh-meat store with preparation, cutting, packing and chilled delivery across Jeddah.'
+      )}</p>
+
+      <div class="mega-footer-social" aria-label="${t('قنوات التواصل الاجتماعي','Social channels')}">
+        <button class="social-brand instagram" type="button" aria-disabled="true" aria-label="Instagram" title="${t('إنستغرام · قريباً','Instagram · Coming soon')}">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <defs>
+              <linearGradient id="igGradientV143" x1="2" y1="22" x2="22" y2="2">
+                <stop offset="0%" stop-color="#FFD600"/>
+                <stop offset="28%" stop-color="#FF7A00"/>
+                <stop offset="52%" stop-color="#FF0169"/>
+                <stop offset="78%" stop-color="#D300C5"/>
+                <stop offset="100%" stop-color="#7638FA"/>
+              </linearGradient>
+            </defs>
+            <rect x="3.2" y="3.2" width="17.6" height="17.6" rx="5.3" fill="none" stroke="url(#igGradientV143)" stroke-width="2.2"/>
+            <circle cx="12" cy="12" r="4.1" fill="none" stroke="url(#igGradientV143)" stroke-width="2.2"/>
+            <circle cx="17.45" cy="6.75" r="1.25" fill="url(#igGradientV143)"/>
+          </svg>
+        </button>
+
+        <button class="social-brand tiktok" type="button" aria-disabled="true" aria-label="TikTok" title="${t('تيك توك · قريباً','TikTok · Coming soon')}">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path class="tt-cyan" d="M14.3 3.4v10.15a4.05 4.05 0 1 1-3.35-3.99v2.38a1.82 1.82 0 1 0 1.14 1.69V3.4h2.21Z"/>
+            <path class="tt-red" d="M15.35 3.4c.4 2.02 1.62 3.31 3.65 3.88v2.24c-1.43-.15-2.7-.69-3.65-1.53V3.4Z"/>
+            <path class="tt-main" d="M14.85 2.9v10.15a4.05 4.05 0 1 1-3.35-3.99v2.38a1.82 1.82 0 1 0 1.14 1.69V2.9h2.21Zm0 0c.4 2.02 1.62 3.31 3.65 3.88v2.24c-1.43-.15-2.7-.69-3.65-1.53"/>
+          </svg>
+        </button>
+
+        <button class="social-brand snapchat" type="button" aria-disabled="true" aria-label="Snapchat" title="${t('سناب شات · قريباً','Snapchat · Coming soon')}">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 4.15c-2.17 0-3.55 1.7-3.55 3.83 0 .76.13 1.47.03 2.09-.13.79-.76 1.14-1.55 1.47-.6.25-1.02.44-.93.82.08.34.59.52 1.23.65.28.06.47.36.36.63-.17.42-.42.83-.77 1.18.31.2.75.33 1.28.4.29.04.52.27.55.56.05.47.13.93.28 1.24.63.02 1.22.19 1.75.5.39.23.83.38 1.32.38s.93-.15 1.32-.38c.53-.31 1.12-.48 1.75-.5.15-.31.23-.77.28-1.24.03-.29.26-.52.55-.56.53-.07.97-.2 1.28-.4-.35-.35-.6-.76-.77-1.18-.11-.27.08-.57.36-.63.64-.13 1.15-.31 1.23-.65.09-.38-.33-.57-.93-.82-.79-.33-1.42-.68-1.55-1.47-.1-.62.03-1.33.03-2.09 0-2.13-1.38-3.83-3.55-3.83Z" fill="white" stroke="#111" stroke-width="1.45" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <button class="social-brand x-twitter" type="button" aria-disabled="true" aria-label="X" title="${t('إكس · قريباً','X · Coming soon')}">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4.7 4h3.55l4.2 5.62L17.25 4h2.05l-5.88 6.91L19.8 20h-3.54l-4.66-6.23L6.3 20H4.25l6.39-7.51L4.7 4Zm2.44 1.55 9.91 12.9h1.36L8.5 5.55H7.14Z" fill="currentColor"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="mega-footer-registration">
+        <img src="assets/saudi-ministry-commerce-v139.png" alt="${t('وزارة التجارة السعودية','Saudi Ministry of Commerce')}">
+        <div>
+          <span><small>${t('السجل التجاري','Commercial Registration')}</small><b dir="ltr">7014006428</b></span>
+          <span><small>${t('الرقم الضريبي','VAT Registration')}</small><b dir="ltr">300225678600003</b></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="mega-footer-links">
+      <h4>${t('روابط مهمة','Important links')}</h4>
+      <button type="button" data-nav="home">${t('الرئيسية','Home')}</button>
+      <button type="button" class="js-products">${t('الذبائح والمنتجات','Livestock & products')}</button>
+      <button type="button" data-nav="orders">${t('تتبع الطلب','Track order')}</button>
+      <button type="button" data-nav="account">${t('حسابي','My account')}</button>
+      <button type="button" data-nav="account">${t('تسجيل الدخول','Login')}</button>
+    </section>
+
+    <section class="mega-footer-contact">
+      <h4>${t('تواصل معنا','Contact us')}</h4>
+
+      <a class="mega-contact-row whatsapp" href="https://wa.me/966582231594" target="_blank" rel="noopener">
+        <span class="mega-contact-icon whatsapp-icon" aria-hidden="true">
+          <svg viewBox="0 0 32 32">
+            <circle cx="16" cy="16" r="15" fill="#25D366"/>
+            <path d="M23.1 8.8A9.9 9.9 0 0 0 7.5 20.7L6 26l5.5-1.4a10 10 0 0 0 4.8 1.2h.1A9.9 9.9 0 0 0 23.1 8.8Zm-6.7 14.8h-.1a8.1 8.1 0 0 1-4.1-1.1l-.3-.2-3.3.9.9-3.2-.2-.3A8.1 8.1 0 1 1 16.4 23.6Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.3-.7.8-.8 1-.2.2-.3.2-.6.1-1.7-.8-2.8-1.5-3.9-3.4-.3-.5.3-.5.8-1.6.1-.2 0-.4 0-.6-.1-.2-.6-1.4-.8-1.9-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.3 5.2 4.6.7.3 1.3.5 1.8.6.8.2 1.5.2 2 .1.6-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.2-.3-.3-.6-.4Z" fill="#fff"/>
+          </svg>
+        </span>
+        <span>
+          <small>${t('واتساب خدمة العملاء','Customer service WhatsApp')}</small>
+          <b dir="ltr">+966 58 223 1594</b>
+        </span>
+      </a>
+
+      <a class="mega-contact-row phone" href="tel:+966582231594">
+        <span class="mega-contact-icon phone-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M6.6 2.9c.4-.1.8.1 1 .5l1.8 4.1c.2.4.1.8-.2 1.1l-1.5 1.5c1 2 2.6 3.6 4.6 4.6l1.5-1.5c.3-.3.7-.4 1.1-.2l4.1 1.8c.4.2.6.6.5 1l-.6 3.1c-.1.5-.5.8-1 .9-1 .1-2 .2-3 .1C8.9 19.4 4.6 15.1 3.2 9.1c-.3-1.5-.3-3 0-4.5.1-.5.4-.9.9-1l2.5-.7Z" fill="currentColor"/>
+          </svg>
+        </span>
+        <span>
+          <small>${t('اتصال مباشر','Phone')}</small>
+          <b dir="ltr">+966 58 223 1594</b>
+        </span>
+      </a>
+
+      <p>${t('متاح لخدمة العملاء والطلبات داخل أوقات التشغيل','Available for customer service and orders during operating hours')}</p>
+    </section>
+
+    <section class="mega-footer-apps">
+      <h4>${t('حمّل التطبيق','Get the app')}</h4>
+      <p>${t('افتح متجر جهازك لتحميل التطبيق عند توفره.','Open your device store to download the app when available.')}</p>
+
+      <div class="mega-store-badges">
+        <a class="mega-store-badge google-play" href="https://play.google.com/store" target="_blank" rel="noopener" aria-label="Open Google Play">
+          <span class="store-logo google-play-logo" aria-hidden="true">
+            <svg viewBox="0 0 64 64">
+              <defs>
+                <linearGradient id="gpA" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#00D7FF"/>
+                  <stop offset="100%" stop-color="#00A8F0"/>
+                </linearGradient>
+              </defs>
+              <path d="M8 7.5 37.5 32 8 56.5c-1.3-1.1-2-2.8-2-4.7V12.2c0-1.9.7-3.6 2-4.7Z" fill="url(#gpA)"/>
+              <path d="m37.5 32 9.7-8.1L14.8 5.2c-2.3-1.3-4.9-.8-6.8 2.3L37.5 32Z" fill="#20D66B"/>
+              <path d="m37.5 32-29.5 24.5c1.9 3.1 4.5 3.6 6.8 2.3l32.4-18.7L37.5 32Z" fill="#FFD54A"/>
+              <path d="m47.2 23.9 8.6 5c2.9 1.7 2.9 4.5 0 6.2l-8.6 5L37.5 32l9.7-8.1Z" fill="#FF5A55"/>
+            </svg>
+          </span>
+          <span class="store-copy"><small>GET IT ON</small><b>Google Play</b></span>
+        </a>
+
+        <a class="mega-store-badge app-store" href="https://apps.apple.com/" target="_blank" rel="noopener" aria-label="Open Apple App Store">
+          <span class="store-logo apple-logo" aria-hidden="true">
+            <svg viewBox="0 0 64 64">
+              <path d="M41.9 33.7c0-7.2 5.9-10.6 6.2-10.8-3.4-5-8.6-5.7-10.5-5.8-4.5-.5-8.7 2.6-10.9 2.6-2.2 0-5.7-2.5-9.4-2.4-4.8.1-9.3 2.8-11.8 7.1-5.1 8.8-1.3 21.7 3.6 28.8 2.4 3.5 5.3 7.4 9.1 7.2 3.6-.1 5-2.3 9.4-2.3s5.7 2.3 9.5 2.2c3.9-.1 6.4-3.5 8.8-7 2.8-4 3.9-7.9 3.9-8.1-.1 0-7.9-3-7.9-11.5Z" fill="currentColor"/>
+              <path d="M34.7 12.3c2-2.5 3.4-5.9 3-9.3-2.9.1-6.4 1.9-8.5 4.4-1.9 2.2-3.6 5.7-3.1 9.1 3.2.2 6.5-1.6 8.6-4.2Z" fill="currentColor"/>
+            </svg>
+          </span>
+          <span class="store-copy"><small>DOWNLOAD ON THE</small><b>App Store</b></span>
+        </a>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="mega-footer-bottom">
+    <span>© 2026 ASS AL HALAAL · JEDDAH</span>
+    <span>${t('مؤسسة مسجلة في المملكة العربية السعودية','Registered establishment in the Kingdom of Saudi Arabia')}</span>
+  </div>
+</footer>
 
 <div class="floating-whatsapp" data-floating-whatsapp>
   <div class="floating-whatsapp-card" data-whatsapp-card aria-hidden="true">
@@ -1784,7 +2131,246 @@ function homePage(){
   </button>
 </div>
 <div class="v405-home-ui" hidden></div>
+<style id="v405-reference-home-ui">
+/* v405 — home-only visual skin. Keeps all existing IDs/data attributes/handlers intact. */
+:root{--v405-emerald:#063f32;--v405-emerald-2:#0a5a45;--v405-gold:#d9a936;--v405-gold-2:#f0cf72;--v405-cream:#f7f2e7;--v405-ink:#143f34}
+.app-shell:has(.v405-home-ui){background:#f1eee6!important;width:100%!important;max-width:none!important;min-height:100vh!important;margin:0!important;box-sizing:border-box!important;box-shadow:0 0 0 1px rgba(117,91,33,.05),0 20px 60px rgba(42,45,35,.08)!important}
+.app-shell:has(.v405-home-ui) .screen{background:linear-gradient(180deg,#fbf8f1 0%,#f7f2e8 100%)!important;padding:0 26px 54px!important}
 
+/* Header — dark emerald bar like reference, but same controls/functions. */
+.app-shell:has(.v405-home-ui) .app-header{background:linear-gradient(180deg,#064936 0%,#043b2f 100%)!important;border:0!important;border-radius:0!important;color:#fff!important;box-shadow:0 8px 22px rgba(4,51,39,.16)!important;padding:13px 24px!important;gap:18px!important;position:sticky!important;top:0!important;z-index:90!important}
+.app-shell:has(.v405-home-ui) .customer-brand{gap:10px!important}
+.app-shell:has(.v405-home-ui) .customer-logo{background:transparent!important;border:0!important;box-shadow:none!important;padding:0 4px!important;color:#fff!important}
+.app-shell:has(.v405-home-ui) .customer-logo img{width:54px!important;height:44px!important;object-fit:contain!important;filter:brightness(0) invert(1) sepia(.08)!important}
+.app-shell:has(.v405-home-ui) .customer-logo b{color:#f2d67a!important;font-size:20px!important}
+.app-shell:has(.v405-home-ui) .customer-logo small{color:#e9efe9!important;opacity:.86!important}
+.app-shell:has(.v405-home-ui) .location-pill{background:rgba(255,255,255,.08)!important;border:1px solid rgba(244,210,112,.35)!important;color:#fff!important;box-shadow:none!important}
+.app-shell:has(.v405-home-ui) .location-pill small{color:#dce9e3!important}.app-shell:has(.v405-home-ui) .location-pill b{color:#fff!important}.app-shell:has(.v405-home-ui) .ref-location-pin{background:#d8a937!important;color:#123c31!important}
+.app-shell:has(.v405-home-ui) .desktop-main-nav{gap:4px!important}
+.app-shell:has(.v405-home-ui) .desktop-main-nav button{background:transparent!important;border:0!important;color:#eef5f1!important;border-radius:10px!important;padding:9px 11px!important}
+.app-shell:has(.v405-home-ui) .desktop-main-nav button:hover{background:rgba(255,255,255,.08)!important}
+.app-shell:has(.v405-home-ui) .desktop-main-nav button.active{color:#f7d36e!important;background:rgba(218,170,57,.10)!important;box-shadow:inset 0 -2px 0 #e0ae37!important}
+.app-shell:has(.v405-home-ui) .desktop-main-nav .nav-icon svg{width:19px!important;height:19px!important}
+.app-shell:has(.v405-home-ui) .premium-action-dock{gap:7px!important}
+.app-shell:has(.v405-home-ui) .premium-action-dock .top-action{background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,255,255,.16)!important;color:#fff!important;box-shadow:none!important}
+.app-shell:has(.v405-home-ui) .premium-action-dock .top-search{min-width:240px!important}
+.app-shell:has(.v405-home-ui) .top-search-copy{color:#e7eee9!important}
+.app-shell:has(.v405-home-ui) .top-language .lang-code{color:#f2d171!important}
+
+/* Thin trust band below header. */
+.app-shell:has(.v405-home-ui) .ref-announcement{margin:0 -26px 14px!important;border-radius:0!important;background:#0b5a46!important;color:#fff!important;min-height:42px!important;padding:8px 26px!important;border:0!important;box-shadow:none!important}
+.app-shell:has(.v405-home-ui) .ref-announcement>span{background:#e3b542!important;color:#113e31!important}
+.app-shell:has(.v405-home-ui) .ref-announcement p,.app-shell:has(.v405-home-ui) .ref-announcement small{color:#f4f8f5!important}
+.app-shell:has(.v405-home-ui) .ref-announcement b{background:#126d56!important;color:#e9cd77!important;border-color:rgba(233,205,119,.35)!important}
+
+/* Delivery selector — compact cream control bar, functionality untouched. */
+.app-shell:has(.v405-home-ui) .ref-district-card{background:#f6eddb!important;border:1px solid #eadfc9!important;border-radius:15px!important;box-shadow:0 6px 18px rgba(78,65,35,.07)!important;margin:-14px 0 10px!important;padding:12px 16px 10px!important;overflow:hidden!important;transform:none!important}
+.app-shell:has(.v405-home-ui) .district-visual{opacity:.15!important}
+.app-shell:has(.v405-home-ui) .district-title{margin-bottom:8px!important;gap:10px!important;align-items:center!important}.app-shell:has(.v405-home-ui) .district-title h2{color:#164c3d!important;font-size:18px!important;line-height:1.2!important;margin:0 0 3px!important}.app-shell:has(.v405-home-ui) .district-title p{color:#6d766e!important;font-size:11px!important;margin:0!important}
+.app-shell:has(.v405-home-ui) .district-title .near{background:#0b5b47!important;color:#fff!important;width:44px!important;height:44px!important;min-width:44px!important}.app-shell:has(.v405-home-ui) .district-title .fast{background:linear-gradient(180deg,#f7d77a,#e3ad38)!important;color:#513b10!important;border:1px solid #d19b25!important;padding:8px 15px!important;font-size:11px!important}
+.app-shell:has(.v405-home-ui) .district-chips{gap:7px!important;margin:7px 0 8px!important}.app-shell:has(.v405-home-ui) .district-chips button{background:#fffaf1!important;border:1px solid #d9d5c9!important;color:#28483e!important;border-radius:999px!important;padding:7px 14px!important;min-height:34px!important;font-size:11px!important;box-shadow:0 2px 6px rgba(45,51,43,.04)!important}.app-shell:has(.v405-home-ui) .district-chips button.selected{background:#0c654e!important;color:#fff!important;border-color:#0c654e!important}
+.app-shell:has(.v405-home-ui) .dispatch{background:#e2f2ec!important;color:#276453!important;border-radius:8px!important;border:1px solid #cce6dc!important;min-height:34px!important;padding:7px 10px!important;font-size:10px!important}
+
+/* Categories — text-free artwork + real language-aware name buttons. */
+.app-shell:has(.v405-home-ui) .ref-categories{padding:2px 0 18px!important;margin:0!important}
+.app-shell:has(.v405-home-ui) .ref-categories .section-row{margin-bottom:14px!important;align-items:flex-end!important}
+.app-shell:has(.v405-home-ui) .ref-categories .section-row h2{font-size:22px!important;color:#123f34!important;margin:0 0 2px!important}.app-shell:has(.v405-home-ui) .ref-categories .section-row p{color:#879089!important;margin:0!important}.app-shell:has(.v405-home-ui) .ref-categories #view-all{background:transparent!important;border:0!important;color:#0a5c47!important;font-weight:900!important}
+.app-shell:has(.v405-home-ui) .ref-categories .category-row{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:18px!important;margin-top:0!important}
+.app-shell:has(.v405-home-ui) .ref-categories .livestock-type-card{background:transparent!important;border:0!important;border-radius:18px!important;padding:0!important;overflow:visible!important;box-shadow:none!important;transition:transform .18s ease!important}
+.app-shell:has(.v405-home-ui) .ref-categories .livestock-type-card:hover{transform:translateY(-4px)!important;box-shadow:none!important;filter:none!important}
+.app-shell:has(.v405-home-ui) .ref-categories .category-image-button{width:100%!important;padding:0!important;border:0!important;background:transparent!important;border-radius:18px!important;overflow:hidden!important;box-shadow:0 9px 20px rgba(24,55,45,.15)!important}
+.app-shell:has(.v405-home-ui) .ref-categories .livestock-type-card .category-photo{aspect-ratio:auto!important;border-radius:18px!important;background:transparent!important;overflow:hidden!important}
+.app-shell:has(.v405-home-ui) .ref-categories .livestock-type-card .category-photo img{width:100%!important;height:auto!important;object-fit:contain!important;object-position:center!important;border-radius:18px!important;display:block!important}
+.app-shell:has(.v405-home-ui) .ref-categories .category-name-button{width:82%!important;min-height:46px!important;margin:auto auto 0!important;background:linear-gradient(180deg,#0d654a 0%,#004632 100%)!important;color:#f4cd64!important;border:2px solid #d9b64a!important;border-radius:999px!important;font-size:18px!important;font-weight:900!important;box-shadow:0 6px 14px rgba(0,50,36,.16)!important}
+
+/* Hero — wide emerald + gold banner, still uses the existing working slider and controls. */
+.app-shell:has(.v405-home-ui) .v94-hero-slider{margin:4px 0 24px!important;border:1px solid #d5a739!important;border-radius:20px!important;overflow:hidden!important;background:#063f32!important;box-shadow:0 14px 34px rgba(22,54,44,.18)!important;min-height:390px!important}
+.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-slides{min-height:390px!important}
+.app-shell:has(.v405-home-ui) .v94-hero-slider .quality-hero{min-height:390px!important;display:grid!important;grid-template-columns:1.05fr .95fr!important;align-items:stretch!important;background:radial-gradient(circle at 80% 15%,rgba(30,112,83,.42),transparent 34%),linear-gradient(115deg,#074b3a 0%,#053b30 58%,#082f27 100%)!important;border-radius:0!important;box-shadow:none!important;padding:0!important;overflow:hidden!important}
+.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-copy{order:2!important;padding:34px 38px!important;display:flex!important;flex-direction:column!important;justify-content:center!important;color:#fff!important;position:relative!important;z-index:2!important}
+.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-media{order:1!important;min-height:390px!important;position:relative!important;overflow:hidden!important}
+.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-media:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 56%,rgba(5,59,48,.88) 100%);pointer-events:none}
+.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-media img{width:100%!important;height:100%!important;object-fit:cover!important;object-position:left center!important;border:0!important;border-radius:0!important;filter:saturate(1.05) contrast(1.02)!important}
+.app-shell:has(.v405-home-ui) .luxury-hero-badges{display:flex!important;align-items:center!important;gap:9px!important;flex-wrap:wrap!important;margin-bottom:16px!important}.app-shell:has(.v405-home-ui) .luxury-hero-badges>span{background:linear-gradient(180deg,#f4d77b,#d7a433)!important;color:#49340d!important;border:1px solid #f1d173!important;border-radius:999px!important;padding:9px 16px!important;font-weight:900!important;box-shadow:0 6px 16px rgba(217,169,54,.18)!important}.app-shell:has(.v405-home-ui) .luxury-hero-badges small{color:#f5f4e9!important;font-weight:700!important}.app-shell:has(.v405-home-ui) .luxury-hero-badges i{color:#e9c85e!important}
+.app-shell:has(.v405-home-ui) .luxury-hero-title{font-size:46px!important;line-height:1.06!important;margin:6px 0 14px!important;color:#fff!important}.app-shell:has(.v405-home-ui) .luxury-hero-title .hero-title-gold{display:block!important;color:#e6b84c!important;font-weight:900!important}.app-shell:has(.v405-home-ui) .hero-copy>p{color:#e6eee9!important;font-size:15px!important;line-height:1.8!important;max-width:620px!important}
+.app-shell:has(.v405-home-ui) .luxury-feature-row{display:grid!important;grid-template-columns:repeat(4,1fr)!important;gap:10px!important;margin-top:18px!important}.app-shell:has(.v405-home-ui) .luxury-feature-row>div{background:rgba(255,255,255,.045)!important;border:1px solid rgba(229,189,78,.35)!important;border-radius:12px!important;padding:12px 10px!important;color:#fff!important;text-align:center!important}.app-shell:has(.v405-home-ui) .luxury-feature-row span{display:block!important;color:#f0c95d!important;font-size:20px!important;margin-bottom:4px!important}.app-shell:has(.v405-home-ui) .luxury-feature-row b{font-size:12px!important;color:#f7faf8!important}
+.app-shell:has(.v405-home-ui) .luxury-hero-actions{margin-top:18px!important;display:flex!important;align-items:center!important;gap:14px!important;flex-wrap:wrap!important}.app-shell:has(.v405-home-ui) .unified-login-hero{background:linear-gradient(180deg,#f6d779,#dda936)!important;color:#4d380e!important;border:1px solid #f1d77f!important;border-radius:999px!important;padding:11px 22px!important;font-weight:900!important;box-shadow:0 8px 18px rgba(0,0,0,.16)!important}.app-shell:has(.v405-home-ui) .luxury-hero-actions small{color:#f0f4f1!important}.app-shell:has(.v405-home-ui) .luxury-hero-actions small i{color:#e9bd52!important}
+.app-shell:has(.v405-home-ui) .hero-slider-arrow{width:38px!important;height:38px!important;border-radius:50%!important;background:linear-gradient(180deg,#f3d16f,#d6a02e)!important;border:1px solid #f5dc8d!important;color:#4f3b0f!important;box-shadow:0 6px 15px rgba(0,0,0,.18)!important}.app-shell:has(.v405-home-ui) .hero-slider-dots{bottom:13px!important}.app-shell:has(.v405-home-ui) .hero-slider-dots button{background:#dbe7e1!important;opacity:.7!important}.app-shell:has(.v405-home-ui) .hero-slider-dots button.active{background:#e9bd4d!important;opacity:1!important;width:24px!important}
+
+/* Featured products — compact cream cards like reference, all handlers preserved. */
+.app-shell:has(.v405-home-ui) .ref-collection{background:transparent!important;border:0!important;padding:2px 0 24px!important;margin:0!important;box-shadow:none!important}
+.app-shell:has(.v405-home-ui) .ref-collection>.section-row{margin:0 0 12px!important}.app-shell:has(.v405-home-ui) .ref-collection>.section-row h2{font-size:24px!important;color:#173e34!important}.app-shell:has(.v405-home-ui) .ref-collection>.section-row p{color:#818b84!important}.app-shell:has(.v405-home-ui) .ref-collection .crown{color:#d7a632!important}
+.app-shell:has(.v405-home-ui) .ref-search{background:#fffaf1!important;border:1px solid #e3dccd!important;border-radius:12px!important;height:42px!important;box-shadow:none!important;margin-bottom:10px!important}.app-shell:has(.v405-home-ui) .ref-search input{background:transparent!important;color:#23473d!important}
+.app-shell:has(.v405-home-ui) .ref-collection .filters{display:flex!important;gap:7px!important;flex-wrap:wrap!important;margin:0 0 14px!important}.app-shell:has(.v405-home-ui) .ref-collection .filters button{background:#fffaf1!important;border:1px solid #ded7c7!important;color:#315248!important;border-radius:999px!important;padding:7px 14px!important}.app-shell:has(.v405-home-ui) .ref-collection .filters button.selected{background:#0c624c!important;color:#fff!important;border-color:#0c624c!important;box-shadow:0 4px 10px rgba(12,98,76,.16)!important}
+.app-shell:has(.v405-home-ui) #products.ref-products{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important;align-items:stretch!important}
+.app-shell:has(.v405-home-ui) #products.ref-products>.product-card{background:#fffaf2!important;border:1px solid #e4dccd!important;border-radius:16px!important;box-shadow:0 7px 18px rgba(47,47,37,.07)!important;overflow:hidden!important;min-width:0!important;width:auto!important;margin:0!important;transition:transform .18s ease,box-shadow .18s ease!important}
+.app-shell:has(.v405-home-ui) #products.ref-products>.product-card:hover{transform:translateY(-3px)!important;box-shadow:0 12px 24px rgba(47,47,37,.11)!important}
+.app-shell:has(.v405-home-ui) #products.ref-products .product-image{height:auto!important;aspect-ratio:1501/1048!important;border-radius:0!important;background:#fffaf2!important;overflow:hidden!important;display:flex!important;align-items:center!important;justify-content:center!important}.app-shell:has(.v405-home-ui) #products.ref-products .product-image img{width:100%!important;height:100%!important;object-fit:contain!important;object-position:center center!important;display:block!important;transform:none!important}
+/* v406: preserve full product hero artwork on homepage cards */
+.app-shell:has(.v405-home-ui) #products.ref-products>.product-card .product-image,
+.app-shell:has(.v405-home-ui) #products.ref-products>.product-card .harri-final-visual,
+.app-shell:has(.v405-home-ui) #products.ref-products>.product-card .hashi-final-visual{
+  height:auto!important;
+  min-height:0!important;
+  aspect-ratio:1501/1048!important;
+  overflow:hidden!important;
+  background:#fffaf2!important;
+}
+.app-shell:has(.v405-home-ui) #products.ref-products>.product-card .product-image>img,
+.app-shell:has(.v405-home-ui) #products.ref-products>.product-card .harri-final-visual>img,
+.app-shell:has(.v405-home-ui) #products.ref-products>.product-card .hashi-final-visual>img{
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  transform:none!important;
+}
+
+.app-shell:has(.v405-home-ui) #products.ref-products .product-content{padding:13px!important;gap:9px!important}.app-shell:has(.v405-home-ui) #products.ref-products h3{font-size:17px!important;color:#153f34!important;margin:0!important}.app-shell:has(.v405-home-ui) #products.ref-products .product-title-block p{font-size:11px!important;color:#7a837e!important;line-height:1.45!important}.app-shell:has(.v405-home-ui) #products.ref-products .clean-meta-row,.app-shell:has(.v405-home-ui) #products.ref-products .harri-chip-row{gap:6px!important}.app-shell:has(.v405-home-ui) #products.ref-products .weight,.app-shell:has(.v405-home-ui) #products.ref-products .delivery-badge{font-size:10px!important;padding:5px 8px!important}.app-shell:has(.v405-home-ui) #products.ref-products .clean-price-row,.app-shell:has(.v405-home-ui) #products.ref-products .harri-price-row{padding-top:6px!important}.app-shell:has(.v405-home-ui) #products.ref-products .price b,.app-shell:has(.v405-home-ui) #products.ref-products .harri-price-row b{font-size:20px!important;color:#0c684f!important}.app-shell:has(.v405-home-ui) #products.ref-products .clean-prep-line,.app-shell:has(.v405-home-ui) #products.ref-products .harri-prep-line{font-size:10px!important;padding:8px 0!important}.app-shell:has(.v405-home-ui) #products.ref-products .product-details-link{font-size:11px!important;padding:7px 0!important;color:#0b5c48!important}.app-shell:has(.v405-home-ui) #products.ref-products .premium-card-actions{gap:7px!important;margin-top:auto!important}.app-shell:has(.v405-home-ui) #products.ref-products .premium-add-button{min-height:38px!important;border-radius:999px!important;background:#0c654e!important;color:#fff!important;border-color:#0c654e!important;font-size:11px!important}.app-shell:has(.v405-home-ui) #products.ref-products .premium-card-share{width:38px!important;height:38px!important;border-radius:50%!important;background:#f3eee1!important;border:1px solid #ddd4bf!important;color:#0b604a!important}
+
+/* Lower quality/safety area gets same premium visual language. */
+.app-shell:has(.v405-home-ui) .premium-safety-standards{background:#f6eddd!important;border:1px solid #e3d6bd!important;border-radius:18px!important;box-shadow:0 8px 20px rgba(59,49,29,.06)!important}.app-shell:has(.v405-home-ui) .standards-title h2{color:#123f34!important}.app-shell:has(.v405-home-ui) .standards-certified-pill{background:#0b604a!important;color:#fff!important}.app-shell:has(.v405-home-ui) .standard-card{background:#fffaf2!important;border:1px solid #e0d7c5!important;box-shadow:none!important}
+
+
+/* v500 — website structure inspired by the supplied reference screenshots.
+   Visual/layout only: existing IDs, data attributes and handlers remain untouched. */
+.app-shell:has(.v405-home-ui) .screen{padding-left:0!important;padding-right:0!important;background:#fff!important}
+.app-shell:has(.v405-home-ui) .screen > .ref-announcement,
+.app-shell:has(.v405-home-ui) .screen > .v94-hero-slider{width:100%!important}
+.app-shell:has(.v405-home-ui) .screen > .ref-categories,
+.app-shell:has(.v405-home-ui) .screen > .ref-district-card,
+.app-shell:has(.v405-home-ui) .screen > .ref-collection,
+.app-shell:has(.v405-home-ui) .screen > .v490-request-section,
+.app-shell:has(.v405-home-ui) .screen > .premium-safety-standards,
+.app-shell:has(.v405-home-ui) .screen > .v500-proof-section,
+.app-shell:has(.v405-home-ui) .screen > .v500-guide-section,
+.app-shell:has(.v405-home-ui) .screen > .v500-faq-section{
+  width:min(1420px,calc(100% - 64px))!important;margin-left:auto!important;margin-right:auto!important
+}
+.app-shell:has(.v405-home-ui) .ref-announcement{margin:0!important;padding-left:max(28px,calc((100vw - 1420px)/2))!important;padding-right:max(28px,calc((100vw - 1420px)/2))!important}
+.app-shell:has(.v405-home-ui) .v94-hero-slider{margin:0!important;border-left:0!important;border-right:0!important;border-radius:0!important;min-height:520px!important}
+.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-slides,
+.app-shell:has(.v405-home-ui) .v94-hero-slider .quality-hero{min-height:520px!important}
+.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-copy{padding-left:max(48px,calc((100vw - 1340px)/2))!important;padding-right:max(48px,calc((100vw - 1340px)/2))!important}
+.app-shell:has(.v405-home-ui) .ref-district-card{margin-top:18px!important;margin-bottom:68px!important;box-shadow:0 8px 24px rgba(31,45,38,.08)!important}
+.app-shell:has(.v405-home-ui) .ref-categories{padding:0 0 70px!important}
+.app-shell:has(.v405-home-ui) .ref-categories .section-row{justify-content:center!important;text-align:center!important;position:relative!important;margin-bottom:30px!important}
+.app-shell:has(.v405-home-ui) .ref-categories .section-row>div{width:100%!important}
+.app-shell:has(.v405-home-ui) .ref-categories .section-row h2{font-size:34px!important;letter-spacing:-.02em!important}
+.app-shell:has(.v405-home-ui) .ref-categories .section-row p{font-size:13px!important;margin-top:7px!important}
+.app-shell:has(.v405-home-ui) .ref-categories #view-all{position:absolute!important;right:0!important;top:10px!important}
+html[dir="rtl"] .app-shell:has(.v405-home-ui) .ref-categories #view-all{right:auto!important;left:0!important}
+.app-shell:has(.v405-home-ui) .ref-categories .category-row{gap:24px!important}
+.app-shell:has(.v405-home-ui) .ref-collection{padding:0 0 90px!important}
+.app-shell:has(.v405-home-ui) .ref-collection>.section-row{justify-content:center!important;text-align:center!important;margin-bottom:32px!important}
+.app-shell:has(.v405-home-ui) .ref-collection>.section-row>div{width:100%!important}
+.app-shell:has(.v405-home-ui) .ref-collection>.section-row h2{font-size:38px!important;letter-spacing:.04em!important}
+.app-shell:has(.v405-home-ui) #products.ref-products{gap:24px!important}
+.app-shell:has(.v405-home-ui) #products.ref-products>.product-card{border-radius:14px!important;background:#fff!important;box-shadow:0 5px 18px rgba(15,38,30,.07)!important}
+.app-shell:has(.v405-home-ui) .v490-request-section{margin-bottom:90px!important;padding-top:24px!important}
+.app-shell:has(.v405-home-ui) .premium-safety-standards{margin-bottom:90px!important}
+
+.v500-proof-section,.v500-guide-section,.v500-faq-section{box-sizing:border-box}
+.v500-section-heading{text-align:center;max-width:900px;margin:0 auto 38px}
+.v500-section-heading>small{display:block;color:#b78922;font-weight:900;font-size:12px;letter-spacing:.16em;margin-bottom:9px}
+.v500-section-heading h2{margin:0;color:#183e34;font-size:clamp(30px,3vw,46px);line-height:1.2;letter-spacing:-.025em}
+.v500-section-heading p{margin:10px auto 0;color:#5f6f68;font-size:15px;line-height:1.8}
+.v500-heading-rule{display:flex;align-items:center;justify-content:center;gap:12px;margin:18px auto 0}
+.v500-heading-rule i{display:block;width:72px;height:2px;background:#274d42;opacity:.65}.v500-heading-rule b{display:block;width:11px;height:11px;border:2px solid #274d42;border-radius:50%;box-sizing:border-box}
+
+.v500-proof-section{padding:14px 0 96px}
+.v500-proof-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.v500-proof-grid article{min-height:178px;background:#fff;border:1px solid #e5e6e2;border-radius:14px;box-shadow:0 5px 18px rgba(25,44,36,.06);padding:28px;display:flex;gap:18px;align-items:flex-start}
+.v500-proof-grid article>span{width:48px;height:48px;min-width:48px;border-radius:50%;display:grid;place-items:center;background:#f3e6b9;color:#07533f;font-size:22px;font-weight:900}
+.v500-proof-grid b{display:block;color:#163d33;font-size:18px;margin:2px 0 10px}.v500-proof-grid p{margin:0;color:#6e7974;line-height:1.8;font-size:14px}
+
+.v500-guide-section{padding:70px 0 82px;border-top:1px solid #eef0ed}
+.v500-guide-copy{max-width:1060px;margin:0 auto;text-align:center}
+.v500-guide-copy p{font-size:18px;line-height:2;color:#5d6964;margin:0}
+
+.v500-faq-section{padding:70px 0 120px}
+.v500-faq-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px}
+.v500-faq-grid details{background:#fff;border:1px solid #ccd4d0;border-radius:10px;overflow:hidden}
+.v500-faq-grid summary{list-style:none;cursor:pointer;padding:18px 20px;color:#173e34;font-weight:800;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.v500-faq-grid summary::-webkit-details-marker{display:none}
+.v500-faq-grid summary:after{content:"⌄";width:30px;height:30px;min-width:30px;border-radius:50%;display:grid;place-items:center;background:#0b5c47;color:#fff;font-size:15px;transition:transform .18s ease}
+.v500-faq-grid details[open] summary:after{transform:rotate(180deg)}
+.v500-faq-grid details p{margin:0;padding:0 20px 20px;color:#68746f;line-height:1.8;font-size:14px}
+.app-shell:has(.v405-home-ui) .customer-mega-footer{margin-top:0!important;border-radius:0!important}
+
+
+/* v501 — footer width + visible Ass Al Halaal logo only */
+.app-shell:has(.v405-home-ui) .customer-mega-footer-inner,
+.app-shell:has(.v405-home-ui) .customer-mega-footer .mega-footer-bottom{
+  width:min(1760px,calc(100% - 72px))!important;
+  max-width:none!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+.app-shell:has(.v405-home-ui) .customer-mega-footer-inner{
+  column-gap:64px!important;
+}
+.app-shell:has(.v405-home-ui) .customer-mega-footer .mega-footer-brand-head img{
+  width:82px!important;
+  height:82px!important;
+  min-width:82px!important;
+  max-width:82px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  display:block!important;
+  filter:none!important;
+  opacity:1!important;
+}
+@media(max-width:900px){
+  .app-shell:has(.v405-home-ui) .customer-mega-footer-inner,
+  .app-shell:has(.v405-home-ui) .customer-mega-footer .mega-footer-bottom{
+    width:calc(100% - 28px)!important;
+  }
+}
+
+@media(max-width:1180px){
+  .app-shell:has(.v405-home-ui) .desktop-main-nav{display:none!important}
+  .app-shell:has(.v405-home-ui) .premium-action-dock .top-search{min-width:170px!important}
+  .app-shell:has(.v405-home-ui) #products.ref-products{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+
+@media(max-width:900px){
+  .app-shell:has(.v405-home-ui) .screen > .ref-categories,
+  .app-shell:has(.v405-home-ui) .screen > .ref-district-card,
+  .app-shell:has(.v405-home-ui) .screen > .ref-collection,
+  .app-shell:has(.v405-home-ui) .screen > .v490-request-section,
+  .app-shell:has(.v405-home-ui) .screen > .premium-safety-standards,
+  .app-shell:has(.v405-home-ui) .screen > .v500-proof-section,
+  .app-shell:has(.v405-home-ui) .screen > .v500-guide-section,
+  .app-shell:has(.v405-home-ui) .screen > .v500-faq-section{width:calc(100% - 28px)!important}
+  .app-shell:has(.v405-home-ui) .ref-district-card{margin-bottom:44px!important}
+  .app-shell:has(.v405-home-ui) .ref-categories{padding-bottom:52px!important}
+  .app-shell:has(.v405-home-ui) .ref-categories .section-row h2,
+  .app-shell:has(.v405-home-ui) .ref-collection>.section-row h2{font-size:29px!important}
+  .app-shell:has(.v405-home-ui) .ref-categories #view-all{position:static!important;margin-top:10px!important}
+  .v500-proof-grid{grid-template-columns:1fr!important}
+  .v500-faq-grid{grid-template-columns:1fr!important}
+  .v500-guide-copy p{font-size:16px!important}
+}
+@media(max-width:900px){
+  .app-shell:has(.v405-home-ui) .screen{padding:0 14px 36px!important}
+  .app-shell:has(.v405-home-ui) .ref-announcement{margin:0 -14px 10px!important;padding-inline:14px!important}
+  .app-shell:has(.v405-home-ui) .ref-categories .category-row{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;overflow:visible!important;gap:11px!important}
+  .app-shell:has(.v405-home-ui) .ref-categories .livestock-type-card{width:100%!important;min-width:0!important}
+  .app-shell:has(.v405-home-ui) .v94-hero-slider,.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-slides{min-height:560px!important}
+  .app-shell:has(.v405-home-ui) .v94-hero-slider .quality-hero{grid-template-columns:1fr!important;grid-template-rows:240px auto!important;min-height:560px!important}
+  .app-shell:has(.v405-home-ui) .v94-hero-slider .hero-media{order:1!important;min-height:240px!important}.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-media:after{background:linear-gradient(180deg,transparent 50%,rgba(5,59,48,.92) 100%)!important}.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-copy{order:2!important;padding:24px!important}.app-shell:has(.v405-home-ui) .luxury-hero-title{font-size:34px!important}.app-shell:has(.v405-home-ui) .luxury-feature-row{grid-template-columns:repeat(2,1fr)!important}
+  .app-shell:has(.v405-home-ui) #products.ref-products{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:620px){
+  .app-shell:has(.v405-home-ui) .app-header{padding:10px 12px!important}.app-shell:has(.v405-home-ui) .customer-logo span,.app-shell:has(.v405-home-ui) .location-pill{display:none!important}.app-shell:has(.v405-home-ui) .premium-action-dock .top-search{display:none!important}
+  .app-shell:has(.v405-home-ui) .ref-categories .category-row{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .app-shell:has(.v405-home-ui) #products.ref-products{grid-template-columns:1fr!important}
+  .app-shell:has(.v405-home-ui) .ref-district-card{padding:14px 12px!important}.app-shell:has(.v405-home-ui) .district-title .fast{display:none!important}
+}
+</style>
 `}
 
 
@@ -2797,7 +3383,22 @@ function livestockCategoryPage(key){
     </article>`;
   }).join('');
   return `<main class="livestock-hub-page" data-livestock-hub="${safe(key)}">
-    
+    <style>
+      .livestock-hub-page{max-width:1180px;margin:0 auto;padding:18px 18px 54px}
+      .livestock-hub-breadcrumb{display:flex;gap:10px;align-items:center;margin:8px 0 18px;color:#507066;font-size:13px}.livestock-hub-breadcrumb button{border:0;background:none;color:#075a45;font-weight:800;cursor:pointer}
+      .livestock-hub-hero{display:grid;grid-template-columns:1.15fr .85fr;gap:22px;align-items:center;background:linear-gradient(135deg,#063f32,#0d6a52);border-radius:28px;padding:28px;color:#fff;box-shadow:0 18px 40px rgba(7,72,54,.16);overflow:hidden;position:relative}
+      .livestock-hub-hero:after{content:'';position:absolute;inset:auto -80px -100px auto;width:280px;height:280px;border-radius:50%;border:1px solid rgba(230,188,74,.3)}
+      .livestock-hub-hero small{color:#f3cc66;font-weight:900;letter-spacing:.08em}.livestock-hub-hero h1{font-size:38px;margin:8px 0}.livestock-hub-hero p{max-width:620px;line-height:1.8;color:#e8f2ee}.livestock-hub-hero img{width:100%;height:250px;object-fit:cover;border-radius:22px;border:2px solid rgba(241,197,74,.8);box-shadow:0 12px 30px rgba(0,0,0,.22)}
+      .livestock-hub-head{display:flex;justify-content:space-between;gap:20px;align-items:end;margin:32px 0 16px}.livestock-hub-head h2{margin:0;color:#103f34;font-size:28px}.livestock-hub-head p{margin:6px 0 0;color:#71827c}.livestock-hub-head span{background:#edf8f4;color:#056046;border:1px solid #cde9df;padding:8px 12px;border-radius:999px;font-weight:800}
+      .livestock-hub-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.livestock-hub-card{background:#fff;border:1px solid #dce9e4;border-radius:24px;overflow:hidden;box-shadow:0 12px 28px rgba(14,55,43,.08);transition:.2s ease;cursor:pointer}.livestock-hub-card:hover{transform:translateY(-4px);box-shadow:0 18px 36px rgba(14,55,43,.14)}
+      .livestock-hub-photo{height:220px;background:#f5f8f6;position:relative;overflow:hidden}.livestock-hub-photo img{width:100%;height:100%;object-fit:cover;display:block}.livestock-hub-photo span,.livestock-hub-photo .livestock-card-index{position:absolute!important;top:12px!important;left:12px!important;right:auto!important;bottom:auto!important;inset:auto auto auto 12px!important;transform:none!important;width:34px!important;height:34px!important;border-radius:50%!important;display:grid!important;place-items:center!important;background:#fff!important;color:#8c690f!important;font-weight:900!important;border:1px solid #ecd27e!important;z-index:20!important}
+      .livestock-hub-copy{padding:18px}.livestock-hub-copy>small{color:#b07a0a;font-weight:900}.livestock-hub-copy h3{margin:5px 0 6px;color:#0b4f3e;font-size:22px}.livestock-hub-copy p{min-height:44px;margin:0;color:#6a7873;line-height:1.55}.livestock-hub-meta{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.livestock-hub-meta span{background:#eff8f5;border:1px solid #d5ece5;color:#255f50;padding:7px 9px;border-radius:999px;font-size:12px}.livestock-hub-price{display:flex;justify-content:space-between;align-items:end;border-top:1px solid #edf1ef;padding-top:13px}.livestock-hub-price b{font-size:22px;color:#0a654d}.livestock-hub-price small{color:#87938f}.livestock-hub-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}.livestock-hub-actions button{border:1px solid #0a6b50;background:#0a6b50;color:#fff;border-radius:12px;padding:11px;font-weight:900;cursor:pointer}.livestock-hub-actions button.ghost{background:#fff;color:#0a6b50}
+
+      .livestock-hub-card .livestock-card-index{left:12px!important;right:auto!important;top:12px!important;bottom:auto!important;inset:auto auto auto 12px!important;transform:none!important;z-index:20!important}
+      html[dir="rtl"] .livestock-hub-card .livestock-card-index,body[dir="rtl"] .livestock-hub-card .livestock-card-index{left:12px!important;right:auto!important;inset:auto auto auto 12px!important}
+      @media(max-width:900px){.livestock-hub-hero{grid-template-columns:1fr}.livestock-hub-grid{grid-template-columns:1fr 1fr}}
+      @media(max-width:620px){.livestock-hub-page{padding:10px}.livestock-hub-grid{grid-template-columns:1fr}.livestock-hub-hero{padding:20px}.livestock-hub-hero h1{font-size:30px}.livestock-hub-hero img{height:210px}}
+    </style>
     <nav class="livestock-hub-breadcrumb"><button data-nav="home">${t('الرئيسية','Home')}</button><span>‹</span><b>${safe(t(c.ar,c.en))}</b></nav>
     <section class="livestock-hub-hero"><div><small>ASS AL HALAAL · ${safe(t(c.ar,c.en))}</small><h1>${safe(t(c.titleAr,c.titleEn))}</h1><p>${safe(t(c.descAr,c.descEn))}</p></div><img src="${safe(c.hero)}" alt="${safe(t(c.ar,c.en))}"></section>
     <div class="livestock-hub-head"><div><h2>${safe(t('الأنواع المتاحة','Available selections'))}</h2><p>${safe(t('اختر الحيوان ثم أكمل الوزن والأجزاء والتجهيز في الصفحة التالية.','Choose an animal, then complete weight, cuts and preparation on the next page.'))}</p></div><span>${c.items.length} ${t('خيارات','options')}</span></div>
@@ -4193,7 +4794,9 @@ function productDetailPage(id){
         <div class="ref-service-note"><span>✓</span><div><b>${ardiVacuumMode?t('تجهيز عارضي بسحب هواء وسلسلة تبريد','Ardi vacuum preparation & cold chain'):t('تجهيز نظامي وفحص بيطري','Regulated preparation & veterinary inspection')}</b><small>${ardiVacuumMode?t('كل مجموعة لحم تعبأ بسحب هواء غذائي ثم توضع في كرتون مبرد للتوصيل داخل جدة.','Each meat group is food-safe vacuum sealed, then placed in a chilled carton for delivery across Jeddah.'):t('الذبح والتجهيز بعد تأكيد الطلب مع سلسلة تبريد داخل جدة.','Prepared after order confirmation with chilled delivery across Jeddah.')}</small></div></div>
 
         <section class="pdp-order-format">
-          
+          <style>
+            .pdp-order-format{margin:14px 0;border:1px solid #d9e7e2;background:#fbfdfc;border-radius:16px;padding:14px}.pdp-order-format header{display:flex;justify-content:space-between;gap:10px;align-items:end;margin-bottom:10px}.pdp-order-format header b{color:#0b4f3d}.pdp-order-format header small{color:#7b8883}.pdp-order-format-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.pdp-order-format-grid button{border:1px solid #d0e5dd;background:#fff;border-radius:12px;padding:10px 8px;color:#215a4b;font-weight:900;cursor:pointer}.pdp-order-format-grid button.selected{background:#0b6a50;color:#fff;border-color:#0b6a50;box-shadow:0 6px 14px rgba(11,106,80,.18)}.pdp-custom-kg{margin-top:10px;display:flex;gap:8px;align-items:center}.pdp-custom-kg[hidden]{display:none}.pdp-custom-kg input{width:110px;border:1px solid #cfe2db;border-radius:10px;padding:9px;text-align:center}.pdp-custom-kg span{color:#64756f;font-size:12px}@media(max-width:620px){.pdp-order-format-grid{grid-template-columns:1fr 1fr}}
+          </style>
           <header><b>${t('اختر شكل الطلب','Choose order format')}</b><small>${t('الحيوان الكامل أو كمية محددة','Whole animal or selected kilograms')}</small></header>
           <div class="pdp-order-format-grid"><button type="button" class="selected" data-pdp-purchase-mode="whole">${t('حيوان كامل','Whole animal')}</button><button type="button" data-pdp-purchase-mode="half">${t('نصف','Half')}</button><button type="button" data-pdp-purchase-mode="quarter">${t('ربع','Quarter')}</button><button type="button" data-pdp-purchase-mode="kg">${t('بالكيلو','By KG')}</button></div>
           <div class="pdp-custom-kg" data-pdp-custom-kg-wrap hidden><input id="pdp-custom-kg" type="number" min="1" max="50" step="0.5" value="3"><span>${t('أدخل الكمية المطلوبة بالكيلو. يتم تأكيد الوزن النهائي قبل التجهيز.','Enter required kilograms. Final weight is confirmed before preparation.')}</span></div>
@@ -6895,11 +7498,10 @@ let postRenderEnhancementToken=0;
 function schedulePostRenderEnhancements(appRoot){
   const token=++postRenderEnhancementToken;
   const queue=[
-    ()=>scheduleAccessibilityHardening(appRoot),
+    ()=>applyAccessibilityHardening(appRoot),
     ()=>applyBatch2UxHardening(appRoot),
     ()=>applyV469MobileExperience(),
     ()=>setupHomeProductLazyExpansion(),
-    ()=>scheduleHomeDeferredHydration(),
     ()=>{
       window.__v496BindFaq?.();
       window.__v517SyncBrandContrast?.();
@@ -6920,17 +7522,14 @@ function render(){
   let content=v==='home'?homePage():v==='orders'?ordersPage():v==='account'?accountPage():v==='admin'?adminPage():v.startsWith('livestock/')?livestockCategoryPage(decodeURIComponent(v.slice(10))):v.startsWith('hashi/')?hashiVariantPage(productById('hashi-camel')||products.find(isHashiCamelProduct),decodeURIComponent(v.slice(6))):v.startsWith('product/')?productDetailPage(decodeURIComponent(v.slice(8))):homePage();
   const appRoot=document.querySelector('#app');
   appRoot.innerHTML=shell(content,{admin:v==='admin'});
-  applyCriticalMediaPriority(appRoot);
   bind();
 
   // Keep all geometry/layout-affecting setup in the first render so LCP and
   // CLS settle immediately. Only non-visual scans/enhancements are deferred.
-  if(v!=='home'||homeProductsExpanded){
-    setupV485MostRequestedSlider();
-    if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();
-    if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel();
-    if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel();
-  }
+  setupV485MostRequestedSlider();
+  if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();
+  if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel();
+  if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel();
   if(typeof setupV490RequestSection==='function')setupV490RequestSection();
   if(typeof applyV443LockedTopNav==='function')applyV443LockedTopNav();
 
@@ -7549,69 +8148,6 @@ function bind(){
   document.querySelectorAll('[data-admin-status]').forEach(s=>s.onchange=()=>updateAdminStatus(s.dataset.adminStatus,s.value));
   applyRbacUi();
 }
-let homeDeferredObserver=null;
-let homeDeferredHydrationPromise=null;
-let homeDeferredHydrationRoot=null;
-let homeDeferredFallbackTimer=null;
-
-function bindHomeDeferred(root){
-  if(!root)return;
-  root.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>setView(b.dataset.nav));
-  root.querySelectorAll('.js-products').forEach(el=>el.onclick=()=>{
-    if(view()!=='home')setView('home');
-    setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'}),80);
-  });
-  setupStandardsExperience();
-  if(typeof setupV490RequestSection==='function')setupV490RequestSection();
-  window.__v496BindFaq?.();
-  applyAccessibilityHardening(root);
-  applyBatch2UxHardening(root);
-}
-
-async function hydrateHomeDeferred(root=document.querySelector('[data-home-deferred]')){
-  if(view()!=='home'||!root||!root.isConnected)return false;
-  window.__activateFullStyle?.();
-  if(root.dataset.homeDeferredReady==='1')return true;
-  if(homeDeferredHydrationPromise&&homeDeferredHydrationRoot===root)return homeDeferredHydrationPromise;
-  homeDeferredHydrationRoot=root;
-  homeDeferredHydrationPromise=(async()=>{
-    const mod=await ensureHomeDeferredModule();
-    if(view()!=='home'||!root.isConnected)return false;
-    root.innerHTML=mod.buildHomeDeferredMarkup({t,safe,portalManagerState,portalFaqRows});
-    root.dataset.homeDeferredReady='1';
-    bindHomeDeferred(root);
-    return true;
-  })().finally(()=>{
-    if(homeDeferredHydrationRoot===root){
-      homeDeferredHydrationPromise=null;
-      homeDeferredHydrationRoot=null;
-    }
-  });
-  return homeDeferredHydrationPromise;
-}
-
-function scheduleHomeDeferredHydration(){
-  if(view()!=='home')return;
-  const root=document.querySelector('[data-home-deferred]');
-  if(!root||root.dataset.homeDeferredReady==='1')return;
-  homeDeferredObserver?.disconnect?.();
-  clearTimeout(homeDeferredFallbackTimer);
-  if('IntersectionObserver' in window){
-    homeDeferredObserver=new IntersectionObserver(entries=>{
-      if(!entries.some(entry=>entry.isIntersecting))return;
-      homeDeferredObserver?.disconnect?.();
-      homeDeferredObserver=null;
-      hydrateHomeDeferred(root);
-    },{rootMargin:'280px 0px',threshold:0.01});
-    homeDeferredObserver.observe(root);
-  }
-  const intent=()=>hydrateHomeDeferred(root);
-  window.addEventListener('scroll',intent,{once:true,passive:true});
-  window.addEventListener('pointerdown',intent,{once:true,passive:true});
-  window.addEventListener('keydown',intent,{once:true});
-  homeDeferredFallbackTimer=setTimeout(()=>hydrateHomeDeferred(root),12000);
-}
-
 let homeProductsExpanded=false;
 let homeProductsObserver=null;
 
@@ -7630,12 +8166,11 @@ function setupHomeProductLazyExpansion(){
 
   homeProductsObserver=new IntersectionObserver(entries=>{
     if(!entries.some(entry=>entry.isIntersecting))return;
-    window.__activateFullStyle?.();
     homeProductsExpanded=true;
     homeProductsObserver?.disconnect?.();
     homeProductsObserver=null;
     renderProducts();
-  },{rootMargin:'120px 0px',threshold:0.01});
+  },{rootMargin:'500px 0px',threshold:0.01});
 
   homeProductsObserver.observe(collection);
 }
