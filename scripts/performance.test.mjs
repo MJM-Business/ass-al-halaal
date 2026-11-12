@@ -203,3 +203,13 @@ test('noncritical startup work yields across browser tasks to reduce TBT',async(
   const yields=[...app.matchAll(/await yieldStartupTask\(\);/g)];
   assert.ok(yields.length>=4);
 });
+
+
+test('noncritical home enhancement engines wait for interaction or later idle window',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.match(app,/scheduleHomeEnhancements\(\)/);
+  assert.match(app,/homeEnhancementsTimer=setTimeout\(runHomeEnhancements,5500\)/);
+  assert.match(app,/window\.addEventListener\('pointerdown',start,\{once:true,passive:true\}\)/);
+  assert.match(app,/setupV485MostRequestedSlider\(\)/);
+  assert.match(app,/setupV528MobileCarousel\(\)/);
+});
