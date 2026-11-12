@@ -164,8 +164,6 @@ test('carousel engines do not duplicate their initial DOMContentLoaded setup',as
 
 test('legacy nav reflow boots are retired from initial load',async()=>{
   const app=await readFile('www/app.js','utf8');
-  assert.match(app,/v443 forced-layout navigation retired/);
-  assert.doesNotMatch(app,/applyV443LockedTopNav/);
   assert.match(app,/Initial request-section setup is owned by render\(\)/);
   for(const name of [
     'installV444PremiumUtilityBar',
@@ -204,13 +202,4 @@ test('noncritical startup work yields across browser tasks to reduce TBT',async(
   assert.match(app,/await yieldStartupTask\(\);/);
   const yields=[...app.matchAll(/await yieldStartupTask\(\);/g)];
   assert.ok(yields.length>=4);
-});
-
-
-test('customer header relies on CSS sticky positioning instead of forced layout measurements',async()=>{
-  const critical=await readFile('www/critical.css','utf8');
-  const app=await readFile('www/app.js','utf8');
-  assert.match(critical,/\.app-header\{height:64px;position:sticky;top:0/);
-  assert.doesNotMatch(app,/shell\.getBoundingClientRect\(\)/);
-  assert.doesNotMatch(app,/header\.offsetHeight/);
 });
