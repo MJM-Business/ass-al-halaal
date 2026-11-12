@@ -266,14 +266,11 @@ test('runtime page template styles are moved to static CSS',async()=>{
 });
 
 
-test('full stylesheet participates in the first stable layout',async()=>{
-  const loader=await readFile('www/style-loader.js','utf8');
-  const app=await readFile('www/app.js','utf8');
-  assert.match(loader,/window\.__activateFullStyle=activate/);
-  assert.match(loader,/fullStyle\.media='all'/);
-  assert.match(loader,/activate\(\);/);
-  assert.doesNotMatch(loader,/setTimeout\(activate,12000\)/);
-  assert.match(app,/window\.__activateFullStyle\?\.\(\)/);
+test('production stylesheet loads deterministically without media-swap race',async()=>{
+  const index=await readFile('www/index.html','utf8');
+  assert.match(index,/rel="stylesheet" href="dist\/style\.min\.css\?v=585"/);
+  assert.doesNotMatch(index,/media="print"/);
+  assert.doesNotMatch(index,/style-loader\.js/);
 });
 
 test('accessibility scans are chunked after critical media priority',async()=>{
