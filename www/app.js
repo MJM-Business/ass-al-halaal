@@ -612,6 +612,107 @@ function applyAccessibilityHardening(root=document){
     });
   });
 }
+function applyCriticalMediaPriority(root=document){
+  const scope=root&&root.querySelector?root:document;
+  const priority=scope.querySelector('.ref-customer-header img,.mobile-reference-header img,.v94-hero-slider img,.quality-hero img,.simple-auth-logo-wrap img');
+  if(!priority)return;
+  priority.setAttribute('loading','eager');
+  priority.setAttribute('fetchpriority','high');
+  priority.setAttribute('decoding','sync');
+  priority.dataset.criticalPriority='1';
+}
+
+function scheduleAccessibilityHardening(root=document){
+  const scope=root&&root.querySelectorAll?root:document;
+  const groups=[
+    [...scope.querySelectorAll('img')],
+    [...scope.querySelectorAll('input:not([type="hidden"]),select,textarea')],
+    [...scope.querySelectorAll('button,a,[role="button"]')],
+    [...scope.querySelectorAll('[role="button"]')]
+  ];
+  let group=0,index=0;
+  let priorityAssigned=Boolean(scope.querySelector('img[data-critical-priority="1"]'));
+
+  const accessibleNameFallback=el=>{
+    const id=String(el.id||'').toLowerCase();
+    const dataNav=String(el.dataset?.nav||'').toLowerCase();
+    const key=id||dataNav||String(el.className||'').toLowerCase();
+    if(key.includes('search'))return t('بحث','Search');
+    if(key.includes('bell')||key.includes('notif'))return t('التنبيهات','Notifications');
+    if(key.includes('cart')||key.includes('bag'))return t('السلة','Cart');
+    if(key.includes('language')||key.includes('lang'))return t('لغة التطبيق','App language');
+    if(key.includes('account'))return t('حسابي','Account');
+    if(key.includes('order'))return t('تتبع الطلب','Track order');
+    if(key.includes('home'))return t('الرئيسية','Home');
+    if(key.includes('close'))return t('إغلاق','Close');
+    return '';
+  };
+
+  const handle=(el,g)=>{
+    if(g===0){
+      if(!el.hasAttribute('alt'))el.setAttribute('alt','');
+      if(el.dataset.criticalPriority==='1')return;
+      const aboveFold=Boolean(el.closest('.ref-customer-header,.mobile-reference-header,.v94-hero-slider,.quality-hero,.simple-auth-logo-wrap'));
+      if(aboveFold&&!priorityAssigned){
+        el.setAttribute('loading','eager');
+        el.setAttribute('fetchpriority','high');
+        el.setAttribute('decoding','sync');
+        priorityAssigned=true;
+      }else{
+        if(!el.hasAttribute('loading'))el.setAttribute('loading','lazy');
+        if(!el.hasAttribute('decoding'))el.setAttribute('decoding','async');
+        if(!el.hasAttribute('fetchpriority'))el.setAttribute('fetchpriority','low');
+      }
+      return;
+    }
+    if(g===1){
+      if(el.hasAttribute('aria-label')||el.hasAttribute('aria-labelledby')||el.closest('label'))return;
+      const fallback=el.getAttribute('placeholder')||el.getAttribute('name')||el.id||'Form field';
+      el.setAttribute('aria-label',fallback);
+      return;
+    }
+    if(g===2){
+      const hasName=Boolean(
+        el.getAttribute('aria-label')?.trim()||
+        el.getAttribute('aria-labelledby')?.trim()||
+        el.getAttribute('title')?.trim()||
+        el.textContent?.trim()||
+        el.querySelector('img[alt]:not([alt=""])')
+      );
+      if(!hasName){
+        const fallback=accessibleNameFallback(el);
+        if(fallback)el.setAttribute('aria-label',fallback);
+      }
+      return;
+    }
+    if(!el.hasAttribute('tabindex'))el.setAttribute('tabindex','0');
+    if(el.dataset.a11yKeyBound==='1')return;
+    el.dataset.a11yKeyBound='1';
+    el.addEventListener('keydown',event=>{
+      if(event.key!=='Enter'&&event.key!==' ')return;
+      event.preventDefault();
+      el.click();
+    });
+  };
+
+  const runChunk=()=>{
+    const started=performance.now();
+    while(group<groups.length){
+      const list=groups[group];
+      while(index<list.length){
+        handle(list[index++],group);
+        if(performance.now()-started>=6){
+          setTimeout(runChunk,0);
+          return;
+        }
+      }
+      group++;
+      index=0;
+    }
+  };
+  setTimeout(runChunk,0);
+}
+
 function open(html,klass=''){opener=document.activeElement;modal.className=klass;modal.innerHTML=`<button class="close" type="button" aria-label="${t('إغلاق','Close')}">×</button>${html}`;applyAccessibilityHardening(modal);modal.showModal();modal.querySelector('.close').onclick=()=>modal.close();setTimeout(applyRbacUi,0)}
 modal.addEventListener('close',()=>opener?.focus());
 function openLanguagePicker(){
@@ -6794,7 +6895,7 @@ let postRenderEnhancementToken=0;
 function schedulePostRenderEnhancements(appRoot){
   const token=++postRenderEnhancementToken;
   const queue=[
-    ()=>applyAccessibilityHardening(appRoot),
+    ()=>scheduleAccessibilityHardening(appRoot),
     ()=>applyBatch2UxHardening(appRoot),
     ()=>applyV469MobileExperience(),
     ()=>setupHomeProductLazyExpansion(),
@@ -6819,6 +6920,7 @@ function render(){
   let content=v==='home'?homePage():v==='orders'?ordersPage():v==='account'?accountPage():v==='admin'?adminPage():v.startsWith('livestock/')?livestockCategoryPage(decodeURIComponent(v.slice(10))):v.startsWith('hashi/')?hashiVariantPage(productById('hashi-camel')||products.find(isHashiCamelProduct),decodeURIComponent(v.slice(6))):v.startsWith('product/')?productDetailPage(decodeURIComponent(v.slice(8))):homePage();
   const appRoot=document.querySelector('#app');
   appRoot.innerHTML=shell(content,{admin:v==='admin'});
+  applyCriticalMediaPriority(appRoot);
   bind();
 
   // Keep all geometry/layout-affecting setup in the first render so LCP and
