@@ -1415,13 +1415,6 @@ function customerIcon(name){
   return icons[name] || '';
 }
 
-function desktopHeaderIcon(name){
-  const common='viewBox="0 0 24 24" fill="none" stroke="#f6d36f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"';
-  if(name==='search')return `<svg ${common} width="22" height="22"><circle cx="10.7" cy="10.7" r="5.6"></circle><path d="m15 15 4.2 4.2"></path></svg>`;
-  if(name==='bell')return `<svg ${common} width="22" height="22"><path d="M18 9.7a6 6 0 0 0-12 0c0 6-2.2 6.3-2.2 6.3h16.4S18 15.7 18 9.7Z"></path><path d="M10 19h4"></path></svg>`;
-  if(name==='bag')return `<svg ${common} width="22" height="22"><path d="M6.4 8.2h11.2l-.6 11H7Z"></path><path d="M9.1 8.3V7a2.9 2.9 0 0 1 5.8 0v1.3"></path></svg>`;
-  return '';
-}
 
 function header(){const v=view();return `<header class="app-header ref-customer-header">
   <div class="mobile-reference-header">
@@ -2376,52 +2369,6 @@ html[dir="rtl"] .app-shell:has(.v405-home-ui) .ref-categories #view-all{right:au
 
 let customBoxPromoTimer=0;
 
-function customBoxPromoCard(){
-  const slides=[
-    ['assets/harri-card-v386.png','حري','Harri'],
-    ['assets/naimi-card-v385.png','نعيمي','Naimi'],
-    ['assets/sawakni-card-v384.png','سواكني','Sawakni'],
-    ['assets/najdi-card-v383.png','نجدي','Najdi']
-  ];
-  return `<aside class="custom-box-promo custom-box-promo-3d" data-custom-box-showcase aria-label="${t('اصنع صندوقك بنفسك','Build your own meat box')}">
-    <div class="custom-box-promo-brand">
-      <img src="assets/ass-al-halaal-logo-v135.png" alt="Ass Al Halaal">
-      <span>${t('عاس الحلال','ASS AL HALAAL')}</span>
-    </div>
-
-    <div class="custom-box-promo-copy">
-      <small>${t('اختيارك · تجهيزنا · توصيل مبرد','Your choice · our preparation · chilled delivery')}</small>
-      <h3>${t('اصنع <em>صندوقك</em> بنفسك','Build <em>your own box</em>')}</h3>
-      <p>${t('اختر من منتجاتنا وشاهدها في عرض ثلاثي الأبعاد، ثم خصص صندوقك حسب رغبتك.','Explore our products in a 3D showcase, then customise your box your way.')}</p>
-    </div>
-
-    <div class="custom-box-promo-benefits">
-      <div><span class="promo-benefit-icon" aria-hidden="true">✓</span><b>${t('لحوم حلال طازجة','Fresh halal meat')}</b><small>${t('اختيار موثّق يومياً','Verified daily selection')}</small></div>
-      <div><span class="promo-benefit-icon promo-knife" aria-hidden="true">✦</span><b>${t('تحضير وتقطيع حسب طلبك','Prepared to your preference')}</b><small>${t('اختر القطع والتجهيز','Choose cuts & preparation')}</small></div>
-      <div><span class="promo-benefit-icon promo-cold" aria-hidden="true">❄</span><b>${t('توصيل مبرد في جدة','Chilled delivery in Jeddah')}</b><small>${t('حفاظاً على الطزاجة','Freshness protected')}</small></div>
-    </div>
-
-    <div class="custom-box-promo-stage promo-3d-stage">
-      <div class="promo-3d-glow" aria-hidden="true"></div>
-      <div class="promo-3d-carousel" data-promo-carousel aria-live="polite">
-        ${slides.map((s,i)=>`<figure class="promo-3d-slide ${i===0?'is-current':''}" data-promo-slide="${i}" aria-hidden="${i===0?'false':'true'}">
-          <div class="promo-3d-card"><img src="${s[0]}" alt="${safe(t(s[1],s[2]))}" loading="${i===0?'eager':'lazy'}"></div>
-          <figcaption>${safe(t(s[1],s[2]))}</figcaption>
-        </figure>`).join('')}
-      </div>
-      <button type="button" class="promo-3d-nav promo-prev" data-promo-prev aria-label="${t('الصورة السابقة','Previous image')}">${t('›','‹')}</button>
-      <button type="button" class="promo-3d-nav promo-next" data-promo-next aria-label="${t('الصورة التالية','Next image')}">${t('‹','›')}</button>
-      <div class="promo-3d-dots" role="tablist" aria-label="${t('صور المنتجات','Product images')}">
-        ${slides.map((s,i)=>`<button type="button" role="tab" class="${i===0?'active':''}" data-promo-dot="${i}" aria-label="${safe(t(s[1],s[2]))}" aria-selected="${i===0?'true':'false'}" tabindex="${i===0?'0':'-1'}"></button>`).join('')}
-      </div>
-    </div>
-
-    <button type="button" class="custom-box-promo-cta" data-product="harri-breed">
-      <span>${t('خصص صندوقك الآن','Customise your box')}</span>
-      <b>${t('←','→')}</b>
-    </button>
-  </aside>`;
-}
 
 function setupCustomBox3DShowcase(){
   if(customBoxPromoTimer){clearInterval(customBoxPromoTimer);customBoxPromoTimer=0}
@@ -3567,42 +3514,6 @@ function breedProfileForProduct(p){
   const breed=GOAT_BREED_META.find(b=>b.id===p.breedId);if(!breed)return null;
   return {...breed,...(GOAT_BREED_PROFILE[breed.id]||{})};
 }
-function breedProfileSection(p){
-  const b=breedProfileForProduct(p);if(!b)return '';
-  const price=GOAT_BREED_DEMO_PRICES[b.id]||Number(p.price||0);
-  const facts=[
-    ['⚖',t('الوزن النموذجي','Typical weight'),t(b.weightAr||'يختلف حسب الاختيار',b.weightEn||'Varies by selection')],
-    ['◐',t('اللون / الفروة','Coat / colour'),t(b.coatAr||'متنوع',b.coatEn||'Variable')],
-    ['⌁',t('الأذنان','Ears'),t(b.earsAr||'متنوعة',b.earsEn||'Variable')],
-    ['⌃',t('القرون','Horns'),t(b.hornsAr||'قد توجد',b.hornsEn||'May be present')],
-    ['◎',t('الغرض','Purpose'),t(b.purposeAr||'لحم',b.purposeEn||'Meat')],
-    ['☀',t('التكيف المناخي','Climate'),t(b.climateAr||'متأقلم',b.climateEn||'Adapted')],
-    ['✦',t('الطبع','Temperament'),t(b.temperAr||'قوي',b.temperEn||'Hardy')],
-    ['✓',t('ملاحظة الجودة','Quality note'),t(b.qualityAr||b.descAr,b.qualityEn||b.descEn)]
-  ];
-  return `<section class="breed-profile-section" data-breed-profile="${safe(b.id)}">
-    <div class="breed-profile-heading">
-      <div><small>${t('ملف السلالة','BREED PROFILE')}</small><h2>${safe(t(b.ar,b.en))}</h2><p>${safe(t(b.descAr,b.descEn))}</p></div>
-      <span>${t('سلالة حية','Live breed')}</span>
-    </div>
-    <div class="breed-profile-grid">
-      <div class="breed-profile-gallery">
-        <div class="breed-profile-main-photo"><img src="${safe(b.image)}" alt="${safe(t(b.ar,b.en))}"><b>${safe(t(b.originAr,b.originEn))}</b></div>
-        <div class="breed-profile-mini-grid">
-          <figure><img src="${safe(b.image)}" alt=""><figcaption>${t('عرض كامل','Full body')}</figcaption></figure>
-          <figure class="zoom"><img src="${safe(b.image)}" alt=""><figcaption>${t('تفاصيل السلالة','Breed detail')}</figcaption></figure>
-          <figure class="side"><img src="${safe(b.image)}" alt=""><figcaption>${t('الهيئة والبنية','Frame & build')}</figcaption></figure>
-        </div>
-      </div>
-      <div class="breed-profile-content">
-        <div class="breed-profile-price"><div><small>${t('سعر السلالة الحالي','Current breed price')}</small><strong>${money(price)}</strong></div><em>${t('قابل للتعديل لاحقاً من بيانات المنتج','Editable later in product data')}</em></div>
-        <div class="breed-profile-facts">${facts.map(([icon,label,value])=>`<article><i>${icon}</i><div><small>${safe(label)}</small><b>${safe(value)}</b></div></article>`).join('')}</div>
-        <div class="breed-profile-notes"><span>✓ ${t('فحص بيطري قبل التجهيز','Veterinary inspection before preparation')}</span><span>❄ ${t('سلسلة تبريد بعد التجهيز','Cold chain after preparation')}</span><span>▣ ${t('تجهيز وتغليف حسب الطلب','Preparation & packing to preference')}</span></div>
-        <p class="breed-profile-disclaimer">${t('بيانات السلالة هنا وصفية ونموذجية. الوزن والعمر والصفات الدقيقة للحيوان الفعلي يتم تأكيدها عند الاختيار النهائي.','Breed information shown here is a typical catalog profile. Exact live-animal weight, age and characteristics are confirmed at final selection.')}</p>
-      </div>
-    </div>
-  </section>`;
-}
 
 // v117 — profile metadata for existing whole-livestock products that are not breed-card products.
 // These are catalog descriptions; exact live-animal traits are confirmed at final selection.
@@ -3804,21 +3715,6 @@ function productPartMeta(part){
   return PRODUCT_PART_META[part?.id]||PRODUCT_PART_META[part?.type]||{price:0,image:'/assets/cuts/loin-back-v110.webp'};
 }
 
-function productPartIcon(type){
-  const icons={
-    head:'<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M15 18c0-7 4-11 9-11s9 4 9 11v8c0 8-4 14-9 14s-9-6-9-14Z"/><path d="M14 16 8 11M34 16l6-5M19 24h.1M29 24h.1M21 31c2 1 4 1 6 0"/></svg>',
-    neck:'<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M18 7c8 3 13 9 12 17-.7 5-4 9-9 12l4 5H13l4-8c4-2 6-5 6-9 0-5-3-9-8-11Z"/></svg>',
-    shoulder:'<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M9 29c0-9 7-17 17-17 7 0 13 4 16 10l-7 15H18c-5 0-9-3-9-8Z"/><path d="M31 18c-2 6-7 11-14 14"/></svg>',
-    ribs:'<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M13 11c13 0 23 9 23 21v6H18c-4 0-7-3-7-7 0-7 4-13 11-16"/><path d="M19 17c2 7 1 13-3 18M25 15c3 7 3 14 0 21M31 18c3 5 4 11 2 18"/></svg>',
-    loin:'<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M7 25c6-10 15-15 27-13l7 8-5 13H14c-5 0-8-3-7-8Z"/><path d="M14 23h20"/></svg>',
-    leg:'<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M9 29c0-9 7-16 16-16 7 0 12 4 14 10l-8 9-5-1-8 10-7-4 5-9c-4 1-7 1-7 1Z"/></svg>',
-    liver:'<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 28c3-10 13-17 25-15 6 1 9 4 8 9-2 9-12 15-23 14-7-1-12-3-10-8Z"/></svg>',
-    fat:'<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 7c7 10 12 16 12 23 0 7-5 12-12 12s-12-5-12-12c0-7 5-13 12-23Z"/></svg>',
-    trotters:'<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M16 7h7v20l-4 14h-9l6-16ZM29 7h7l-1 18 5 16h-9l-4-14Z"/></svg>',
-    tripe:'<svg viewBox="0 0 48 48" aria-hidden="true"><path d="M14 12c-6 5-6 14 1 17 7 3 13-5 8-10-3-4-9-1-8 4 1 6 10 7 15 3 7-6 4-16-4-19"/><path d="M13 33c7 7 20 5 24-4"/></svg>'
-  };
-  return icons[type]||icons.loin;
-}
 function productPartsFor(p){
   const hay=`${String(p.id||'')} ${String(p.en||p.name_en||'')} ${String(p.category||'')}`.toLowerCase();
   const whole=/whole|harri|naimi|ardi|goat|sheep|livestock/.test(hay)&&!/(box|grill|everyday|daily)/.test(hay);
@@ -4394,7 +4290,7 @@ function bindSheepBreedCatalog(){
 
 
 
-function pdpChoiceGroup({id,label,options=[],selected='',note=''}){
+){
   const selectedValue=String(selected||options?.[0]?.[0]||'');
   return `<section class="pdp-choice-group" data-pdp-choice-group="${safe(id)}">
     <div class="pdp-choice-label">
@@ -4410,25 +4306,6 @@ function pdpChoiceGroup({id,label,options=[],selected='',note=''}){
   </section>`;
 }
 
-function pdpPackagingBoxGroup(){
-  const sizes=[1,2,3,4,5];
-  return `<section class="pdp-choice-group pdp-packaging-box-group" data-pdp-choice-group="pdp-box">
-    <div class="pdp-choice-label">
-      <b>${t('اختر صندوق التغليف','Choose packaging box')}</b>
-      <small>${t('اختر سعة الصندوق المناسبة للتجهيز النهائي','Choose the box capacity for final packing')}</small>
-    </div>
-    <div class="pdp-packaging-box-grid" role="group" aria-label="${t('صناديق عاس الحلال','Ass Al Halaal packaging boxes')}">
-      ${sizes.map((kg,i)=>`<button type="button" class="pdp-packaging-box-card ${i===0?'selected':''}" data-pdp-box-choice="${kg}" aria-pressed="${i===0?'true':'false'}">
-        <span class="pdp-packaging-box-image"><img src="assets/ass-al-halaal-box-${kg}kg-v315.webp" alt="Ass Al Halaal ${kg} KG packaging box" loading="lazy"></span>
-        <span class="pdp-packaging-box-copy"><b>${kg} KG</b><small>${t('صندوق عاس الحلال','Ass Al Halaal box')}</small></span>
-        <i aria-hidden="true">✓</i>
-      </button>`).join('')}
-    </div>
-    <select id="pdp-box" class="pdp-choice-select" tabindex="-1" aria-hidden="true">
-      ${sizes.map((kg,i)=>`<option value="${kg}" ${i===0?'selected':''}>${kg} KG</option>`).join('')}
-    </select>
-  </section>`;
-}
 
 const HASHI_SOURCE_VARIANTS=[
   {id:'jeddah',ar:'حاشي جدة',en:'Hashi · Jeddah Selection',regionAr:'جدة',regionEn:'Jeddah',noteAr:'اختيار متاح عبر موردين جدة مع تأكيد الحيوان الفعلي قبل التجهيز.',noteEn:'Jeddah supplier selection with the exact animal confirmed before preparation.'},
@@ -5276,22 +5153,6 @@ function adminTodayLabel(){
     return new Intl.DateTimeFormat(locale,{day:'2-digit',month:'short',year:'numeric'}).format(new Date());
   }catch{return new Date().toLocaleDateString()}
 }
-function adminDashboardRecentRow(o){
-  const code=safe(o.order_code||o.id);
-  const itemCount=(o.items||[]).reduce((sum,i)=>sum+Number(i.qty||0),0);
-  const statusClass=safe(o.status||'received');
-  const when=safe(String(o.created_at||o.updated_at||'').replace('T',' ').slice(0,16));
-  return `<tr>
-    <td class="dash-row-index"><span>${safe(String((adminOrders.indexOf(o)+1)||1))}</span></td>
-    <td><button type="button" class="dash-order-link" data-dashboard-order="${safe(o.id)}"><b dir="ltr">${code}</b><small>${t('فتح الطلب','Open order')}</small></button></td>
-    <td><div class="dash-customer-cell"><b>${safe(o.customer_name||t('عميل','Customer'))}</b><small dir="ltr">${safe(o.phone||'—')}</small></div></td>
-    <td><div class="dash-items-cell"><b>${itemCount}</b><small>${t('عنصر','items')}</small></div></td>
-    <td class="dash-value-cell">${adminCan('finance','view')?`<b>${money(o.total)}</b>`:'—'}</td>
-    <td><span class="admin-status-pill ${statusClass}">${statusLabel(o.status)}</span></td>
-    <td><div class="dash-date-cell"><b>${when||'—'}</b><small>${safe(o.district||'')}</small></div></td>
-    <td><button type="button" class="dash-row-action" data-dashboard-order="${safe(o.id)}" aria-label="${t('فتح الطلب','Open order')}">${adminIcon('chevron')}</button></td>
-  </tr>`;
-}
 
 
 function adminLast7DaysSeries(){
@@ -5746,7 +5607,7 @@ async function aiChatRequest({message,phone='',orderId='',language=lang,channel=
   return data.ai;
 }
 
-async function aiWhatsAppReplyRequest({message,phone='',orderId='',language=lang,send=false}={}){
+={}){
   const r=await fetch('/api/ai/whatsapp-reply',{
     method:'POST',
     headers:{
@@ -9606,190 +9467,6 @@ function setupV485MostRequestedSlider(){
    Rebinds v485 carousel with robust desktop interaction.
    ========================================================= */
 
-function setupV486MostRequestedInteractions(){
-  const shell=document.querySelector('#collection.ref-collection .v485-product-carousel-shell');
-  const track=shell?.querySelector('#products.ref-products.v485-product-carousel-track');
-  if(!shell || !track)return;
-
-  // Remove/replace old arrows so v485 listeners cannot conflict.
-  const oldPrev=shell.querySelector('.v485-carousel-prev');
-  const oldNext=shell.querySelector('.v485-carousel-next');
-
-  const makeArrow=(old, cls, label, html)=>{
-    const btn=old ? old.cloneNode(false) : document.createElement('button');
-    btn.type='button';
-    btn.className=`v485-carousel-arrow ${cls} v486-active-arrow`;
-    btn.setAttribute('aria-label',label);
-    btn.innerHTML=html;
-    if(old) old.replaceWith(btn);
-    else shell.appendChild(btn);
-    return btn;
-  };
-
-  const rtl=document.documentElement.dir==='rtl';
-  const prev=makeArrow(
-    oldPrev,
-    'v485-carousel-prev',
-    rtl?'السابق':'Previous product',
-    '‹'
-  );
-  const next=makeArrow(
-    oldNext,
-    'v485-carousel-next',
-    rtl?'التالي':'Next product',
-    '›'
-  );
-
-  const cards=()=>[...track.querySelectorAll(':scope > .product-card.v485-carousel-card')];
-
-  const nearestIndex=()=>{
-    const list=cards();
-    if(!list.length)return 0;
-    const box=track.getBoundingClientRect();
-    const anchor=rtl ? box.right : box.left;
-
-    let best=0;
-    let dist=Infinity;
-    list.forEach((card,i)=>{
-      const r=card.getBoundingClientRect();
-      const edge=rtl ? r.right : r.left;
-      const d=Math.abs(edge-anchor);
-      if(d<dist){dist=d;best=i;}
-    });
-    return best;
-  };
-
-  const goToIndex=(index,behavior='smooth')=>{
-    const list=cards();
-    if(!list.length)return;
-    const target=list[Math.max(0,Math.min(list.length-1,index))];
-    target.scrollIntoView({
-      behavior,
-      block:'nearest',
-      inline:'start'
-    });
-  };
-
-  const updateArrowState=()=>{
-    const list=cards();
-    if(list.length<=1){
-      prev.disabled=true;
-      next.disabled=true;
-      return;
-    }
-
-    const i=nearestIndex();
-    prev.disabled=i<=0;
-    next.disabled=i>=list.length-1;
-
-    prev.setAttribute('aria-disabled',String(prev.disabled));
-    next.setAttribute('aria-disabled',String(next.disabled));
-  };
-
-  prev.onclick=e=>{
-    e.preventDefault();
-    e.stopPropagation();
-    goToIndex(nearestIndex()-1,'smooth');
-    setTimeout(updateArrowState,380);
-  };
-
-  next.onclick=e=>{
-    e.preventDefault();
-    e.stopPropagation();
-    goToIndex(nearestIndex()+1,'smooth');
-    setTimeout(updateArrowState,380);
-  };
-
-  // Robust desktop mouse-drag.
-  // Uses document-level mousemove so dragging continues even if pointer leaves track.
-  if(!track.dataset.v486MouseDrag){
-    track.dataset.v486MouseDrag='1';
-
-    let dragging=false;
-    let startX=0;
-    let startScroll=0;
-    let moved=false;
-    let suppressClickUntil=0;
-
-    const interactiveSelector='button,a,input,select,textarea,label,[role="button"]';
-
-    const down=e=>{
-      if(e.button!==0)return;
-      if(e.target.closest(interactiveSelector))return;
-
-      dragging=true;
-      moved=false;
-      startX=e.clientX;
-      startScroll=track.scrollLeft;
-
-      track.classList.add('is-v486-dragging');
-      document.documentElement.classList.add('v486-carousel-dragging');
-
-      e.preventDefault();
-    };
-
-    const move=e=>{
-      if(!dragging)return;
-
-      const dx=e.clientX-startX;
-      if(Math.abs(dx)>4)moved=true;
-
-      // Physical drag: pull rail with the mouse.
-      track.scrollLeft=startScroll-dx;
-
-      if(moved)e.preventDefault();
-    };
-
-    const up=e=>{
-      if(!dragging)return;
-
-      dragging=false;
-      track.classList.remove('is-v486-dragging');
-      document.documentElement.classList.remove('v486-carousel-dragging');
-
-      if(moved){
-        suppressClickUntil=Date.now()+320;
-        // Snap cleanly to nearest card after drag.
-        const index=nearestIndex();
-        requestAnimationFrame(()=>goToIndex(index,'smooth'));
-      }
-
-      setTimeout(updateArrowState,360);
-    };
-
-    track.addEventListener('mousedown',down);
-    document.addEventListener('mousemove',move,{passive:false});
-    document.addEventListener('mouseup',up);
-
-    track.addEventListener('dragstart',e=>e.preventDefault());
-
-    // Prevent accidental card-open after an actual drag.
-    track.addEventListener('click',e=>{
-      if(Date.now()<suppressClickUntil){
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    },true);
-  }
-
-  // Native touch swipe remains enabled.
-  if(!track.dataset.v486ScrollState){
-    track.dataset.v486ScrollState='1';
-    let raf=0;
-    track.addEventListener('scroll',()=>{
-      cancelAnimationFrame(raf);
-      raf=requestAnimationFrame(updateArrowState);
-    },{passive:true});
-  }
-
-  // Image dragging should never steal the mouse gesture.
-  track.querySelectorAll('img').forEach(img=>{
-    img.draggable=false;
-    img.style.webkitUserDrag='none';
-  });
-
-  requestAnimationFrame(updateArrowState);
-}
 
 /* v486 no-op boot retired */
 
@@ -10162,67 +9839,6 @@ function getV489RequestFitData(){
   };
 }
 
-function setupV489RequestFitSelector(){
-  const section=document.querySelector('#request-fit.request-fit-section');
-  if(!section)return;
-
-  const tabs=[...section.querySelectorAll('[data-request-fit]')];
-  if(!tabs.length)return;
-
-  const data=getV489RequestFitData();
-
-  const renderFit=(key)=>{
-    const item=data[key]||data.camping;
-
-    tabs.forEach(btn=>{
-      const active=btn.dataset.requestFit===key;
-      btn.classList.toggle('selected',active);
-      btn.setAttribute('aria-selected',active?'true':'false');
-      btn.tabIndex=active?0:-1;
-    });
-
-    const set=(sel,value)=>{
-      const el=section.querySelector(sel);
-      if(el)el.textContent=value||'';
-    };
-
-    set('[data-fit-kicker]',item.kicker);
-    set('[data-fit-title]',item.title);
-    set('[data-fit-description]',item.description);
-    set('[data-fit-type]',item.type);
-    set('[data-fit-cuts]',item.cuts);
-    set('[data-fit-qty]',item.qty);
-    set('[data-fit-prep]',item.prep);
-    set('[data-fit-summary-title]',item.summaryTitle);
-    set('[data-fit-summary]',item.summary);
-  };
-
-  tabs.forEach(btn=>{
-    btn.onclick=()=>{
-      renderFit(btn.dataset.requestFit);
-    };
-
-    btn.onkeydown=e=>{
-      if(!['ArrowLeft','ArrowRight'].includes(e.key))return;
-      e.preventDefault();
-      const i=tabs.indexOf(btn);
-      const step=e.key==='ArrowRight'?1:-1;
-      const next=tabs[(i+step+tabs.length)%tabs.length];
-      next.focus();
-      next.click();
-    };
-  });
-
-  section.querySelector('[data-fit-browse]')?.addEventListener('click',()=>{
-    document.querySelector('#collection')?.scrollIntoView({
-      behavior:'smooth',
-      block:'start'
-    });
-  });
-
-  const selected=section.querySelector('[data-request-fit].selected');
-  renderFit(selected?.dataset.requestFit||'camping');
-}
 
 /* v489 startup boot retired; v490 owns the active request section. */
 
