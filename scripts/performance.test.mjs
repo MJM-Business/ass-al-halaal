@@ -213,3 +213,17 @@ test('critical CSS mirrors final mobile header and hero geometry to prevent CLS'
   assert.match(critical,/\.app-shell:not\(\.admin-shell\) \.hero-slider\.v94-hero-slider/);
   assert.match(critical,/\.app-shell:not\(\.admin-shell\) \.ref-customer-header/);
 });
+
+
+test('customer bundle lazy-loads admin renderers only on the admin route',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  const build=await readFile('scripts/build-assets.mjs','utf8');
+  assert.match(app,/async function ensureAdminRendererModules\(\)/);
+  assert.match(app,/import\('\.\/modules\/admin-governance\.js'\)/);
+  assert.match(app,/import\('\.\/modules\/admin-marketing\.js'\)/);
+  assert.match(app,/if\(view\(\)==='admin'\)await ensureAdminRendererModules\(\);\s*\nrender\(\);/);
+  assert.doesNotMatch(app,/\/\/ Bundled admin module: governance/);
+  assert.doesNotMatch(app,/\/\/ Bundled admin module: marketing/);
+  assert.match(build,/splitting:true/);
+  assert.match(build,/chunkNames:'chunks\/\[name\]-\[hash\]'/);
+});
