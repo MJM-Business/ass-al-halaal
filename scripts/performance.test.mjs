@@ -195,3 +195,12 @@ test('duplicate installed-app startup boot is retired',async()=>{
   assert.match(app,/v502 duplicate installed-app boot retired/);
   assert.doesNotMatch(app,/const installV502WebsiteVsInstalledNavigation=/);
 });
+
+
+test('noncritical startup work yields across browser tasks to reduce TBT',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.match(app,/const yieldStartupTask=\(\)=>new Promise\(resolve=>setTimeout\(resolve,0\)\)/);
+  assert.match(app,/await yieldStartupTask\(\);/);
+  const yields=[...app.matchAll(/await yieldStartupTask\(\);/g)];
+  assert.ok(yields.length>=4);
+});
