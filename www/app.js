@@ -8395,12 +8395,7 @@ function render(){
   applyBatch2UxHardening(appRoot);
   bind();
   applyV469MobileExperience();
-  setupV485MostRequestedSlider();
-  if(typeof setupV487StableCarousel==='function') setupV487StableCarousel();
-  if(typeof setupV527MobileProductCarousel==='function') setupV527MobileProductCarousel();
-  if(typeof setupV528MobileCarousel==='function') setupV528MobileCarousel();
-  if(typeof setupV490RequestSection==='function') setupV490RequestSection();
-  setupHomeProductLazyExpansion();
+  scheduleHomeEnhancements();
   requestAnimationFrame(()=>{
     if(typeof applyV443LockedTopNav==='function') applyV443LockedTopNav();
     window.__v496BindFaq?.();
@@ -8408,6 +8403,36 @@ function render(){
   });
 }
 
+
+let homeEnhancementsStarted=false;
+let homeEnhancementsTimer=0;
+function runHomeEnhancements(){
+  if(view()!=='home')return;
+  homeEnhancementsStarted=true;
+  clearTimeout(homeEnhancementsTimer);
+  setupV485MostRequestedSlider();
+  if(typeof setupV487StableCarousel==='function') setupV487StableCarousel();
+  if(typeof setupV527MobileProductCarousel==='function') setupV527MobileProductCarousel();
+  if(typeof setupV528MobileCarousel==='function') setupV528MobileCarousel();
+  if(typeof setupV490RequestSection==='function') setupV490RequestSection();
+  setupHomeProductLazyExpansion();
+}
+function scheduleHomeEnhancements(){
+  if(view()!=='home')return;
+  if(homeEnhancementsStarted){
+    setTimeout(runHomeEnhancements,0);
+    return;
+  }
+  const start=()=>setTimeout(runHomeEnhancements,0);
+  if(!window.__ahlHomeEnhancementIntentBound){
+    window.__ahlHomeEnhancementIntentBound=true;
+    window.addEventListener('pointerdown',start,{once:true,passive:true});
+    window.addEventListener('keydown',start,{once:true});
+    window.addEventListener('touchstart',start,{once:true,passive:true});
+  }
+  clearTimeout(homeEnhancementsTimer);
+  homeEnhancementsTimer=setTimeout(runHomeEnhancements,5500);
+}
 
 function standardDetailData(kind){
   const rows={
