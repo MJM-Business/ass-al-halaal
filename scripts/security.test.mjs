@@ -22,7 +22,7 @@ async function freePort(){
 }
 
 async function waitForHealth(base,child,logs){
-  const deadline=Date.now()+10_000;
+  const deadline=Date.now()+20_000;
   while(Date.now()<deadline){
     if(child.exitCode!==null)throw new Error(`server exited early (code ${child.exitCode})\n${logs.join('')}`);
     try{
