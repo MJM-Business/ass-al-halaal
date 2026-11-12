@@ -95,10 +95,9 @@ test('mobile active hero paints immediately without entrance transitions',async(
 });
 
 
-test('full stylesheet is preloaded and activated without blocking first paint',async()=>{
-  assert.match(index,/rel="preload" as="style" href="dist\/style\.min\.css\?v=\d+"/);
-  assert.match(index,/id="full-style" rel="stylesheet" href="dist\/style\.min\.css\?v=\d+" media="print"/);
-  assert.match(index,/style-loader\.js\?v=\d+/);
+test('full stylesheet loads directly for stable rendering',async()=>{
+  assert.match(index,/rel="stylesheet" href="dist\/style\.min\.css\?v=\d+"/);
+  assert.doesNotMatch(index,/id="full-style"[^>]*media="print"/);
 });
 
 
