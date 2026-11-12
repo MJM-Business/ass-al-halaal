@@ -606,6 +606,71 @@ function applyAccessibilityHardening(root=document){
     });
   });
 }
+function scheduleAccessibilityHardening(root=document){
+  const scope=root&&root.querySelectorAll?root:document;
+  const jobs=[
+    [...scope.querySelectorAll('img')],
+    [...scope.querySelectorAll('input:not([type="hidden"]),select,textarea')],
+    [...scope.querySelectorAll('button,a,[role="button"]')],
+    [...scope.querySelectorAll('[role="button"]')]
+  ];
+  let group=0,index=0,priorityAssigned=false;
+  const accessibleNameFallback=el=>{
+    const id=String(el.id||'').toLowerCase();
+    const dataNav=String(el.dataset?.nav||'').toLowerCase();
+    const key=id||dataNav||String(el.className||'').toLowerCase();
+    if(key.includes('search'))return t('بحث','Search');
+    if(key.includes('bell')||key.includes('notif'))return t('التنبيهات','Notifications');
+    if(key.includes('cart')||key.includes('bag'))return t('السلة','Cart');
+    if(key.includes('language')||key.includes('lang'))return t('لغة التطبيق','App language');
+    if(key.includes('account'))return t('حسابي','Account');
+    if(key.includes('order'))return t('تتبع الطلب','Track order');
+    if(key.includes('home'))return t('الرئيسية','Home');
+    if(key.includes('close'))return t('إغلاق','Close');
+    return '';
+  };
+  const handle=(el,g)=>{
+    if(g===0){
+      if(!el.hasAttribute('alt'))el.setAttribute('alt','');
+      const aboveFold=Boolean(el.closest('.ref-customer-header,.mobile-reference-header,.v94-hero-slider,.quality-hero,.simple-auth-logo-wrap'));
+      if(aboveFold&&!priorityAssigned){
+        el.setAttribute('loading','eager');el.setAttribute('fetchpriority','high');el.setAttribute('decoding','sync');priorityAssigned=true;
+      }else{
+        if(!el.hasAttribute('loading'))el.setAttribute('loading','lazy');
+        if(!el.hasAttribute('decoding'))el.setAttribute('decoding','async');
+        if(!el.hasAttribute('fetchpriority'))el.setAttribute('fetchpriority','low');
+      }
+    }else if(g===1){
+      if(el.hasAttribute('aria-label')||el.hasAttribute('aria-labelledby')||el.closest('label'))return;
+      const fallback=el.getAttribute('placeholder')||el.getAttribute('name')||el.id||'Form field';
+      el.setAttribute('aria-label',fallback);
+    }else if(g===2){
+      const hasName=Boolean(el.getAttribute('aria-label')?.trim()||el.getAttribute('aria-labelledby')?.trim()||el.getAttribute('title')?.trim()||el.textContent?.trim()||el.querySelector('img[alt]:not([alt=""])'));
+      if(!hasName){const fallback=accessibleNameFallback(el);if(fallback)el.setAttribute('aria-label',fallback)}
+    }else{
+      if(!el.hasAttribute('tabindex'))el.setAttribute('tabindex','0');
+      if(el.dataset.a11yKeyBound==='1')return;
+      el.dataset.a11yKeyBound='1';
+      el.addEventListener('keydown',event=>{
+        if(event.key!=='Enter'&&event.key!==' ')return;
+        event.preventDefault();el.click();
+      });
+    }
+  };
+  const runChunk=()=>{
+    const started=performance.now();
+    while(group<jobs.length){
+      const list=jobs[group];
+      while(index<list.length){
+        handle(list[index++],group);
+        if(performance.now()-started>8){setTimeout(runChunk,0);return}
+      }
+      group++;index=0;
+    }
+  };
+  runChunk();
+}
+
 function open(html,klass=''){opener=document.activeElement;modal.className=klass;modal.innerHTML=`<button class="close" type="button" aria-label="${t('إغلاق','Close')}">×</button>${html}`;applyAccessibilityHardening(modal);modal.showModal();modal.querySelector('.close').onclick=()=>modal.close();setTimeout(applyRbacUi,0)}
 modal.addEventListener('close',()=>opener?.focus());
 function openLanguagePicker(){
@@ -7498,7 +7563,7 @@ let postRenderEnhancementToken=0;
 function schedulePostRenderEnhancements(appRoot){
   const token=++postRenderEnhancementToken;
   const queue=[
-    ()=>applyAccessibilityHardening(appRoot),
+    ()=>scheduleAccessibilityHardening(appRoot),
     ()=>applyBatch2UxHardening(appRoot),
     ()=>applyV469MobileExperience(),
     ()=>setupHomeProductLazyExpansion(),
