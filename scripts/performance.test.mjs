@@ -241,3 +241,10 @@ test('duplicate nonvisual startup passes stay retired while render owns first sy
   assert.match(app,/v485 no-op installer retired/);
   assert.match(app,/v487 no-op installer retired/);
 });
+
+
+test('superseded v527 carousel engine stays off startup',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.doesNotMatch(app,/setupV487StableCarousel\(\);\s*if\(typeof setupV527MobileProductCarousel/);
+  assert.match(app,/track\.classList\.add\('v527-mobile-centered-track','v528-pointer-carousel'\)/);
+});
