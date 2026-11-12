@@ -9699,6 +9699,11 @@ if(view()==='admin'){
   setTimeout(scheduleLater,3000);
 }
 
+// Yield after the critical first render so non-critical enhancement setup
+// is split across browser tasks instead of inflating Total Blocking Time.
+const yieldStartupTask=()=>new Promise(resolve=>setTimeout(resolve,0));
+await yieldStartupTask();
+
 
 
 
@@ -10356,6 +10361,8 @@ if(!window.__v469ResizeBound){
 
 
 
+await yieldStartupTask();
+
 /* =========================================================
    Ass Al Halaal v485 — MOST REQUESTED PRODUCT SLIDER
    Isolated to the home #collection / #products section only.
@@ -10965,6 +10972,8 @@ function setupV487StableCarousel(){
 })();
 
 
+await yieldStartupTask();
+
 /* =========================================================
    Ass Al Halaal v489 — WHAT SUITS YOUR REQUEST
    Interactive occasion/use-case recommendation section.
@@ -11476,6 +11485,8 @@ function setupV490RequestSection(){
 
 /* retired empty runtime style installer */
 
+
+await yieldStartupTask();
 
 /* =========================================================
    Ass Al Halaal v527 — MOBILE PRODUCT CAROUSEL CENTER + SWIPE
