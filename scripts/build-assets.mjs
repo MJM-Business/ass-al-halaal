@@ -1,4 +1,4 @@
-import {mkdir,stat} from 'node:fs/promises';
+import {mkdir,stat,rm} from 'node:fs/promises';
 import sharp from 'sharp';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -7,6 +7,7 @@ import {build} from 'esbuild';
 const root=fileURLToPath(new URL('../',import.meta.url));
 const outDir=path.join(root,'www','dist');
 const optimizedAssetsDir=path.join(outDir,'assets');
+await rm(outDir,{recursive:true,force:true});
 await mkdir(outDir,{recursive:true});
 await mkdir(optimizedAssetsDir,{recursive:true});
 
