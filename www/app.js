@@ -7468,6 +7468,7 @@ function bindHomeDeferred(root){
 
 async function hydrateHomeDeferred(root=document.querySelector('[data-home-deferred]')){
   if(view()!=='home'||!root||!root.isConnected)return false;
+  window.__activateFullStyle?.();
   if(root.dataset.homeDeferredReady==='1')return true;
   if(homeDeferredHydrationPromise&&homeDeferredHydrationRoot===root)return homeDeferredHydrationPromise;
   homeDeferredHydrationRoot=root;
@@ -7527,6 +7528,7 @@ function setupHomeProductLazyExpansion(){
 
   homeProductsObserver=new IntersectionObserver(entries=>{
     if(!entries.some(entry=>entry.isIntersecting))return;
+    window.__activateFullStyle?.();
     homeProductsExpanded=true;
     homeProductsObserver?.disconnect?.();
     homeProductsObserver=null;
