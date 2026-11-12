@@ -227,3 +227,15 @@ test('customer bundle lazy-loads admin renderers only on the admin route',async(
   assert.match(build,/splitting:true/);
   assert.match(build,/chunkNames:'chunks\/\[name\]-\[hash\]'/);
 });
+
+
+test('duplicate nonvisual startup passes stay retired while render owns first sync',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.match(app,/v489 startup boot retired; v490 owns the active request section/);
+  assert.match(app,/Initial bind is owned by render\(\)'s requestAnimationFrame pass/);
+  assert.match(app,/Initial contrast sync is owned by render\(\)'s requestAnimationFrame pass/);
+  assert.doesNotMatch(app,/document\.addEventListener\('DOMContentLoaded',bindFaq/);
+  assert.doesNotMatch(app,/window\.__v517SyncBrandContrast=syncBrandContrast;\s*syncBrandContrast\(\)/);
+  assert.match(app,/v485 no-op installer retired/);
+  assert.match(app,/v487 no-op installer retired/);
+});
