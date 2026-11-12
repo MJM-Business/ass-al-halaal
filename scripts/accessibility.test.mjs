@@ -163,10 +163,11 @@ test('portal manager forms announce loading success and local fallback states',(
 });
 
 
-test('customer header follows document RTL and LTR direction consistently',async()=>{
+test('customer header keeps icon positions stable while text follows RTL and LTR',async()=>{
   const critical=await readFile('www/critical.css','utf8');
-  assert.match(critical,/html\[dir="rtl"\] \.app-shell:not\(\.admin-shell\) \.header-quick-actions\{direction:rtl!important\}/);
-  assert.match(critical,/html\[dir="ltr"\] \.app-shell:not\(\.admin-shell\) \.header-quick-actions\{direction:ltr!important\}/);
-  assert.match(critical,/html\[dir="rtl"\] \.app-shell:not\(\.admin-shell\) \.app-header\{direction:rtl!important\}/);
-  assert.match(critical,/html\[dir="ltr"\] \.app-shell:not\(\.admin-shell\) \.app-header\{direction:ltr!important\}/);
+  assert.match(critical,/\.app-shell:not\(\.admin-shell\) \.app-header\{direction:ltr!important\}/);
+  assert.match(critical,/\.app-shell:not\(\.admin-shell\) \.header-quick-actions\{direction:ltr!important\}/);
+  assert.match(critical,/html\[dir="rtl"\] \.app-shell:not\(\.admin-shell\) \.customer-brand,/);
+  assert.match(critical,/html\[dir="rtl"\] \.app-shell:not\(\.admin-shell\) \.location-pill\{direction:rtl!important;text-align:right!important\}/);
+  assert.match(critical,/html\[dir="ltr"\] \.app-shell:not\(\.admin-shell\) \.location-pill\{direction:ltr!important;text-align:left!important\}/);
 });
