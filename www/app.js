@@ -8402,7 +8402,6 @@ function render(){
   if(typeof setupV490RequestSection==='function') setupV490RequestSection();
   setupHomeProductLazyExpansion();
   requestAnimationFrame(()=>{
-    if(typeof applyV443LockedTopNav==='function') applyV443LockedTopNav();
     window.__v496BindFaq?.();
     window.__v517SyncBrandContrast?.();
   });
@@ -9767,105 +9766,9 @@ await yieldStartupTask();
 
 
 
-;(()=>{
-  const STYLE_ID='v443-true-fixed-top-navigation';
-
-  function ensureV443Style(){
-    if(document.getElementById(STYLE_ID)) return;
-    const style=document.createElement('style');
-    style.id=STYLE_ID;
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
-  }
-
-  function px(n){ return `${Math.max(0,Math.round(n))}px`; }
-
-  let v443LastLayoutAt=0;
-  let v443LastShell=null;
-
-  window.applyV443LockedTopNav=function applyV443LockedTopNav(force=false){
-    ensureV443Style();
-
-    const now=performance.now();
-    const shell=document.querySelector('.app-shell:not(.admin-shell)');
-
-    // Many historical UI patches call this function during the same startup
-    // burst. Avoid repeating synchronous layout reads/writes for the same
-    // shell within a short window; render/resize still performs a fresh pass.
-    if(!force && shell && shell===v443LastShell && (now-v443LastLayoutAt)<250){
-      return;
-    }
-    v443LastShell=shell;
-    v443LastLayoutAt=now;
-    if(!shell){
-      document.documentElement.style.setProperty('--v443-locked-nav-height','0px');
-      return;
-    }
-
-    const header=shell.querySelector(':scope > .ref-customer-header') || shell.querySelector('.ref-customer-header');
-    if(!header) return;
-
-    let headerSpacer=shell.querySelector(':scope > .v443-header-spacer');
-    if(!headerSpacer){
-      headerSpacer=document.createElement('div');
-      headerSpacer.className='v443-header-spacer';
-      header.insertAdjacentElement('afterend',headerSpacer);
-    }
-
-    const shellRect=shell.getBoundingClientRect();
-    const headerH=header.offsetHeight || 94;
-
-    header.classList.add('v443-fixed-header');
-    header.style.setProperty('left',px(shellRect.left),'important');
-    header.style.setProperty('right','auto','important');
-    header.style.setProperty('width',px(shellRect.width),'important');
-    header.style.setProperty('max-width',px(shellRect.width),'important');
-    header.style.setProperty('top','0px','important');
-    headerSpacer.style.height=px(headerH);
-    headerSpacer.style.minHeight=px(headerH);
-
-    const announcement=shell.querySelector('.ref-announcement');
-    let totalH=headerH;
-
-    if(announcement){
-      const screen=announcement.closest('.screen') || shell.querySelector('.screen');
-      let announcementSpacer=screen?.querySelector(':scope > .v443-announcement-spacer');
-      if(!announcementSpacer && screen){
-        announcementSpacer=document.createElement('div');
-        announcementSpacer.className='v443-announcement-spacer';
-        screen.insertBefore(announcementSpacer,announcement);
-      }
-
-      const announcementH=announcement.offsetHeight || 52;
-      announcement.classList.add('v443-fixed-announcement');
-      announcement.style.setProperty('left',px(shellRect.left),'important');
-      announcement.style.setProperty('right','auto','important');
-      announcement.style.setProperty('width',px(shellRect.width),'important');
-      announcement.style.setProperty('max-width',px(shellRect.width),'important');
-      announcement.style.setProperty('top',px(headerH),'important');
-      if(announcementSpacer){
-        announcementSpacer.style.height=px(announcementH);
-        announcementSpacer.style.minHeight=px(announcementH);
-      }
-      totalH+=announcementH;
-    }
-
-    document.documentElement.style.setProperty('--v443-locked-nav-height',px(totalH));
-  };
-
-  let raf=0;
-  const schedule=()=>{
-    cancelAnimationFrame(raf);
-    raf=requestAnimationFrame(()=>requestAnimationFrame(()=>window.applyV443LockedTopNav(true)));
-  };
-
-  // Initial measurement is owned by render(); keep only responsive re-measurements.
-  window.addEventListener('resize',schedule,{passive:true});
-  window.addEventListener('orientationchange',schedule,{passive:true});
-
-  // render() already schedules a fresh navigation measurement.
-  // Avoid a second MutationObserver-triggered layout pass for the same render.
-})();
+/* v443 forced-layout navigation retired.
+   Base critical CSS already keeps .app-header sticky, so no synchronous
+   getBoundingClientRect()/offsetHeight measurement is needed on render/resize. */
 
 
 /* installV444PremiumUtilityBar retired: empty style + duplicate nav reflow */
