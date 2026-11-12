@@ -203,3 +203,13 @@ test('noncritical startup work yields across browser tasks to reduce TBT',async(
   const yields=[...app.matchAll(/await yieldStartupTask\(\);/g)];
   assert.ok(yields.length>=4);
 });
+
+
+test('critical CSS mirrors final mobile header and hero geometry to prevent CLS',async()=>{
+  const critical=await readFile('www/critical.css','utf8');
+  assert.match(critical,/v568 — mirrored final mobile header\/hero geometry to prevent CLS/);
+  assert.match(critical,/runtime-style-87/);
+  assert.match(critical,/runtime-style-91/);
+  assert.match(critical,/\.app-shell:not\(\.admin-shell\) \.hero-slider\.v94-hero-slider/);
+  assert.match(critical,/\.app-shell:not\(\.admin-shell\) \.ref-customer-header/);
+});
