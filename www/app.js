@@ -7501,8 +7501,6 @@ function schedulePostRenderEnhancements(appRoot){
     ()=>applyAccessibilityHardening(appRoot),
     ()=>applyBatch2UxHardening(appRoot),
     ()=>applyV469MobileExperience(),
-    ()=>{if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel()},
-    ()=>{if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel()},
     ()=>setupHomeProductLazyExpansion(),
     ()=>{
       window.__v496BindFaq?.();
@@ -7530,6 +7528,8 @@ function render(){
   // CLS settle immediately. Only non-visual scans/enhancements are deferred.
   setupV485MostRequestedSlider();
   if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();
+  if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel();
+  if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel();
   if(typeof setupV490RequestSection==='function')setupV490RequestSection();
   if(typeof applyV443LockedTopNav==='function')applyV443LockedTopNav();
 
