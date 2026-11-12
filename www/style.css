@@ -56,3 +56,23 @@
     scroll-behavior:auto!important;
   }
 }
+
+
+/* Accessibility baseline — touch targets and keyboard focus */
+button,
+a[href],
+input,
+select,
+textarea,
+[role="button"]{
+  min-block-size:44px;
+}
+button:focus-visible,
+a[href]:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible{
+  outline:3px solid #d7b463;
+  outline-offset:2px;
+}
