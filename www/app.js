@@ -6798,6 +6798,7 @@ function schedulePostRenderEnhancements(appRoot){
     ()=>applyBatch2UxHardening(appRoot),
     ()=>applyV469MobileExperience(),
     ()=>setupHomeProductLazyExpansion(),
+    ()=>scheduleHomeDeferredHydration(),
     ()=>{
       window.__v496BindFaq?.();
       window.__v517SyncBrandContrast?.();
@@ -7444,6 +7445,68 @@ function bind(){
   document.querySelectorAll('[data-admin-status]').forEach(s=>s.onchange=()=>updateAdminStatus(s.dataset.adminStatus,s.value));
   applyRbacUi();
 }
+let homeDeferredObserver=null;
+let homeDeferredHydrationPromise=null;
+let homeDeferredHydrationRoot=null;
+let homeDeferredFallbackTimer=null;
+
+function bindHomeDeferred(root){
+  if(!root)return;
+  root.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>setView(b.dataset.nav));
+  root.querySelectorAll('.js-products').forEach(el=>el.onclick=()=>{
+    if(view()!=='home')setView('home');
+    setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'}),80);
+  });
+  setupStandardsExperience();
+  if(typeof setupV490RequestSection==='function')setupV490RequestSection();
+  window.__v496BindFaq?.();
+  applyAccessibilityHardening(root);
+  applyBatch2UxHardening(root);
+}
+
+async function hydrateHomeDeferred(root=document.querySelector('[data-home-deferred]')){
+  if(view()!=='home'||!root||!root.isConnected)return false;
+  if(root.dataset.homeDeferredReady==='1')return true;
+  if(homeDeferredHydrationPromise&&homeDeferredHydrationRoot===root)return homeDeferredHydrationPromise;
+  homeDeferredHydrationRoot=root;
+  homeDeferredHydrationPromise=(async()=>{
+    const mod=await ensureHomeDeferredModule();
+    if(view()!=='home'||!root.isConnected)return false;
+    root.innerHTML=mod.buildHomeDeferredMarkup({t,safe,portalManagerState,portalFaqRows});
+    root.dataset.homeDeferredReady='1';
+    bindHomeDeferred(root);
+    return true;
+  })().finally(()=>{
+    if(homeDeferredHydrationRoot===root){
+      homeDeferredHydrationPromise=null;
+      homeDeferredHydrationRoot=null;
+    }
+  });
+  return homeDeferredHydrationPromise;
+}
+
+function scheduleHomeDeferredHydration(){
+  if(view()!=='home')return;
+  const root=document.querySelector('[data-home-deferred]');
+  if(!root||root.dataset.homeDeferredReady==='1')return;
+  homeDeferredObserver?.disconnect?.();
+  clearTimeout(homeDeferredFallbackTimer);
+  if('IntersectionObserver' in window){
+    homeDeferredObserver=new IntersectionObserver(entries=>{
+      if(!entries.some(entry=>entry.isIntersecting))return;
+      homeDeferredObserver?.disconnect?.();
+      homeDeferredObserver=null;
+      hydrateHomeDeferred(root);
+    },{rootMargin:'280px 0px',threshold:0.01});
+    homeDeferredObserver.observe(root);
+  }
+  const intent=()=>hydrateHomeDeferred(root);
+  window.addEventListener('scroll',intent,{once:true,passive:true});
+  window.addEventListener('pointerdown',intent,{once:true,passive:true});
+  window.addEventListener('keydown',intent,{once:true});
+  homeDeferredFallbackTimer=setTimeout(()=>hydrateHomeDeferred(root),8000);
+}
+
 let homeProductsExpanded=false;
 let homeProductsObserver=null;
 
