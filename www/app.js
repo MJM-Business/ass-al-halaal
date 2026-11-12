@@ -9599,20 +9599,7 @@ function setupV485MostRequestedSlider(){
   }
 }
 
-;(()=>{
-  const installV485ProductSliderCSS=()=>{
-    if(document.getElementById('v485-most-requested-product-slider'))return;
-
-    const style=document.createElement('style');
-    style.id='v485-most-requested-product-slider';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
-  };
-
-  // Initial v485 setup is owned by render()/renderProducts().
-  // Avoid a second DOMContentLoaded carousel pass.
-})();
-
+/* v485 no-op installer retired */
 
 /* =========================================================
    Ass Al Halaal v486 — ACTIVE CAROUSEL CONTROLS + MOUSE DRAG
@@ -9804,10 +9791,7 @@ function setupV486MostRequestedInteractions(){
   requestAnimationFrame(updateArrowState);
 }
 
-;(()=>{
-  // v486 is intentionally retired. v487 is the active carousel engine and
-  // render()/renderProducts() already invoke it explicitly.
-})();
+/* v486 no-op boot retired */
 
 /* =========================================================
    Ass Al Halaal v487 — STABLE ACTIVE PRODUCT CAROUSEL
@@ -10012,23 +9996,7 @@ function setupV487StableCarousel(){
   });
 }
 
-;(()=>{
-  const installV487StableCarouselCSS=()=>{
-    if(document.getElementById('v487-stable-active-carousel'))return;
-
-    // Disable v486 visual layer; v487 owns the controls now.
-    document.getElementById('v486-active-carousel-controls')?.remove();
-
-    const style=document.createElement('style');
-    style.id='v487-stable-active-carousel';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
-  };
-
-  // Initial v487 setup is owned by render()/renderProducts().
-  // Route/language renders already call it explicitly; avoid duplicate startup work.
-})();
-
+/* v487 no-op installer retired */
 
 /* =========================================================
    Ass Al Halaal v488 — PAGE HORIZONTAL OVERFLOW FIX
@@ -10256,28 +10224,7 @@ function setupV489RequestFitSelector(){
   renderFit(selected?.dataset.requestFit||'camping');
 }
 
-;(()=>{
-  const installV489RequestFitCSS=()=>{
-    if(document.getElementById('v489-request-fit-css'))return;
-
-    const style=document.createElement('style');
-    style.id='v489-request-fit-css';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
-  };
-
-  const boot=()=>{
-    installV489RequestFitCSS();
-    setupV489RequestFitSelector();
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',boot,{once:true});
-  }else{
-    boot();
-  }
-})();
-
+/* v489 startup boot retired; v490 owns the active request section. */
 
 /* =========================================================
    Ass Al Halaal v490 — REFERENCE-STYLE REQUEST SECTION
@@ -10324,22 +10271,7 @@ function setupV490RequestSection(){
   });
 }
 
-;(()=>{
-  const installV490RequestCSS=()=>{
-    if(document.getElementById('v490-request-section-css'))return;
-
-    /* Remove v489 styling so it cannot interfere with the new structure. */
-    document.getElementById('v489-request-fit-css')?.remove();
-
-    const style=document.createElement('style');
-    style.id='v490-request-section-css';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
-  };
-
-  // Initial request-section setup is owned by render(); avoid duplicate startup binding.
-})();
-
+/* v490 no-op installer retired */
 
 
 /* retired empty runtime style installer */
@@ -10385,11 +10317,7 @@ function setupV490RequestSection(){
     };
 
     window.__v496BindFaq=bindFaq;
-    if(document.readyState==='loading'){
-      document.addEventListener('DOMContentLoaded',bindFaq,{once:true});
-    }else{
-      bindFaq();
-    }
+    // Initial bind is owned by render()'s requestAnimationFrame pass.
   };
 
   installV496FaqSingleOpen();
@@ -10542,7 +10470,7 @@ function setupV490RequestSection(){
     };
 
     window.__v517SyncBrandContrast=syncBrandContrast;
-    syncBrandContrast();
+    // Initial contrast sync is owned by render()'s requestAnimationFrame pass.
     window.addEventListener('resize',schedule,{passive:true});
     window.addEventListener('hashchange',schedule);
   };
