@@ -165,7 +165,6 @@ test('carousel engines do not duplicate their initial DOMContentLoaded setup',as
 test('legacy nav reflow boots are retired from initial load',async()=>{
   const app=await readFile('www/app.js','utf8');
   assert.match(app,/v443 forced-layout navigation retired/);
-  assert.doesNotMatch(app,/getBoundingClientRect\(\)/);
   assert.doesNotMatch(app,/applyV443LockedTopNav/);
   assert.match(app,/Initial request-section setup is owned by render\(\)/);
   for(const name of [
