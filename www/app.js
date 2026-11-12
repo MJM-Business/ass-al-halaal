@@ -10342,16 +10342,7 @@ if(!window.__v469ResizeBound){
     boot();
   }
 
-  if(!window.__v482HeroObserver){
-    window.__v482HeroObserver=new MutationObserver(()=>{
-      requestAnimationFrame(normalizeActiveHero);
-    });
-    window.__v482HeroObserver.observe(document.documentElement,{
-      subtree:true,
-      attributes:true,
-      attributeFilter:['class','dir']
-    });
-  }
+  window.__v482NormalizeActiveHero=normalizeActiveHero;
 })();
 
 
@@ -11328,169 +11319,15 @@ function setupV490RequestSection(){
   }
 })();
 
-;(()=>{
-  const installV502WebsiteVsInstalledNavigation=()=>{
-    if(document.getElementById('v502-website-vs-installed-navigation')) return;
 
-    const style=document.createElement('style');
-    style.id='v502-website-vs-installed-navigation';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
-
-    const installed =
-      window.matchMedia?.('(display-mode: standalone)')?.matches ||
-      window.navigator.standalone === true;
-
-    document.documentElement.classList.toggle('ass-installed-app',Boolean(installed));
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',installV502WebsiteVsInstalledNavigation,{once:true});
-  }else{
-    installV502WebsiteVsInstalledNavigation();
-  }
-})();
+/* v502 duplicate installed-app boot retired; v501 owns this state. */
 
 
 /* retired empty runtime style installer */
 
 
-;(()=>{
-  const installAssAlHalaalBrowserIcon=()=>{
-    const href='assets/favicon-ass-al-halaal.png?v=1';
-    document.querySelectorAll('link[rel~="icon"],link[rel="shortcut icon"]').forEach(el=>el.remove());
 
-    const icon=document.createElement('link');
-    icon.rel='icon';
-    icon.type='image/png';
-    icon.sizes='512x512';
-    icon.href=href;
-    document.head.appendChild(icon);
-
-    const shortcut=document.createElement('link');
-    shortcut.rel='shortcut icon';
-    shortcut.type='image/png';
-    shortcut.href=href;
-    document.head.appendChild(shortcut);
-
-    let apple=document.querySelector('link[rel="apple-touch-icon"]');
-    if(!apple){
-      apple=document.createElement('link');
-      apple.rel='apple-touch-icon';
-      document.head.appendChild(apple);
-    }
-    apple.href=href;
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',installAssAlHalaalBrowserIcon,{once:true});
-  }else{
-    installAssAlHalaalBrowserIcon();
-  }
-})();
-
-;(()=>{
-  const installOriginalLogoWhiteCircleFavicon=()=>{
-    const originalLogo='assets/ass-al-halaal-logo-v135.png';
-
-    const applyIcon=(href)=>{
-      document.querySelectorAll('link[rel~="icon"],link[rel="shortcut icon"]').forEach(el=>el.remove());
-
-      const icon=document.createElement('link');
-      icon.rel='icon';
-      icon.type='image/png';
-      icon.href=href;
-      document.head.appendChild(icon);
-
-      const shortcut=document.createElement('link');
-      shortcut.rel='shortcut icon';
-      shortcut.type='image/png';
-      shortcut.href=href;
-      document.head.appendChild(shortcut);
-
-      let apple=document.querySelector('link[rel="apple-touch-icon"]');
-      if(!apple){
-        apple=document.createElement('link');
-        apple.rel='apple-touch-icon';
-        document.head.appendChild(apple);
-      }
-      apple.href=href;
-    };
-
-    const img=new Image();
-    img.onload=()=>{
-      try{
-        const size=512;
-        const canvas=document.createElement('canvas');
-        canvas.width=size;
-        canvas.height=size;
-        const ctx=canvas.getContext('2d');
-
-        ctx.clearRect(0,0,size,size);
-
-        /* White circular badge only — original logo pixels remain untouched. */
-        ctx.beginPath();
-        ctx.arc(size/2,size/2,238,0,Math.PI*2);
-        ctx.fillStyle='#ffffff';
-        ctx.fill();
-
-        /* Very subtle neutral edge so the white circle stays visible on light tabs. */
-        ctx.lineWidth=8;
-        ctx.strokeStyle='rgba(15,61,49,.16)';
-        ctx.stroke();
-
-        const padding=78;
-        const maxW=size-padding*2;
-        const maxH=size-padding*2;
-
-        const ratio=Math.min(maxW/img.naturalWidth,maxH/img.naturalHeight);
-        const w=img.naturalWidth*ratio;
-        const h=img.naturalHeight*ratio;
-        const x=(size-w)/2;
-        const y=(size-h)/2;
-
-        /* Draw the original asset exactly as-is: no recolor, filter or tint. */
-        ctx.drawImage(img,x,y,w,h);
-
-        applyIcon(canvas.toDataURL('image/png'));
-      }catch(err){
-        applyIcon(originalLogo);
-      }
-    };
-
-    img.onerror=()=>applyIcon(originalLogo);
-    img.src=originalLogo+'?favicon-original-circle=2';
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',installOriginalLogoWhiteCircleFavicon,{once:true});
-  }else{
-    installOriginalLogoWhiteCircleFavicon();
-  }
-})();
-
-;(()=>{
-  const installProminentOriginalAssAlHalaalFavicon=()=>{
-    const href='apple-touch-icon.png';
-    document.querySelectorAll('link[rel~="icon"],link[rel="shortcut icon"]').forEach(el=>{
-      el.href=href;
-      if(el.rel.includes('icon')) el.type='image/png';
-    });
-    let apple=document.querySelector('link[rel="apple-touch-icon"]');
-    if(!apple){
-      apple=document.createElement('link');
-      apple.rel='apple-touch-icon';
-      document.head.appendChild(apple);
-    }
-    apple.href=href;
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',installProminentOriginalAssAlHalaalFavicon,{once:true});
-  }else{
-    installProminentOriginalAssAlHalaalFavicon();
-  }
-})();
+/* Runtime favicon redraw/installers retired; static head links own browser icons. */
 
 
 /* retired empty runtime style installer */
