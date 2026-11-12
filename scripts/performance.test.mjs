@@ -241,3 +241,16 @@ test('duplicate nonvisual startup passes stay retired while render owns first sy
   assert.match(app,/v485 no-op installer retired/);
   assert.match(app,/v487 no-op installer retired/);
 });
+
+
+test('home product carousel work waits until the collection is near the viewport',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.match(app,/function scheduleHomeCarouselNearViewport\(\)/);
+  assert.match(app,/rootMargin:'120px 0px'/);
+  assert.match(app,/requestAnimationFrame\(runHomeCarouselEngines\)/);
+  assert.match(app,/scheduleHomeCarouselNearViewport\(\);/);
+  const renderBlock=app.slice(app.indexOf('function render(){'),app.indexOf('function standardDetailData'));
+  assert.doesNotMatch(renderBlock,/setupV485MostRequestedSlider\(\);/);
+  assert.doesNotMatch(renderBlock,/setupV527MobileProductCarousel\(\);/);
+  assert.doesNotMatch(renderBlock,/setupV528MobileCarousel\(\);/);
+});
