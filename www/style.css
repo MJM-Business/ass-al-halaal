@@ -21,3 +21,14 @@
     text-align:left!important;
   }
 }
+
+
+/* v534 — Mobile initial hero paints immediately for LCP */
+@media(max-width:900px){
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide.is-active .hero-copy>*{
+    opacity:1!important;
+    transform:none!important;
+    transition:none!important;
+    animation:none!important;
+  }
+}
