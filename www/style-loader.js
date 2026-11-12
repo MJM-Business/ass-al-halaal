@@ -1,9 +1,25 @@
 const fullStyle=document.getElementById('full-style');
+
 if(fullStyle){
-  const activate=()=>{fullStyle.media='all'};
-  if(fullStyle.sheet){
+  let activated=false;
+  const activate=()=>{
+    if(activated)return;
+    activated=true;
+    fullStyle.media='all';
+  };
+
+  window.__activateFullStyle=activate;
+
+  const route=location.hash.replace('#','')||'home';
+  if(route!=='home'){
     activate();
   }else{
-    fullStyle.addEventListener('load',activate,{once:true});
+    const activateOnIntent=()=>activate();
+    window.addEventListener('scroll',activateOnIntent,{once:true,passive:true});
+    window.addEventListener('pointerdown',activateOnIntent,{once:true,passive:true});
+    window.addEventListener('keydown',activateOnIntent,{once:true});
+
+    // Safety fallback for users who leave the home page open without interaction.
+    setTimeout(activate,12000);
   }
 }
