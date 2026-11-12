@@ -264,3 +264,22 @@ test('runtime page template styles are moved to static CSS',async()=>{
   assert.match(css,/runtime-template-block-1/);
   assert.match(css,/runtime-template-block-4/);
 });
+
+
+test('full stylesheet activation stays off the idle home critical path',async()=>{
+  const loader=await readFile('www/style-loader.js','utf8');
+  const app=await readFile('www/app.js','utf8');
+  assert.match(loader,/route!=='home'/);
+  assert.match(loader,/window\.__activateFullStyle=activate/);
+  assert.match(loader,/setTimeout\(activate,12000\)/);
+  assert.match(app,/window\.__activateFullStyle\?\.\(\)/);
+});
+
+test('accessibility scans are chunked after critical media priority',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.match(app,/function applyCriticalMediaPriority/);
+  assert.match(app,/function scheduleAccessibilityHardening/);
+  assert.match(app,/performance\.now\(\)-started>=6/);
+  assert.match(app,/applyCriticalMediaPriority\(appRoot\);\s*\n\s*bind\(\);/);
+  assert.match(app,/\(\)=>scheduleAccessibilityHardening\(appRoot\)/);
+});
