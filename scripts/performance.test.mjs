@@ -241,3 +241,22 @@ test('duplicate nonvisual startup passes stay retired while render owns first sy
   assert.match(app,/v485 no-op installer retired/);
   assert.match(app,/v487 no-op installer retired/);
 });
+
+
+test('unreferenced legacy functions stay out of the customer startup bundle',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  for(const name of [
+    'breedProfileSection',
+    'setupV486MostRequestedInteractions',
+    'pdpPackagingBoxGroup',
+    'customBoxPromoCard',
+    'setupV489RequestFitSelector',
+    'productPartIcon',
+    'adminDashboardRecentRow',
+    'pdpChoiceGroup',
+    'desktopHeaderIcon',
+    'aiWhatsAppReplyRequest'
+  ]){
+    assert.doesNotMatch(app,new RegExp('function\\s+'+name+'\\s*\\('));
+  }
+});
