@@ -178,3 +178,20 @@ test('legacy nav reflow boots are retired from initial load',async()=>{
     assert.doesNotMatch(app,new RegExp('const\\s+'+name+'='));
   }
 });
+
+
+test('startup avoids document-wide hero observers and runtime favicon redraw work',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.doesNotMatch(app,/__v482HeroObserver=new MutationObserver/);
+  assert.match(app,/__v482NormalizeActiveHero=normalizeActiveHero/);
+  assert.doesNotMatch(app,/installOriginalLogoWhiteCircleFavicon/);
+  assert.doesNotMatch(app,/installAssAlHalaalBrowserIcon/);
+  assert.doesNotMatch(app,/installProminentOriginalAssAlHalaalFavicon/);
+  assert.match(index,/rel="apple-touch-icon" href="apple-touch-icon\.png"/);
+});
+
+test('duplicate installed-app startup boot is retired',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.match(app,/v502 duplicate installed-app boot retired/);
+  assert.doesNotMatch(app,/const installV502WebsiteVsInstalledNavigation=/);
+});
