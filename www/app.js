@@ -1645,7 +1645,7 @@ function homePage(){
 
 <section id="collection" class="collection ref-collection">
   <div class="section-row most-requested-heading"><div><h2>${t(portalManagerState.home.mostRequestedAr,portalManagerState.home.mostRequestedEn)}</h2></div></div>
-  <div id="products" class="product-list ref-products">${productCards(homeProductsExpanded?Infinity:4)}</div>
+  <div id="products" class="product-list ref-products">${productCards(homeProductsExpanded?Infinity:1)}</div>
 </section>
 
 <div id="home-deferred-root" class="home-deferred-root" data-home-deferred aria-live="off"></div>
@@ -6823,10 +6823,12 @@ function render(){
 
   // Keep all geometry/layout-affecting setup in the first render so LCP and
   // CLS settle immediately. Only non-visual scans/enhancements are deferred.
-  setupV485MostRequestedSlider();
-  if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();
-  if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel();
-  if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel();
+  if(v!=='home'||homeProductsExpanded){
+    setupV485MostRequestedSlider();
+    if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();
+    if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel();
+    if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel();
+  }
   if(typeof setupV490RequestSection==='function')setupV490RequestSection();
   if(typeof applyV443LockedTopNav==='function')applyV443LockedTopNav();
 
@@ -7504,7 +7506,7 @@ function scheduleHomeDeferredHydration(){
   window.addEventListener('scroll',intent,{once:true,passive:true});
   window.addEventListener('pointerdown',intent,{once:true,passive:true});
   window.addEventListener('keydown',intent,{once:true});
-  homeDeferredFallbackTimer=setTimeout(()=>hydrateHomeDeferred(root),8000);
+  homeDeferredFallbackTimer=setTimeout(()=>hydrateHomeDeferred(root),12000);
 }
 
 let homeProductsExpanded=false;
@@ -7529,7 +7531,7 @@ function setupHomeProductLazyExpansion(){
     homeProductsObserver?.disconnect?.();
     homeProductsObserver=null;
     renderProducts();
-  },{rootMargin:'500px 0px',threshold:0.01});
+  },{rootMargin:'120px 0px',threshold:0.01});
 
   homeProductsObserver.observe(collection);
 }
