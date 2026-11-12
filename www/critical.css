@@ -1094,13 +1094,13 @@ body{background:#f3f6f4;color:#14231e;font-family:Tahoma,Arial,sans-serif}
   align-items:center!important;
   justify-content:flex-start!important;
   gap:10px!important;
-  direction:inherit!important;
+  direction:ltr!important;
   flex:0 0 auto!important;
 }
-html[dir="rtl"] .app-shell:not(.admin-shell) .header-quick-actions{direction:rtl!important}
-html[dir="ltr"] .app-shell:not(.admin-shell) .header-quick-actions{direction:ltr!important}
-html[dir="rtl"] .app-shell:not(.admin-shell) .app-header{direction:rtl!important}
-html[dir="ltr"] .app-shell:not(.admin-shell) .app-header{direction:ltr!important}
+/* Keep the desktop header's physical layout stable across language changes.
+   Only text-bearing controls mirror their internal copy direction. */
+.app-shell:not(.admin-shell) .app-header{direction:ltr!important}
+.app-shell:not(.admin-shell) .header-quick-actions{direction:ltr!important}
 html[dir="rtl"] .app-shell:not(.admin-shell) .customer-brand,
 html[dir="rtl"] .app-shell:not(.admin-shell) .location-pill{direction:rtl!important;text-align:right!important}
 html[dir="ltr"] .app-shell:not(.admin-shell) .customer-brand,
