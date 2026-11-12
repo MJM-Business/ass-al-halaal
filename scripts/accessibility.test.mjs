@@ -138,3 +138,26 @@ test('legacy project branding is removed from user-facing app copy',()=>{
   assert.doesNotMatch(app,/kabsh-najd-(?:governance|audit|suppliers|finance)-/);
   assert.match(app,/ass-al-halaal-(?:governance|audit|suppliers|finance)-/);
 });
+
+
+test('finance admin forms use localized validation busy and inline status states',()=>{
+  assert.match(app,/validateLocalizedForm\(f\)/);
+  assert.match(app,/Saving payment/);
+  assert.match(app,/Payment saved successfully/);
+  assert.match(app,/Creating settlement/);
+  assert.match(app,/Settlement created successfully/);
+});
+
+test('governance admin forms use localized validation busy and inline status states',()=>{
+  assert.match(app,/Saving user/);
+  assert.match(app,/Saving changes/);
+  assert.match(app,/setFormBusy\(f,true/);
+  assert.match(app,/setFormStatus\(f,msg,'error'\)/);
+});
+
+test('portal manager forms announce loading success and local fallback states',()=>{
+  assert.match(app,/Saving content/);
+  assert.match(app,/Category updated successfully/);
+  assert.match(app,/Saving FAQ content/);
+  assert.match(app,/synced\?'success':'warning'/);
+});
