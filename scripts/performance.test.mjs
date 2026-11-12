@@ -241,3 +241,26 @@ test('duplicate nonvisual startup passes stay retired while render owns first sy
   assert.match(app,/v485 no-op installer retired/);
   assert.match(app,/v487 no-op installer retired/);
 });
+
+
+test('home below-the-fold sections stay off the critical startup path',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  const deferred=await readFile('www/modules/home-deferred.js','utf8');
+  assert.match(app,/import\('\.\/modules\/home-deferred\.js'\)/);
+  assert.match(app,/data-home-deferred/);
+  assert.match(app,/productCards\(homeProductsExpanded\?Infinity:1\)/);
+  assert.match(app,/rootMargin:'120px 0px'/);
+  assert.match(app,/if\(v!=='home'\|\|homeProductsExpanded\)/);
+  assert.match(deferred,/id="request-fit"/);
+  assert.match(deferred,/customer-mega-footer/);
+});
+
+test('runtime page template styles are moved to static CSS',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  const css=await readFile('www/style.css','utf8');
+  const runtimeStyleBlocks=[...app.matchAll(/<style(?:\s[^>]*)?>([\s\S]*?)<\/style>/g)];
+  assert.equal(runtimeStyleBlocks.length,1);
+  assert.match(css,/Static CSS moved from runtime templates to reduce startup work/);
+  assert.match(css,/runtime-template-block-1/);
+  assert.match(css,/runtime-template-block-4/);
+});
