@@ -171,3 +171,12 @@ test('customer header keeps icon positions stable while text follows RTL and LTR
   assert.match(critical,/html\[dir="rtl"\] \.app-shell:not\(\.admin-shell\) \.location-pill\{direction:rtl!important;text-align:right!important\}/);
   assert.match(critical,/html\[dir="ltr"\] \.app-shell:not\(\.admin-shell\) \.location-pill\{direction:ltr!important;text-align:left!important\}/);
 });
+
+
+test('final stylesheet keeps desktop header geometry stable after full CSS activation',async()=>{
+  const full=await readFile('www/style.css','utf8');
+  assert.match(full,/v565 — stable desktop header geometry/);
+  assert.match(full,/@media\(min-width:901px\)\{[\s\S]*\.app-shell:not\(\.admin-shell\) \.app-header\{[\s\S]*direction:ltr!important;/);
+  assert.match(full,/\.app-shell:not\(\.admin-shell\) \.header-quick-actions\{[\s\S]*direction:ltr!important;/);
+  assert.match(full,/html\[dir="rtl"\] \.app-shell:not\(\.admin-shell\) \.location-pill\{[\s\S]*direction:rtl!important;/);
+});
