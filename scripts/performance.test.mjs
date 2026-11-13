@@ -241,3 +241,10 @@ test('duplicate nonvisual startup passes stay retired while render owns first sy
   assert.match(app,/v485 no-op installer retired/);
   assert.match(app,/v487 no-op installer retired/);
 });
+
+
+test('only one active carousel engine runs per viewport',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.match(app,/setupV485MostRequestedSlider\(\);\s*if\(window\.matchMedia\('\(max-width: 900px\)'\)\.matches\)\{\s*if\(typeof setupV528MobileCarousel==='function'\)setupV528MobileCarousel\(\);\s*\}else\{\s*if\(typeof setupV487StableCarousel==='function'\)setupV487StableCarousel\(\);\s*\}/);
+  assert.doesNotMatch(app,/setupV527MobileProductCarousel\(\);\s*if\(typeof setupV528MobileCarousel==='function'\)setupV528MobileCarousel\(\)/);
+});
