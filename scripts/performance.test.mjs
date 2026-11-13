@@ -295,3 +295,26 @@ test('admin AI Center stays in a lazy admin-only module',async()=>{
   assert.match(ai,/export function runAiSimulatorCore/);
   assert.doesNotMatch(app,/Hijazi Intent Engine/);
 });
+
+
+test('initial home render avoids known forced-layout reads while preserving behavior engines',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  const renderStart=app.indexOf('function render(){');
+  const renderEnd=app.indexOf('function standardDetailData',renderStart);
+  const renderBlock=app.slice(renderStart,renderEnd);
+  assert.doesNotMatch(renderBlock,/applyV443LockedTopNav\(\)/);
+
+  const v485Start=app.indexOf('function setupV485MostRequestedSlider()');
+  const v486Start=app.indexOf('function setupV486MostRequestedInteractions()',v485Start);
+  const v485=app.slice(v485Start,v486Start);
+  assert.doesNotMatch(v485,/track\.scrollWidth<=track\.clientWidth/);
+
+  const v527Start=app.indexOf('function setupV527MobileProductCarousel()');
+  const v528Start=app.indexOf('function setupV528MobileCarousel()',v527Start);
+  const v527=app.slice(v527Start,v528Start);
+  assert.doesNotMatch(v527,/requestAnimationFrame\(\(\)=>\{\s*requestAnimationFrame\(\(\)=>\{\s*centerIndex\(nearestIndex\(\),'auto'\)/);
+
+  const v529Start=app.indexOf('function setupV529AdminResponsiveShell()',v528Start);
+  const v528=app.slice(v528Start,v529Start);
+  assert.doesNotMatch(v528,/requestAnimationFrame\(update\)/);
+});
