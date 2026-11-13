@@ -7445,7 +7445,7 @@ function render(){
   if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel();
   if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel();
   if(typeof setupV490RequestSection==='function')setupV490RequestSection();
-  if(typeof applyV443LockedTopNav==='function')applyV443LockedTopNav();
+  // v443 startup measurement retired: critical CSS already owns initial header geometry.
 
   // Carousel setup can replace or restyle product nodes, so normalize once
   // more after those synchronous geometry changes.
@@ -9560,10 +9560,8 @@ function setupV485MostRequestedSlider(){
     }
   });
 
-  // Keep current position valid after re-render.
-  if(track.scrollWidth<=track.clientWidth){
-    track.scrollLeft=0;
-  }
+  // Avoid a synchronous scrollWidth/clientWidth layout flush on startup.
+  // New/re-rendered rails naturally start at scrollLeft 0.
 }
 
 /* v485 no-op installer retired */
@@ -10694,14 +10692,10 @@ function setupV527MobileProductCarousel(){
     },{passive:true});
   }
 
-  /* First render: center the currently nearest/first product. */
+  /* First render already starts at the first card. Avoid an initial
+     geometry read/center pass; interaction handlers keep centering behavior. */
   if(track.dataset.v527InitialCentered!=='1'){
     track.dataset.v527InitialCentered='1';
-    requestAnimationFrame(()=>{
-      requestAnimationFrame(()=>{
-        centerIndex(nearestIndex(),'auto');
-      });
-    });
   }
 }
 
@@ -10881,7 +10875,17 @@ function setupV528MobileCarousel(){
       updateTimer=setTimeout(update,90);
     },{passive:true});
 
-    requestAnimationFrame(update);
+    // Initial rail starts at the first card, so set the obvious arrow
+    // state without forcing layout via nearestIndex()/offsetLeft reads.
+    const initialCards=cards();
+    if(prev){
+      prev.disabled=true;
+      prev.setAttribute('aria-disabled','true');
+    }
+    if(next){
+      next.disabled=initialCards.length<2;
+      next.setAttribute('aria-disabled',String(next.disabled));
+    }
   }
 
   /* ---------------------------------------------------------
