@@ -320,9 +320,14 @@ test('initial home render avoids known forced-layout reads while preserving beha
 });
 
 
-test('full stylesheet loads deterministically without media swap',async()=>{
-  const index=await readFile('www/index.html','utf8');
-  assert.match(index,/id="full-style" rel="stylesheet" href="dist\/style\.min\.css\?v=580"/);
-  assert.doesNotMatch(index,/media="print"/);
-  assert.doesNotMatch(index,/rel="preload" as="style"/);
+
+
+test('full stylesheet stays off the blocking critical path while preserving final design',async()=>{
+  const [index,loader]=await Promise.all([
+    readFile('www/index.html','utf8'),
+    readFile('www/style-loader.js','utf8')
+  ]);
+  assert.match(index,/rel="preload" as="style" href="dist\/style\.min\.css\?v=581"/);
+  assert.match(index,/id="full-style" rel="stylesheet" href="dist\/style\.min\.css\?v=581" media="print"/);
+  assert.match(loader,/fullStyle\.media='all'/);
 });
