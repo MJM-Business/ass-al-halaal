@@ -1042,7 +1042,10 @@ html[dir="rtl"] .reference-admin .security-session.current{box-shadow:inset -3px
 
 
 
-/* v538 — single compact inline cropper for Customer Portal Manager */
+
+/* v539 — Facebook-style square cropper for Customer Portal Manager */
+body.portal-square-crop-open{overflow:hidden}
+
 .portal-product-dialog-v532 .portal-editor-media-actions-v535{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -1052,134 +1055,158 @@ html[dir="rtl"] .reference-admin .security-session.current{box-shadow:inset -3px
   grid-column:1/-1;
 }
 
-.portal-product-dialog-v532 .portal-inline-cropper{
-  width:100%;
-  box-sizing:border-box;
-  margin:12px 0 0;
-  padding:12px;
-  border:1px solid #d7e4de;
-  border-radius:14px;
-  background:#f7faf8;
-  overflow:hidden;
+.portal-product-dialog-v532 .portal-square-cropper{
+  position:fixed;
+  inset:0;
+  z-index:100000;
+  display:grid;
+  place-items:center;
+  padding:20px;
+  background:rgba(6,28,23,.72);
+  backdrop-filter:blur(6px);
 }
-.portal-product-dialog-v532 .portal-inline-cropper[hidden]{display:none!important}
+.portal-product-dialog-v532 .portal-square-cropper[hidden]{display:none!important}
 
-.portal-product-dialog-v532 .portal-inline-crop-head{
+.portal-product-dialog-v532 .portal-square-crop-card{
+  width:min(520px,94vw);
+  max-height:92vh;
+  overflow:auto;
+  border:1px solid #d7e4de;
+  border-radius:20px;
+  background:#fff;
+  box-shadow:0 24px 70px rgba(0,0,0,.28);
+}
+
+.portal-product-dialog-v532 .portal-square-crop-card>header{
   display:flex;
-  align-items:center;
+  align-items:flex-start;
   justify-content:space-between;
-  gap:10px;
-  margin:0 0 10px;
+  gap:14px;
+  padding:18px 18px 14px;
+  border-bottom:1px solid #e7eeea;
 }
-.portal-product-dialog-v532 .portal-inline-crop-head div{
-  display:flex;
-  flex-direction:column;
-  gap:1px;
-}
-.portal-product-dialog-v532 .portal-inline-crop-head small{
+.portal-product-dialog-v532 .portal-square-crop-card>header small{
+  display:block;
+  margin-bottom:3px;
   color:#a86d00;
-  font-size:9px;
+  font-size:10px;
   font-weight:800;
   letter-spacing:.08em;
 }
-.portal-product-dialog-v532 .portal-inline-crop-head b{
+.portal-product-dialog-v532 .portal-square-crop-card>header h3{
+  margin:0;
   color:#073f31;
-  font-size:14px;
-  line-height:1.2;
+  font-size:22px;
 }
-.portal-product-dialog-v532 .portal-inline-crop-head>span{
+.portal-product-dialog-v532 .portal-square-crop-card>header p{
+  margin:5px 0 0;
+  color:#697a73;
+  font-size:12px;
+  line-height:1.45;
+}
+.portal-product-dialog-v532 #portal-crop-close{
   flex:0 0 auto;
-  padding:4px 8px;
-  border-radius:999px;
-  background:#e6f4ee;
-  color:#075b45;
-  font-size:10px;
-  font-weight:800;
+  width:38px;
+  height:38px;
+  border:1px solid #d7e4de;
+  border-radius:50%;
+  background:#fff;
+  color:#16463a;
+  font-size:22px;
+  line-height:1;
+  cursor:pointer;
 }
 
-.portal-product-dialog-v532 .portal-inline-crop-frame{
+.portal-product-dialog-v532 .portal-square-crop-frame{
   position:relative;
-  width:100%;
-  height:220px;
+  width:min(420px,calc(94vw - 44px));
+  aspect-ratio:1/1;
+  margin:18px auto 0;
   overflow:hidden;
-  border:2px solid #0b7659;
-  border-radius:12px;
-  background:#fff;
+  border-radius:16px;
+  background:#eef3f0;
+  box-shadow:0 0 0 2px #0b7659;
+  touch-action:none;
 }
-.portal-product-dialog-v532 .portal-inline-crop-frame #portal-crop-canvas{
+.portal-product-dialog-v532 .portal-square-crop-frame #portal-crop-canvas{
   display:block!important;
   width:100%!important;
   height:100%!important;
-  max-width:100%!important;
-  max-height:220px!important;
+  max-width:none!important;
+  max-height:none!important;
   margin:0!important;
   padding:0!important;
   background:#fff;
+  cursor:grab;
+  touch-action:none;
+  user-select:none;
+}
+.portal-product-dialog-v532 .portal-square-crop-frame #portal-crop-canvas.is-dragging{
+  cursor:grabbing;
+}
+.portal-product-dialog-v532 .portal-square-crop-guide{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  border:1px solid rgba(255,255,255,.85);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);
 }
 
-.portal-product-dialog-v532 .portal-inline-crop-controls{
+.portal-product-dialog-v532 .portal-square-zoom{
   display:grid;
-  grid-template-columns:1fr;
-  gap:8px;
-  margin:10px 0 0;
-}
-.portal-product-dialog-v532 .portal-inline-crop-controls .portal-crop-control{
-  display:grid;
-  grid-template-columns:78px minmax(0,1fr);
+  grid-template-columns:52px 1fr;
   align-items:center;
-  gap:8px;
-  margin:0;
+  gap:12px;
+  padding:16px 20px 4px;
 }
-.portal-product-dialog-v532 .portal-inline-crop-controls .portal-crop-control span{
+.portal-product-dialog-v532 .portal-square-zoom span{
   color:#24483d;
-  font-size:10px;
+  font-size:12px;
   font-weight:800;
 }
-.portal-product-dialog-v532 .portal-inline-crop-controls input[type="range"]{
+.portal-product-dialog-v532 .portal-square-zoom input{
   width:100%;
-  min-width:0;
-  margin:0;
   accent-color:#0b7659;
 }
 
-.portal-product-dialog-v532 .portal-inline-crop-actions{
+.portal-product-dialog-v532 .portal-square-crop-card>footer{
   display:grid;
   grid-template-columns:.8fr .8fr 1.4fr;
   gap:8px;
-  margin:10px 0 0;
+  padding:14px 18px 18px;
 }
-.portal-product-dialog-v532 .portal-inline-crop-actions button{
-  min-height:40px;
-  padding:8px 10px;
+.portal-product-dialog-v532 .portal-square-crop-card>footer button{
+  min-height:44px;
   border:1px solid #cfe0d7;
-  border-radius:10px;
+  border-radius:11px;
   background:#fff;
   color:#174b3c;
-  font-size:11px;
   font-weight:800;
   cursor:pointer;
 }
-.portal-product-dialog-v532 .portal-inline-crop-actions .portal-crop-apply{
+.portal-product-dialog-v532 .portal-square-crop-card>footer .portal-crop-apply{
   border-color:#0b7659;
   background:#0b7659;
   color:#fff;
 }
 
 @media (max-width:640px){
-  .portal-product-dialog-v532 .portal-editor-media-actions-v535,
-  .portal-product-dialog-v532 .portal-inline-crop-actions{
+  .portal-product-dialog-v532 .portal-square-cropper{padding:10px}
+  .portal-product-dialog-v532 .portal-square-crop-card{
+    width:100%;
+    max-height:96vh;
+    border-radius:16px;
+  }
+  .portal-product-dialog-v532 .portal-square-crop-frame{
+    width:min(360px,calc(100vw - 44px));
+  }
+  .portal-product-dialog-v532 .portal-square-crop-card>footer{
+    grid-template-columns:1fr;
+  }
+  .portal-product-dialog-v532 .portal-editor-media-actions-v535{
     grid-template-columns:1fr;
   }
   .portal-product-dialog-v532 .portal-editor-media-actions-v535 #portal-product-image-original{
     grid-column:auto;
-  }
-  .portal-product-dialog-v532 .portal-inline-crop-frame{
-    height:190px;
-  }
-  .portal-product-dialog-v532 .portal-inline-crop-frame #portal-crop-canvas{
-    max-height:190px!important;
-  }
-  .portal-product-dialog-v532 .portal-inline-crop-controls .portal-crop-control{
-    grid-template-columns:68px minmax(0,1fr);
   }
 }
