@@ -243,3 +243,11 @@ test('duplicate nonvisual startup passes stay retired while render owns first sy
 });
 
 
+
+
+test('mobile touch bridge uses delegated listeners instead of per-element listeners',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.match(app,/root\.dataset\.v469DelegatedTouch==='1'/);
+  assert.match(app,/root\.addEventListener\('touchstart'/);
+  assert.doesNotMatch(app,/root\.querySelectorAll\(selectors\)\.forEach\(el=>/);
+});
