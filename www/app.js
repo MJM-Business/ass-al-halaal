@@ -471,8 +471,28 @@ function applyPortalProductCardVisuals(){
     const id=card.dataset.productDetail;
     const o=portalProductOverride(id);
     if(!o?.image)return;
-    const img=card.querySelector('img');
-    if(img&&img.getAttribute('src')!==o.image)img.setAttribute('src',o.image);
+    const visual=card.querySelector('.product-image');
+    const img=visual?.querySelector('img')||card.querySelector('img');
+    card.classList.add('portal-image-override-card');
+    if(visual){
+      visual.style.width='100%';
+      visual.style.margin='0';
+      visual.style.padding='0';
+      visual.style.overflow='hidden';
+      visual.style.aspectRatio='4 / 3';
+      visual.style.position='relative';
+    }
+    if(img){
+      if(img.getAttribute('src')!==o.image)img.setAttribute('src',o.image);
+      img.style.display='block';
+      img.style.width='100%';
+      img.style.height='100%';
+      img.style.maxWidth='none';
+      img.style.margin='0';
+      img.style.padding='0';
+      img.style.objectFit='cover';
+      img.style.objectPosition='center';
+    }
   });
 }
 
