@@ -7981,6 +7981,14 @@ function openDeliveryLocationPopup(){
 }
 
 function bind(){
+  const currentView=view();
+  const isHome=currentView==='home';
+  const isProductView=currentView.startsWith('product/');
+  const isHashiView=currentView.startsWith('hashi/');
+  const isLivestockView=currentView.startsWith('livestock/');
+  const isOrdersView=currentView==='orders';
+  const isAccountView=currentView==='account';
+
   document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>setView(b.dataset.nav));
   document.querySelector('#language')?.addEventListener('click',openLanguagePicker);
   document.querySelector('#location-top')?.addEventListener('click',openDeliveryLocationPopup);
@@ -7995,21 +8003,27 @@ function bind(){
   document.querySelector('#mobile-header-cart')?.addEventListener('click',showCart);
   document.querySelectorAll('.js-products,#nav-products').forEach(el=>el.addEventListener('click',()=>{if(view()!=='home')setView('home');setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'}),100)}));
   document.querySelectorAll('[data-hero-browse]').forEach(btn=>btn.addEventListener('click',()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'})));
-  setupHeroSlider();
-  setupCustomBox3DShowcase();
-  setupStandardsExperience();
+  if(isHome)setupHeroSlider();
+  if(isHome)setupCustomBox3DShowcase();
+  if(isHome)setupStandardsExperience();
   setupFloatingWhatsapp();
-  bindReferenceProductDetail();
-  bindSheepBreedCatalog();
-  bindHashiReferenceDetail();
-  document.querySelectorAll('[data-hashi-variant-button]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();setView('hashi/'+encodeURIComponent(b.dataset.hashiVariantButton))}));
-  document.querySelectorAll('[data-hashi-variant]').forEach(card=>{const openVariant=e=>{if(e.target.closest('button'))return;setView('hashi/'+encodeURIComponent(card.dataset.hashiVariant))};card.addEventListener('click',openVariant);card.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('button')){e.preventDefault();openVariant(e)}})});
-  document.querySelectorAll('[data-hashi-product]').forEach(card=>{const choose=()=>{const source=hashiVariantById(card.dataset.hashiSource);const item=HASHI_VARIANT_PRODUCTS.find(x=>x.id===card.dataset.hashiProduct);toast(t(`تم اختيار ${item?.ar||''} من ${source?.ar||''}. ستفتح خيارات التقطيع والتغليف في المرحلة التالية.`,`Selected ${item?.en||''} from ${source?.en||''}. Cutting and packaging options are the next layer.`))};card.addEventListener('click',choose);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose()}})});
+  if(isProductView){
+    bindReferenceProductDetail();
+    bindSheepBreedCatalog();
+    bindHashiReferenceDetail();
+  }
+  if(isHashiView){
+    document.querySelectorAll('[data-hashi-variant-button]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();setView('hashi/'+encodeURIComponent(b.dataset.hashiVariantButton))}));
+    document.querySelectorAll('[data-hashi-variant]').forEach(card=>{const openVariant=e=>{if(e.target.closest('button'))return;setView('hashi/'+encodeURIComponent(card.dataset.hashiVariant))};card.addEventListener('click',openVariant);card.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('button')){e.preventDefault();openVariant(e)}})});
+    document.querySelectorAll('[data-hashi-product]').forEach(card=>{const choose=()=>{const source=hashiVariantById(card.dataset.hashiSource);const item=HASHI_VARIANT_PRODUCTS.find(x=>x.id===card.dataset.hashiProduct);toast(t(`تم اختيار ${item?.ar||''} من ${source?.ar||''}. ستفتح خيارات التقطيع والتغليف في المرحلة التالية.`,`Selected ${item?.en||''} from ${source?.en||''}. Cutting and packaging options are the next layer.`))};card.addEventListener('click',choose);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose()}})});
+  }
   document.querySelector('#view-all')?.addEventListener('click',()=>{filter='all';render();setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'}),60)});
   document.querySelectorAll('[data-district]').forEach(b=>b.onclick=()=>{district=b.dataset.district;persist();render()});
-  document.querySelectorAll('[data-livestock-category]').forEach(b=>b.onclick=()=>setView('livestock/'+encodeURIComponent(b.dataset.livestockCategory)));
-  document.querySelectorAll('[data-livestock-open]').forEach(el=>{const open=e=>{e.stopPropagation();const id=el.dataset.livestockOpen;if(id)setView('product/'+encodeURIComponent(id))};el.addEventListener('click',open);el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open(e)}})});
-  document.querySelectorAll('[data-livestock-quick-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();quickAddLivestockProduct(b.dataset.livestockQuickAdd)});
+  if(isHome||isLivestockView){
+    document.querySelectorAll('[data-livestock-category]').forEach(b=>b.onclick=()=>setView('livestock/'+encodeURIComponent(b.dataset.livestockCategory)));
+    document.querySelectorAll('[data-livestock-open]').forEach(el=>{const open=e=>{e.stopPropagation();const id=el.dataset.livestockOpen;if(id)setView('product/'+encodeURIComponent(id))};el.addEventListener('click',open);el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open(e)}})});
+    document.querySelectorAll('[data-livestock-quick-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();quickAddLivestockProduct(b.dataset.livestockQuickAdd)});
+  }
   document.querySelectorAll('[data-category-query]').forEach(b=>b.onclick=()=>{
     const id=b.dataset.categoryQuery;
     const p=products.find(x=>String(x.id)===String(id));
@@ -8026,13 +8040,17 @@ function bind(){
   document.querySelectorAll('[data-scroll-products]').forEach(b=>b.addEventListener('click',()=>setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'}),80)));
   document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const id=b.dataset.fav;favourites.has(id)?favourites.delete(id):favourites.add(id);persist();renderProducts()});
   document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareProduct(b.dataset.share));
-  const search=document.querySelector('#search');if(search)search.oninput=e=>{query=e.target.value;renderProducts()};
-  const orderForm=document.querySelector('#orders-form');if(orderForm)orderForm.onsubmit=async e=>{e.preventDefault();if(ordersLoading)return;const code=String(new FormData(orderForm).get('code')||'').trim();ordersLookupTouched=true;ordersLookupQuery=code;ordersLookupStatus={message:t('جاري البحث عن الطلبات…','Searching your orders…'),state:'loading'};await loadMyOrders(code)};
-  if(view()==='account') bindCustomerAuth();
-  document.querySelectorAll('[data-customer-invoice]').forEach(b=>b.onclick=()=>openCustomerInvoice(b.dataset.customerInvoice));
-  document.querySelectorAll('[data-customer-verify]').forEach(b=>b.onclick=()=>openOrderVerification(b.dataset.customerVerify));
-  document.querySelectorAll('[data-customer-support]').forEach(b=>b.onclick=()=>openCustomerSupport(b.dataset.customerSupport));
-  document.querySelectorAll('[data-customer-refresh]').forEach(b=>b.onclick=async()=>{if(!customerSession)return;ordersLookupTouched=true;await loadMyOrders(ordersLookupQuery);toast(t('تم تحديث حالة الطلب','Order status refreshed'))});
+  if(isHome){
+    const search=document.querySelector('#search');if(search)search.oninput=e=>{query=e.target.value;renderProducts()};
+  }
+  if(isOrdersView){
+    const orderForm=document.querySelector('#orders-form');if(orderForm)orderForm.onsubmit=async e=>{e.preventDefault();if(ordersLoading)return;const code=String(new FormData(orderForm).get('code')||'').trim();ordersLookupTouched=true;ordersLookupQuery=code;ordersLookupStatus={message:t('جاري البحث عن الطلبات…','Searching your orders…'),state:'loading'};await loadMyOrders(code)};
+    document.querySelectorAll('[data-customer-invoice]').forEach(b=>b.onclick=()=>openCustomerInvoice(b.dataset.customerInvoice));
+    document.querySelectorAll('[data-customer-verify]').forEach(b=>b.onclick=()=>openOrderVerification(b.dataset.customerVerify));
+    document.querySelectorAll('[data-customer-support]').forEach(b=>b.onclick=()=>openCustomerSupport(b.dataset.customerSupport));
+    document.querySelectorAll('[data-customer-refresh]').forEach(b=>b.onclick=async()=>{if(!customerSession)return;ordersLookupTouched=true;await loadMyOrders(ordersLookupQuery);toast(t('تم تحديث حالة الطلب','Order status refreshed'))});
+  }
+  if(isAccountView)bindCustomerAuth();
 
   // The remaining bindings are exclusively for the Admin Portal. On customer
   // views, stop here instead of scanning the entire document dozens of times
