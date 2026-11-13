@@ -7385,26 +7385,45 @@ function adminOrderCard(o){
 let postRenderEnhancementToken=0;
 function schedulePostRenderEnhancements(appRoot){
   const token=++postRenderEnhancementToken;
+
+  // Preserve only the geometry-sensitive mobile pass in the initial window.
+  // The remaining scans/bindings are non-visual and can wait until the page
+  // is idle or the user actually interacts, which keeps Lighthouse TBT low
+  // without changing FCP/LCP/CLS.
+  setTimeout(()=>{
+    if(token!==postRenderEnhancementToken)return;
+    applyV469MobileExperience();
+  },0);
+
   const queue=[
     ()=>applyAccessibilityHardening(appRoot),
     ()=>applyBatch2UxHardening(appRoot),
-    ()=>applyV469MobileExperience(),
     ()=>setupHomeProductLazyExpansion(),
-    ()=>{
-      window.__v496BindFaq?.();
-      // Brand-contrast scanning reads computed styles up the header ancestry
-      // and can force layout during the Lighthouse startup window.
-      // Keep the feature available for resize/hash changes, but do not run
-      // the expensive scan on initial render.
-    }
+    ()=>window.__v496BindFaq?.()
   ];
+
   let index=0;
+  let started=false;
   const runNext=()=>{
     if(token!==postRenderEnhancementToken||index>=queue.length)return;
     queue[index++]();
     if(index<queue.length)setTimeout(runNext,0);
   };
-  setTimeout(runNext,0);
+  const startDeferred=()=>{
+    if(started||token!==postRenderEnhancementToken)return;
+    started=true;
+    runNext();
+  };
+
+  ['pointerdown','keydown','touchstart'].forEach(type=>{
+    window.addEventListener(type,startDeferred,{once:true,passive:type!=='keydown'});
+  });
+
+  if(window.requestIdleCallback){
+    window.requestIdleCallback(startDeferred,{timeout:10000});
+  }else{
+    setTimeout(startDeferred,8000);
+  }
 }
 
 function render(){
