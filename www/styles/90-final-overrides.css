@@ -1356,3 +1356,109 @@ body.portal-crop-open{overflow:hidden}
     padding:12px 14px 14px;
   }
 }
+
+
+/* v537 — inline cropper inside Customer Portal Manager image panel */
+.portal-product-dialog-v532 .portal-inline-cropper{
+  margin-top:12px;
+  padding:12px;
+  border:1px solid #d7e4de;
+  border-radius:16px;
+  background:#f7faf8;
+}
+.portal-product-dialog-v532 .portal-inline-cropper[hidden]{display:none!important}
+
+.portal-product-dialog-v532 .portal-inline-crop-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:10px;
+}
+.portal-product-dialog-v532 .portal-inline-crop-head div{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.portal-product-dialog-v532 .portal-inline-crop-head small{
+  color:#a86d00;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.08em;
+}
+.portal-product-dialog-v532 .portal-inline-crop-head b{
+  color:#073f31;
+  font-size:15px;
+}
+.portal-product-dialog-v532 .portal-inline-crop-head>span{
+  padding:4px 8px;
+  border-radius:999px;
+  background:#e6f4ee;
+  color:#075b45;
+  font-size:10px;
+  font-weight:800;
+}
+
+.portal-product-dialog-v532 .portal-inline-crop-frame{
+  overflow:hidden;
+  width:100%;
+  aspect-ratio:4/3;
+  border:2px solid #0b7659;
+  border-radius:14px;
+  background:#eef4f1;
+}
+.portal-product-dialog-v532 .portal-inline-crop-frame #portal-crop-canvas{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  background:#fff;
+}
+
+.portal-product-dialog-v532 .portal-inline-crop-controls{
+  display:grid;
+  gap:10px;
+  margin-top:12px;
+}
+.portal-product-dialog-v532 .portal-inline-crop-controls .portal-crop-control{
+  display:grid;
+  gap:6px;
+  margin:0;
+}
+.portal-product-dialog-v532 .portal-inline-crop-controls .portal-crop-control span{
+  color:#24483d;
+  font-size:11px;
+  font-weight:800;
+}
+.portal-product-dialog-v532 .portal-inline-crop-controls input[type="range"]{
+  width:100%;
+  accent-color:#0b7659;
+}
+
+.portal-product-dialog-v532 .portal-inline-crop-actions{
+  display:grid;
+  grid-template-columns:.8fr .8fr 1.4fr;
+  gap:8px;
+  margin-top:12px;
+}
+.portal-product-dialog-v532 .portal-inline-crop-actions button{
+  min-height:42px;
+  border:1px solid #cfe0d7;
+  border-radius:11px;
+  background:#fff;
+  color:#174b3c;
+  font-weight:800;
+  cursor:pointer;
+}
+.portal-product-dialog-v532 .portal-inline-crop-actions .portal-crop-apply{
+  border-color:#0b7659;
+  background:#0b7659;
+  color:#fff;
+}
+
+@media (max-width:640px){
+  .portal-product-dialog-v532 .portal-inline-crop-actions{
+    grid-template-columns:1fr;
+  }
+}
