@@ -271,3 +271,16 @@ test('initial post-render does not force computed-style brand contrast scan',asy
   const block=app.slice(start,end);
   assert.doesNotMatch(block,/__v517SyncBrandContrast/);
 });
+
+
+test('admin AI Center stays in a lazy admin-only module',async()=>{
+  const [app,ai]=await Promise.all([
+    readFile('www/app.js','utf8'),
+    readFile('www/modules/admin-ai.js','utf8')
+  ]);
+  assert.match(app,/import\('\.\/modules\/admin-ai\.js'\)/);
+  assert.match(app,/renderAdminAiCenterContent/);
+  assert.match(ai,/export function renderAdminAiCenterContent/);
+  assert.match(ai,/export function runAiSimulatorCore/);
+  assert.doesNotMatch(app,/Hijazi Intent Engine/);
+});
