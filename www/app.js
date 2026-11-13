@@ -11463,8 +11463,9 @@ function openPortalProductEditor(id){
             <p>${t('حرّك أشرطة التحكم لضبط الحيوان أو المنتج داخل الإطار قبل الحفظ.','Adjust zoom and position so the animal or product fits cleanly inside the card frame before saving.')}</p>
           </section>
 
-          <div class="portal-editor-media-actions">
+          <div class="portal-editor-media-actions portal-editor-media-actions-v535">
             <button type="button" id="portal-product-image-pick-secondary">${adminIcon('store')}${t('اختيار صورة من الجهاز','Choose image from device')}</button>
+            <button type="button" id="portal-product-image-crop-current">${adminIcon('refresh')}${t('قص / ضبط الصورة','Crop / adjust image')}</button>
             <button type="button" id="portal-product-image-original">${adminIcon('refresh')}${t('استعادة الصورة الأصلية','Restore original')}</button>
           </div>
 
@@ -11639,6 +11640,12 @@ function openPortalProductEditor(id){
     cropSource=null;
     if(cropper)cropper.hidden=true;
     toast(t('تم تطبيق القص. اضغط حفظ التعديلات لتحديث المتجر.','Crop applied. Press Save changes to update the store.'));
+  });
+
+  document.querySelector('#portal-product-image-crop-current')?.addEventListener('click',()=>{
+    const currentSrc=String(imageValue?.value||preview?.getAttribute('src')||'').trim();
+    if(!currentSrc){toast(t('لا توجد صورة لضبطها','There is no image to adjust'));return}
+    openCropper(currentSrc);
   });
 
   document.querySelector('#portal-product-image-pick')?.addEventListener('click',()=>fileInput?.click());
