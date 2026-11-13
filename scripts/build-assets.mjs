@@ -94,16 +94,6 @@ await Promise.all([
     charset:'utf8',
     sourcemap:false,
     logLevel:'warning'
-  }),
-  build({
-    entryPoints:[path.join(root,'www','admin-extra.css')],
-    outfile:path.join(outDir,'admin-extra.min.css'),
-    bundle:false,
-    minify:true,
-    legalComments:'none',
-    charset:'utf8',
-    sourcemap:false,
-    logLevel:'warning'
   })
 ]);
 
