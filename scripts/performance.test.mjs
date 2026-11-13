@@ -318,3 +318,11 @@ test('initial home render avoids known forced-layout reads while preserving beha
   const v528=app.slice(v528Start,v529Start);
   assert.doesNotMatch(v528,/requestAnimationFrame\(update\)/);
 });
+
+
+test('full stylesheet loads deterministically without media swap',async()=>{
+  const index=await readFile('www/index.html','utf8');
+  assert.match(index,/id="full-style" rel="stylesheet" href="dist\/style\.min\.css\?v=580"/);
+  assert.doesNotMatch(index,/media="print"/);
+  assert.doesNotMatch(index,/rel="preload" as="style"/);
+});
