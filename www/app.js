@@ -8204,7 +8204,7 @@ function setupHomeProductLazyExpansion(){
     homeProductsObserver?.disconnect?.();
     homeProductsObserver=null;
     renderProducts();
-  },{rootMargin:'500px 0px',threshold:0.01});
+  },{rootMargin:'0px 0px',threshold:0.01});
 
   homeProductsObserver.observe(collection);
 }
