@@ -74,8 +74,8 @@ body.portal-square-crop-open{overflow:hidden}
 
 .portal-product-dialog-v532 .portal-square-crop-frame{
   position:relative!important;
-  width:min(420px,calc(94vw - 44px))!important;
-  aspect-ratio:1/1!important;
+  width:min(460px,calc(94vw - 44px))!important;
+  aspect-ratio:4/3!important;
   margin:18px auto 0!important;
   overflow:hidden!important;
   border-radius:16px!important;
@@ -151,7 +151,7 @@ body.portal-square-crop-open{overflow:hidden}
     border-radius:16px!important;
   }
   .portal-product-dialog-v532 .portal-square-crop-frame{
-    width:min(360px,calc(100vw - 44px))!important;
+    width:min(380px,calc(100vw - 44px))!important;
   }
   .portal-product-dialog-v532 .portal-square-crop-card>footer{
     grid-template-columns:1fr!important;
