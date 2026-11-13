@@ -11431,6 +11431,38 @@ function openPortalProductEditor(id){
           <input id="portal-product-image-file" type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden>
           <input id="portal-product-image-value" name="image" type="hidden" value="${safe(currentImage)}">
 
+          <section class="portal-image-cropper" id="portal-image-cropper" hidden aria-label="${t('قص وضبط الصورة','Crop and adjust image')}">
+            <header>
+              <div>
+                <small>${t('ضبط الصورة','IMAGE ADJUSTMENT')}</small>
+                <b>${t('قص وضبط الصورة','Crop & adjust')}</b>
+              </div>
+              <span>4:3</span>
+            </header>
+            <div class="portal-crop-canvas-wrap">
+              <canvas id="portal-crop-canvas" width="1200" height="900" aria-label="${t('معاينة قص الصورة','Crop preview')}"></canvas>
+            </div>
+            <label class="portal-crop-control">
+              <span>${t('تكبير','Zoom')}</span>
+              <input id="portal-crop-zoom" type="range" min="100" max="220" value="100" step="1">
+            </label>
+            <div class="portal-crop-control-row">
+              <label class="portal-crop-control">
+                <span>${t('يمين / يسار','Left / right')}</span>
+                <input id="portal-crop-x" type="range" min="-100" max="100" value="0" step="1">
+              </label>
+              <label class="portal-crop-control">
+                <span>${t('أعلى / أسفل','Up / down')}</span>
+                <input id="portal-crop-y" type="range" min="-100" max="100" value="0" step="1">
+              </label>
+            </div>
+            <div class="portal-crop-actions">
+              <button type="button" id="portal-crop-cancel">${t('إلغاء','Cancel')}</button>
+              <button type="button" id="portal-crop-apply" class="portal-crop-apply">${t('تطبيق القص','Apply crop')}</button>
+            </div>
+            <p>${t('حرّك أشرطة التحكم لضبط الحيوان أو المنتج داخل الإطار قبل الحفظ.','Adjust zoom and position so the animal or product fits cleanly inside the card frame before saving.')}</p>
+          </section>
+
           <div class="portal-editor-media-actions">
             <button type="button" id="portal-product-image-pick-secondary">${adminIcon('store')}${t('اختيار صورة من الجهاز','Choose image from device')}</button>
             <button type="button" id="portal-product-image-original">${adminIcon('refresh')}${t('استعادة الصورة الأصلية','Restore original')}</button>
@@ -11510,6 +11542,12 @@ function openPortalProductEditor(id){
   const preview=document.querySelector('#portal-product-image-preview');
   const miniImage=document.querySelector('#portal-mini-card-image');
   const dropzone=document.querySelector('#portal-product-image-dropzone');
+  const cropper=document.querySelector('#portal-image-cropper');
+  const cropCanvas=document.querySelector('#portal-crop-canvas');
+  const cropZoom=document.querySelector('#portal-crop-zoom');
+  const cropX=document.querySelector('#portal-crop-x');
+  const cropY=document.querySelector('#portal-crop-y');
+  let cropSource=null;
 
   const setImage=(value,{clearUrl=false}={})=>{
     const src=String(value||'').trim();
@@ -11520,13 +11558,59 @@ function openPortalProductEditor(id){
     if(clearUrl&&urlInput)urlInput.value='';
   };
 
+  const renderCropPreview=()=>{
+    if(!cropSource||!cropCanvas)return;
+    const ctx=cropCanvas.getContext('2d',{alpha:false});
+    if(!ctx)return;
+    const cw=cropCanvas.width,ch=cropCanvas.height;
+    const iw=cropSource.naturalWidth||1,ih=cropSource.naturalHeight||1;
+    const cover=Math.max(cw/iw,ch/ih);
+    const zoom=Math.max(1,Number(cropZoom?.value||100)/100);
+    const scale=cover*zoom;
+    const dw=iw*scale,dh=ih*scale;
+    const extraX=Math.max(0,dw-cw),extraY=Math.max(0,dh-ch);
+    const px=Number(cropX?.value||0)/100;
+    const py=Number(cropY?.value||0)/100;
+    const dx=(cw-dw)/2-(extraX/2)*px;
+    const dy=(ch-dh)/2-(extraY/2)*py;
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(0,0,cw,ch);
+    ctx.drawImage(cropSource,dx,dy,dw,dh);
+  };
+
+  const openCropper=source=>{
+    const img=new Image();
+    img.onload=()=>{
+      cropSource=img;
+      if(cropZoom)cropZoom.value='100';
+      if(cropX)cropX.value='0';
+      if(cropY)cropY.value='0';
+      if(cropper)cropper.hidden=false;
+      renderCropPreview();
+      cropper?.scrollIntoView?.({behavior:'smooth',block:'nearest'});
+    };
+    img.onerror=()=>toast(t('تعذر فتح الصورة','Could not open image'));
+    img.src=source;
+  };
+
   const useFile=async file=>{
     if(!file)return;
+    if(!String(file.type||'').startsWith('image/')){
+      toast(t('اختر ملف صورة صالحاً','Please choose a valid image file'));return;
+    }
+    if(Number(file.size||0)>10*1024*1024){
+      toast(t('حجم الصورة كبير جداً. الحد الأقصى 10MB','Image is too large. Maximum size is 10MB'));return;
+    }
     try{
       dropzone?.classList.add('is-loading');
-      const data=await portalPrepareProductImage(file);
-      setImage(data,{clearUrl:true});
-      toast(t('تم تجهيز الصورة. اضغط حفظ لتطبيقها.','Image ready. Press Save changes to apply it.'));
+      const source=await new Promise((resolve,reject)=>{
+        const reader=new FileReader();
+        reader.onload=()=>resolve(String(reader.result||''));
+        reader.onerror=()=>reject(new Error(t('تعذر قراءة الصورة','Could not read image')));
+        reader.readAsDataURL(file);
+      });
+      openCropper(source);
+      toast(t('اضبط القص ثم اضغط تطبيق القص','Adjust the crop, then press Apply crop.'));
     }catch(err){
       toast(err?.message||t('تعذر معالجة الصورة','Could not process image'));
     }finally{
@@ -11534,6 +11618,28 @@ function openPortalProductEditor(id){
       if(fileInput)fileInput.value='';
     }
   };
+
+  [cropZoom,cropX,cropY].forEach(control=>control?.addEventListener('input',renderCropPreview));
+  document.querySelector('#portal-crop-cancel')?.addEventListener('click',()=>{
+    cropSource=null;
+    if(cropper)cropper.hidden=true;
+  });
+  document.querySelector('#portal-crop-apply')?.addEventListener('click',()=>{
+    if(!cropSource||!cropCanvas)return;
+    let result='';
+    try{
+      result=cropCanvas.toDataURL('image/webp',0.88);
+      if(!result.startsWith('data:image/webp'))result='';
+    }catch{}
+    if(!result){
+      try{result=cropCanvas.toDataURL('image/jpeg',0.9)}catch{}
+    }
+    if(!result){toast(t('تعذر حفظ القص','Could not save crop'));return}
+    setImage(result,{clearUrl:true});
+    cropSource=null;
+    if(cropper)cropper.hidden=true;
+    toast(t('تم تطبيق القص. اضغط حفظ التعديلات لتحديث المتجر.','Crop applied. Press Save changes to update the store.'));
+  });
 
   document.querySelector('#portal-product-image-pick')?.addEventListener('click',()=>fileInput?.click());
   document.querySelector('#portal-product-image-pick-secondary')?.addEventListener('click',()=>fileInput?.click());
@@ -11551,6 +11657,8 @@ function openPortalProductEditor(id){
   });
 
   document.querySelector('#portal-product-image-apply-url')?.addEventListener('click',()=>{
+    cropSource=null;
+    if(cropper)cropper.hidden=true;
     const value=String(urlInput?.value||'').trim();
     if(!value){toast(t('أدخل مسار أو رابط الصورة أولاً','Enter an image path or URL first'));return}
     setImage(value);
@@ -11558,6 +11666,8 @@ function openPortalProductEditor(id){
   });
 
   document.querySelector('#portal-product-image-original')?.addEventListener('click',()=>{
+    cropSource=null;
+    if(cropper)cropper.hidden=true;
     const base=visibleFallbackProducts().find(x=>String(x.id)===String(p.id))||p;
     const original=String(premiumProductImage(base)||base.image||p.image||'');
     if(!original)return;
