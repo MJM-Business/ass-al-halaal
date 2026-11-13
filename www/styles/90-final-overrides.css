@@ -1039,3 +1039,107 @@ html[dir="rtl"] .reference-admin .security-session.current{box-shadow:inset -3px
   }
 }
 
+
+
+/* Admin customer-portal product image cropper */
+.portal-product-dialog-v532 .portal-image-cropper{
+  margin-top:14px;
+  padding:14px;
+  border:1px solid #d9e6df;
+  border-radius:16px;
+  background:#f7fbf9;
+}
+.portal-product-dialog-v532 .portal-image-cropper[hidden]{display:none}
+.portal-product-dialog-v532 .portal-image-cropper>header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+}
+.portal-product-dialog-v532 .portal-image-cropper>header div{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.portal-product-dialog-v532 .portal-image-cropper>header small{
+  color:#a86d00;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.08em;
+}
+.portal-product-dialog-v532 .portal-image-cropper>header b{
+  color:#073f31;
+  font-size:16px;
+}
+.portal-product-dialog-v532 .portal-image-cropper>header>span{
+  padding:5px 9px;
+  border-radius:999px;
+  background:#e6f4ee;
+  color:#075b45;
+  font-size:11px;
+  font-weight:800;
+}
+.portal-product-dialog-v532 .portal-crop-canvas-wrap{
+  overflow:hidden;
+  border-radius:14px;
+  border:1px solid #cfe0d7;
+  background:#eaf2ee;
+}
+.portal-product-dialog-v532 #portal-crop-canvas{
+  display:block;
+  width:100%;
+  height:auto;
+  aspect-ratio:4/3;
+  background:#fff;
+}
+.portal-product-dialog-v532 .portal-crop-control{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  margin-top:10px;
+  color:#24483d;
+  font-size:12px;
+  font-weight:700;
+}
+.portal-product-dialog-v532 .portal-crop-control input[type="range"]{
+  width:100%;
+  accent-color:#0b7659;
+}
+.portal-product-dialog-v532 .portal-crop-control-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.portal-product-dialog-v532 .portal-crop-actions{
+  display:grid;
+  grid-template-columns:1fr 1.4fr;
+  gap:10px;
+  margin-top:14px;
+}
+.portal-product-dialog-v532 .portal-crop-actions button{
+  min-height:44px;
+  border:1px solid #cfe0d7;
+  border-radius:12px;
+  background:#fff;
+  color:#174b3c;
+  font-weight:800;
+  cursor:pointer;
+}
+.portal-product-dialog-v532 .portal-crop-actions .portal-crop-apply{
+  border-color:#0b7659;
+  background:#0b7659;
+  color:#fff;
+}
+.portal-product-dialog-v532 .portal-image-cropper>p{
+  margin:10px 0 0;
+  color:#657970;
+  font-size:11px;
+  line-height:1.5;
+}
+@media (max-width:640px){
+  .portal-product-dialog-v532 .portal-crop-control-row,
+  .portal-product-dialog-v532 .portal-crop-actions{
+    grid-template-columns:1fr;
+  }
+}
