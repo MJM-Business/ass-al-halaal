@@ -231,6 +231,17 @@ test('customer bundle lazy-loads admin renderers only on the admin route',async(
 });
 
 
+test('nonvisual home enhancement scans stay out of the initial TBT window',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.match(app,/requestIdleCallback\(startDeferred,\{timeout:10000\}\)/);
+  assert.match(app,/setTimeout\(startDeferred,8000\)/);
+  assert.match(app,/applyV469MobileExperience\(\);/);
+  const start=app.indexOf('function schedulePostRenderEnhancements');
+  const end=app.indexOf('function render(){',start);
+  const block=app.slice(start,end);
+  assert.doesNotMatch(block,/const queue=\[\s*\(\)=>applyAccessibilityHardening\(appRoot\),\s*\(\)=>applyBatch2UxHardening\(appRoot\),\s*\(\)=>applyV469MobileExperience\(\)/);
+});
+
 test('duplicate nonvisual startup passes stay retired while render owns first sync',async()=>{
   const app=await readFile('www/app.js','utf8');
   assert.match(app,/v489 startup boot retired; v490 owns the active request section/);
