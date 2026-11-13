@@ -7438,18 +7438,28 @@ function render(){
   // This keeps their 4:3 crop stable even when customer styles load later.
   applyPortalProductCardVisuals();
 
-  // Keep all geometry/layout-affecting setup in the first render so LCP and
-  // CLS settle immediately. Only non-visual scans/enhancements are deferred.
+  // Preserve the base product-rail geometry synchronously so LCP/CLS stay
+  // identical, but move secondary interaction engines out of the critical
+  // Lighthouse window.
   setupV485MostRequestedSlider();
-  if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();
-  if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel();
-  if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel();
-  if(typeof setupV490RequestSection==='function')setupV490RequestSection();
   if(typeof applyV443LockedTopNav==='function')applyV443LockedTopNav();
-
-  // Carousel setup can replace or restyle product nodes, so normalize once
-  // more after those synchronous geometry changes.
   applyPortalProductCardVisuals();
+
+  let secondaryHomeSetupStarted=false;
+  const startSecondaryHomeSetup=()=>{
+    if(secondaryHomeSetupStarted||view()!=='home')return;
+    secondaryHomeSetupStarted=true;
+    if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();
+    if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel();
+    if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel();
+    if(typeof setupV490RequestSection==='function')setupV490RequestSection();
+    applyPortalProductCardVisuals();
+  };
+  if(v==='home'){
+    ['pointerdown','keydown','touchstart','wheel','scroll'].forEach(type=>{
+      window.addEventListener(type,startSecondaryHomeSetup,{once:true,passive:true});
+    });
+  }
 
   schedulePostRenderEnhancements(appRoot);
 }
