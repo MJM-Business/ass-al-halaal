@@ -318,3 +318,18 @@ test('initial home render avoids known forced-layout reads while preserving beha
   const v528=app.slice(v528Start,v529Start);
   assert.doesNotMatch(v528,/requestAnimationFrame\(update\)/);
 });
+
+
+test('admin seed data stays out of customer startup',async()=>{
+  const [app,seed]=await Promise.all([
+    readFile('www/app.js','utf8'),
+    readFile('www/modules/admin-seed.js','utf8')
+  ]);
+  assert.match(app,/async function ensureAdminLocalState\(\)/);
+  assert.match(app,/import\('\.\/modules\/admin-seed\.js'\)/);
+  assert.match(app,/Promise\.all\(\[ensureAdminLocalState\(\),ensureAdminRendererModules\(\)\]\)/);
+  assert.doesNotMatch(app,/CMP-001/);
+  assert.doesNotMatch(app,/SUP-001/);
+  assert.match(seed,/CMP-001/);
+  assert.match(seed,/SUP-001/);
+});
