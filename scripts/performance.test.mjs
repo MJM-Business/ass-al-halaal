@@ -252,3 +252,12 @@ test('mobile touch bridge uses delegated listeners instead of per-element listen
   assert.doesNotMatch(app,/root\.querySelectorAll\(selectors\)\.forEach\(el=>/);
 });
 
+
+
+test('customer bindings are gated by active route',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.match(app,/const currentView=view\(\);/);
+  assert.match(app,/if\(isProductView\)\{\s*bindReferenceProductDetail\(\);\s*bindSheepBreedCatalog\(\);\s*bindHashiReferenceDetail\(\);/);
+  assert.match(app,/if\(isOrdersView\)\{/);
+  assert.match(app,/if\(isAccountView\)bindCustomerAuth\(\);/);
+});
