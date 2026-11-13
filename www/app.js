@@ -7542,23 +7542,6 @@ function schedulePostRenderEnhancements(appRoot){
   setTimeout(runNext,0);
 }
 
-function scheduleHomeCarouselSetup(){
-  const run=()=>{
-    if(view()!=='home')return;
-    setupV485MostRequestedSlider();
-    if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();
-    if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel();
-    if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel();
-    applyPortalProductCardVisuals();
-  };
-
-  if(window.requestIdleCallback){
-    window.requestIdleCallback(run,{timeout:1800});
-  }else{
-    setTimeout(run,900);
-  }
-}
-
 function render(){
   document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';document.title=t('عاس الحلال','Ass Al Halaal');
   const v=view();
@@ -7571,14 +7554,18 @@ function render(){
   // This keeps their 4:3 crop stable even when customer styles load later.
   applyPortalProductCardVisuals();
 
-  // Preserve first-paint/header geometry synchronously.
+  // Keep all geometry/layout-affecting setup in the first render so LCP and
+  // CLS settle immediately. Only non-visual scans/enhancements are deferred.
+  setupV485MostRequestedSlider();
+  if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();
+  if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel();
+  if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel();
   if(typeof setupV490RequestSection==='function')setupV490RequestSection();
   if(typeof applyV443LockedTopNav==='function')applyV443LockedTopNav();
 
-  // Product carousel is below the initial hero. Keep the exact same engines
-  // and behavior, but initialize them during browser idle time so they do not
-  // inflate the initial Total Blocking Time.
-  if(v==='home')scheduleHomeCarouselSetup();
+  // Carousel setup can replace or restyle product nodes, so normalize once
+  // more after those synchronous geometry changes.
+  applyPortalProductCardVisuals();
 
   schedulePostRenderEnhancements(appRoot);
 }
