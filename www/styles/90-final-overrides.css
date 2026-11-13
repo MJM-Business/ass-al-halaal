@@ -1143,3 +1143,22 @@ html[dir="rtl"] .reference-admin .security-session.current{box-shadow:inset -3px
     grid-template-columns:1fr;
   }
 }
+
+
+/* Admin product image action row with explicit crop control */
+.portal-product-dialog-v532 .portal-editor-media-actions-v535{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.portal-product-dialog-v532 .portal-editor-media-actions-v535 #portal-product-image-original{
+  grid-column:1/-1;
+}
+@media (max-width:640px){
+  .portal-product-dialog-v532 .portal-editor-media-actions-v535{
+    grid-template-columns:1fr;
+  }
+  .portal-product-dialog-v532 .portal-editor-media-actions-v535 #portal-product-image-original{
+    grid-column:auto;
+  }
+}
