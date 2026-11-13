@@ -295,3 +295,16 @@ test('admin AI Center stays in a lazy admin-only module',async()=>{
   assert.match(ai,/export function runAiSimulatorCore/);
   assert.doesNotMatch(app,/Hijazi Intent Engine/);
 });
+
+
+test('below-fold home geometry waits for real user intent to protect TBT',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.match(app,/function scheduleDeferredHomeGeometry\(appRoot\)/);
+  assert.match(app,/\['pointerdown','keydown','touchstart','wheel','scroll'\]/);
+  const start=app.indexOf('function render(){');
+  const end=app.indexOf('function standardDetailData',start);
+  const block=app.slice(start,end);
+  assert.doesNotMatch(block,/\n\s*setupV485MostRequestedSlider\(\);/);
+  assert.doesNotMatch(block,/\n\s*if\(typeof setupV487StableCarousel/);
+  assert.match(block,/applyV443LockedTopNav/);
+});
