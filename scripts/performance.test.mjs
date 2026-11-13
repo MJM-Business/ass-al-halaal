@@ -251,3 +251,15 @@ test('mobile touch bridge uses delegated listeners instead of per-element listen
   assert.match(app,/root\.addEventListener\('touchstart'/);
   assert.doesNotMatch(app,/root\.querySelectorAll\(selectors\)\.forEach\(el=>/);
 });
+
+
+test('home carousel setup is deferred without changing carousel engines',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  assert.match(app,/function scheduleHomeCarouselSetup\(\)/);
+  assert.match(app,/window\.requestIdleCallback/);
+  assert.match(app,/setupV485MostRequestedSlider\(\)/);
+  assert.match(app,/setupV487StableCarousel\(\)/);
+  assert.match(app,/setupV527MobileProductCarousel\(\)/);
+  assert.match(app,/setupV528MobileCarousel\(\)/);
+  assert.match(app,/if\(v==='home'\)scheduleHomeCarouselSetup\(\)/);
+});
