@@ -37,6 +37,28 @@ let marketingProductForCampaignCore,marketingMetricsCore,marketingGenerateCopyCo
 let renderAdminAiCenterContent,runAiSimulatorCore;
 let adminRendererModulesPromise=null;
 
+let adminExtraStylePromise=null;
+function ensureAdminExtraStyle(){
+  if(adminExtraStylePromise)return adminExtraStylePromise;
+  adminExtraStylePromise=new Promise(resolve=>{
+    let link=document.getElementById('admin-extra-style');
+    if(link){
+      if(link.sheet){resolve();return}
+      link.addEventListener('load',resolve,{once:true});
+      link.addEventListener('error',resolve,{once:true});
+      return;
+    }
+    link=document.createElement('link');
+    link.id='admin-extra-style';
+    link.rel='stylesheet';
+    link.href='dist/admin-extra.min.css?v=599';
+    link.addEventListener('load',resolve,{once:true});
+    link.addEventListener('error',resolve,{once:true});
+    document.head.appendChild(link);
+  });
+  return adminExtraStylePromise;
+}
+
 async function ensureAdminRendererModules(){
   if(adminRendererModulesPromise)return adminRendererModulesPromise;
   adminRendererModulesPromise=Promise.all([
@@ -669,7 +691,7 @@ window.addEventListener('languagechange',()=>{
   const next=deviceAppLanguage();
   if(next!==lang){lang=next;persist();render()}
 });
-function setView(name){location.hash=name;window.scrollTo({top:0,behavior:'smooth'})}
+function setView(name){if(name==='admin')ensureAdminExtraStyle();location.hash=name;window.scrollTo({top:0,behavior:'smooth'})}
 function deliveryFee(items=cart){return items.some(i=>i.id==='naimi-selected')?0:25}
 function cartCount(){return cart.reduce((n,i)=>n+Number(i.qty||0),0)}
 function riyadhDate(){const f=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Riyadh',year:'numeric',month:'2-digit',day:'2-digit'});const p=Object.fromEntries(f.formatToParts(new Date()).filter(x=>x.type!=='literal').map(x=>[x.type,x.value]));return `${p.year}-${p.month}-${p.day}`}
@@ -8716,7 +8738,7 @@ async function shareProduct(id){
 }
 
 window.addEventListener('hashchange',async()=>{
-  if(view()==='admin')await ensureAdminRendererModules();
+  if(view()==='admin')await Promise.all([ensureAdminRendererModules(),ensureAdminExtraStyle()]);
   render();
   if(view()==='orders'&&customerSession)await loadMyOrders();
   if(view()==='admin'){
