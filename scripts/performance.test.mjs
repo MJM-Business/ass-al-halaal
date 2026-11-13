@@ -261,3 +261,13 @@ test('customer bindings are gated by active route',async()=>{
   assert.match(app,/if\(isOrdersView\)\{/);
   assert.match(app,/if\(isAccountView\)bindCustomerAuth\(\);/);
 });
+
+
+test('initial post-render does not force computed-style brand contrast scan',async()=>{
+  const app=await readFile('www/app.js','utf8');
+  const start=app.indexOf('function schedulePostRenderEnhancements');
+  const end=app.indexOf('function render(){',start);
+  assert.ok(start>=0&&end>start);
+  const block=app.slice(start,end);
+  assert.doesNotMatch(block,/__v517SyncBrandContrast/);
+});
