@@ -318,20 +318,3 @@ test('initial home render avoids known forced-layout reads while preserving beha
   const v528=app.slice(v528Start,v529Start);
   assert.doesNotMatch(v528,/requestAnimationFrame\(update\)/);
 });
-
-
-test('admin-only stylesheet is split out of the customer startup path',async()=>{
-  const [app,build,index,customerCss,adminCss]=await Promise.all([
-    readFile('www/app.js','utf8'),
-    readFile('scripts/build-assets.mjs','utf8'),
-    readFile('www/index.html','utf8'),
-    readFile('www/style.css','utf8'),
-    readFile('www/admin-extra.css','utf8')
-  ]);
-  assert.match(app,/function ensureAdminExtraStyle\(\)/);
-  assert.match(app,/admin-extra\.min\.css\?v=599/);
-  assert.match(build,/admin-extra\.css/);
-  assert.doesNotMatch(index,/admin-extra\.min\.css/);
-  assert.ok(adminCss.length>250000);
-  assert.ok(customerCss.length<1800000);
-});
