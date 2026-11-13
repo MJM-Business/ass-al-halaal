@@ -7550,6 +7550,10 @@ function render(){
   appRoot.innerHTML=shell(content,{admin:v==='admin'});
   bind();
 
+  // Admin-managed product images must be normalized on every full render.
+  // This keeps their 4:3 crop stable even when customer styles load later.
+  applyPortalProductCardVisuals();
+
   // Keep all geometry/layout-affecting setup in the first render so LCP and
   // CLS settle immediately. Only non-visual scans/enhancements are deferred.
   setupV485MostRequestedSlider();
@@ -7558,6 +7562,10 @@ function render(){
   if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel();
   if(typeof setupV490RequestSection==='function')setupV490RequestSection();
   if(typeof applyV443LockedTopNav==='function')applyV443LockedTopNav();
+
+  // Carousel setup can replace or restyle product nodes, so normalize once
+  // more after those synchronous geometry changes.
+  applyPortalProductCardVisuals();
 
   schedulePostRenderEnhancements(appRoot);
 }
