@@ -11431,37 +11431,46 @@ function openPortalProductEditor(id){
           <input id="portal-product-image-file" type="file" accept="image/jpeg,image/png,image/webp,image/avif" hidden>
           <input id="portal-product-image-value" name="image" type="hidden" value="${safe(currentImage)}">
 
-          <section class="portal-image-cropper" id="portal-image-cropper" hidden aria-label="${t('قص وضبط الصورة','Crop and adjust image')}">
-            <header>
-              <div>
-                <small>${t('ضبط الصورة','IMAGE ADJUSTMENT')}</small>
-                <b>${t('قص وضبط الصورة','Crop & adjust')}</b>
+          <div class="portal-crop-modal" id="portal-image-cropper" hidden>
+            <div class="portal-crop-modal-card" role="dialog" aria-modal="true" aria-label="${t('قص وضبط الصورة','Crop and adjust image')}">
+              <header class="portal-crop-modal-head">
+                <div>
+                  <small>${t('ضبط الصورة','IMAGE ADJUSTMENT')}</small>
+                  <h3>${t('قص وضبط الصورة','Crop & adjust')}</h3>
+                  <p>${t('اضبط الصورة داخل نفس إطار بطاقة المنتج قبل الحفظ.','Fit the image inside the same product-card frame before saving.')}</p>
+                </div>
+                <button type="button" id="portal-crop-close" aria-label="${t('إغلاق','Close')}">×</button>
+              </header>
+
+              <div class="portal-crop-workspace">
+                <div class="portal-crop-frame">
+                  <canvas id="portal-crop-canvas" width="1200" height="900" aria-label="${t('معاينة قص الصورة','Crop preview')}"></canvas>
+                  <span class="portal-crop-ratio">4:3</span>
+                </div>
+
+                <div class="portal-crop-controls">
+                  <label class="portal-crop-control">
+                    <span>${t('تكبير','Zoom')}</span>
+                    <input id="portal-crop-zoom" type="range" min="100" max="220" value="100" step="1">
+                  </label>
+                  <label class="portal-crop-control">
+                    <span>${t('يمين / يسار','Left / right')}</span>
+                    <input id="portal-crop-x" type="range" min="-100" max="100" value="0" step="1">
+                  </label>
+                  <label class="portal-crop-control">
+                    <span>${t('أعلى / أسفل','Up / down')}</span>
+                    <input id="portal-crop-y" type="range" min="-100" max="100" value="0" step="1">
+                  </label>
+                  <button type="button" id="portal-crop-reset">${t('إعادة الضبط','Reset position')}</button>
+                </div>
               </div>
-              <span>4:3</span>
-            </header>
-            <div class="portal-crop-canvas-wrap">
-              <canvas id="portal-crop-canvas" width="1200" height="900" aria-label="${t('معاينة قص الصورة','Crop preview')}"></canvas>
+
+              <footer class="portal-crop-modal-actions">
+                <button type="button" id="portal-crop-cancel">${t('إلغاء','Cancel')}</button>
+                <button type="button" id="portal-crop-apply" class="portal-crop-apply">${t('تطبيق القص','Apply crop')}</button>
+              </footer>
             </div>
-            <label class="portal-crop-control">
-              <span>${t('تكبير','Zoom')}</span>
-              <input id="portal-crop-zoom" type="range" min="100" max="220" value="100" step="1">
-            </label>
-            <div class="portal-crop-control-row">
-              <label class="portal-crop-control">
-                <span>${t('يمين / يسار','Left / right')}</span>
-                <input id="portal-crop-x" type="range" min="-100" max="100" value="0" step="1">
-              </label>
-              <label class="portal-crop-control">
-                <span>${t('أعلى / أسفل','Up / down')}</span>
-                <input id="portal-crop-y" type="range" min="-100" max="100" value="0" step="1">
-              </label>
-            </div>
-            <div class="portal-crop-actions">
-              <button type="button" id="portal-crop-cancel">${t('إلغاء','Cancel')}</button>
-              <button type="button" id="portal-crop-apply" class="portal-crop-apply">${t('تطبيق القص','Apply crop')}</button>
-            </div>
-            <p>${t('حرّك أشرطة التحكم لضبط الحيوان أو المنتج داخل الإطار قبل الحفظ.','Adjust zoom and position so the animal or product fits cleanly inside the card frame before saving.')}</p>
-          </section>
+          </div>
 
           <div class="portal-editor-media-actions portal-editor-media-actions-v535">
             <button type="button" id="portal-product-image-pick-secondary">${adminIcon('store')}${t('اختيار صورة من الجهاز','Choose image from device')}</button>
@@ -11586,9 +11595,11 @@ function openPortalProductEditor(id){
       if(cropZoom)cropZoom.value='100';
       if(cropX)cropX.value='0';
       if(cropY)cropY.value='0';
-      if(cropper)cropper.hidden=false;
+      if(cropper){
+        cropper.hidden=false;
+        document.body.classList.add('portal-crop-open');
+      }
       renderCropPreview();
-      cropper?.scrollIntoView?.({behavior:'smooth',block:'nearest'});
     };
     img.onerror=()=>toast(t('تعذر فتح الصورة','Could not open image'));
     img.src=source;
@@ -11621,9 +11632,21 @@ function openPortalProductEditor(id){
   };
 
   [cropZoom,cropX,cropY].forEach(control=>control?.addEventListener('input',renderCropPreview));
-  document.querySelector('#portal-crop-cancel')?.addEventListener('click',()=>{
+
+  const closeCropper=()=>{
     cropSource=null;
     if(cropper)cropper.hidden=true;
+    document.body.classList.remove('portal-crop-open');
+    document.body.classList.remove('portal-crop-open');
+  };
+
+  document.querySelector('#portal-crop-cancel')?.addEventListener('click',closeCropper);
+  document.querySelector('#portal-crop-close')?.addEventListener('click',closeCropper);
+  document.querySelector('#portal-crop-reset')?.addEventListener('click',()=>{
+    if(cropZoom)cropZoom.value='100';
+    if(cropX)cropX.value='0';
+    if(cropY)cropY.value='0';
+    renderCropPreview();
   });
   document.querySelector('#portal-crop-apply')?.addEventListener('click',()=>{
     if(!cropSource||!cropCanvas)return;
@@ -11639,6 +11662,8 @@ function openPortalProductEditor(id){
     setImage(result,{clearUrl:true});
     cropSource=null;
     if(cropper)cropper.hidden=true;
+    document.body.classList.remove('portal-crop-open');
+    document.body.classList.remove('portal-crop-open');
     toast(t('تم تطبيق القص. اضغط حفظ التعديلات لتحديث المتجر.','Crop applied. Press Save changes to update the store.'));
   });
 
@@ -11666,6 +11691,7 @@ function openPortalProductEditor(id){
   document.querySelector('#portal-product-image-apply-url')?.addEventListener('click',()=>{
     cropSource=null;
     if(cropper)cropper.hidden=true;
+    document.body.classList.remove('portal-crop-open');
     const value=String(urlInput?.value||'').trim();
     if(!value){toast(t('أدخل مسار أو رابط الصورة أولاً','Enter an image path or URL first'));return}
     setImage(value);
@@ -11675,6 +11701,7 @@ function openPortalProductEditor(id){
   document.querySelector('#portal-product-image-original')?.addEventListener('click',()=>{
     cropSource=null;
     if(cropper)cropper.hidden=true;
+    document.body.classList.remove('portal-crop-open');
     const base=visibleFallbackProducts().find(x=>String(x.id)===String(p.id))||p;
     const original=String(premiumProductImage(base)||base.image||p.image||'');
     if(!original)return;
