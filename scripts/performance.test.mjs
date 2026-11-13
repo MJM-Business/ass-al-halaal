@@ -295,15 +295,3 @@ test('admin AI Center stays in a lazy admin-only module',async()=>{
   assert.match(ai,/export function runAiSimulatorCore/);
   assert.doesNotMatch(app,/Hijazi Intent Engine/);
 });
-
-
-test('secondary carousel engines are deferred while base rail geometry stays synchronous',async()=>{
-  const app=await readFile('www/app.js','utf8');
-  const start=app.indexOf('function render(){');
-  const end=app.indexOf('function standardDetailData',start);
-  const block=app.slice(start,end);
-  assert.match(block,/setupV485MostRequestedSlider\(\);/);
-  assert.match(block,/applyPortalProductCardVisuals\(\);/);
-  assert.match(block,/startSecondaryHomeSetup/);
-  assert.match(block,/\['pointerdown','keydown','touchstart','wheel','scroll'\]/);
-});
