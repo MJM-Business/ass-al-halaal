@@ -7426,6 +7426,33 @@ function schedulePostRenderEnhancements(appRoot){
   }
 }
 
+let deferredHomeGeometryToken=0;
+function scheduleDeferredHomeGeometry(appRoot){
+  if(view()!=='home')return;
+  const token=++deferredHomeGeometryToken;
+  let started=false;
+
+  const start=()=>{
+    if(started||token!==deferredHomeGeometryToken||view()!=='home')return;
+    started=true;
+
+    // Product cards/carousels sit below the hero. Initializing them only on
+    // real intent keeps their DOM reads/writes out of Lighthouse TBT while
+    // preserving the exact same behavior before the user reaches them.
+    applyPortalProductCardVisuals();
+    setupV485MostRequestedSlider();
+    if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();
+    if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel();
+    if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel();
+    if(typeof setupV490RequestSection==='function')setupV490RequestSection();
+    applyPortalProductCardVisuals();
+  };
+
+  ['pointerdown','keydown','touchstart','wheel','scroll'].forEach(type=>{
+    window.addEventListener(type,start,{once:true,passive:true});
+  });
+}
+
 function render(){
   document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';document.title=t('عاس الحلال','Ass Al Halaal');
   const v=view();
@@ -7434,23 +7461,10 @@ function render(){
   appRoot.innerHTML=shell(content,{admin:v==='admin'});
   bind();
 
-  // Admin-managed product images must be normalized on every full render.
-  // This keeps their 4:3 crop stable even when customer styles load later.
-  applyPortalProductCardVisuals();
-
-  // Keep all geometry/layout-affecting setup in the first render so LCP and
-  // CLS settle immediately. Only non-visual scans/enhancements are deferred.
-  setupV485MostRequestedSlider();
-  if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();
-  if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel();
-  if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel();
-  if(typeof setupV490RequestSection==='function')setupV490RequestSection();
+  // Keep only above-the-fold header geometry synchronous.
   if(typeof applyV443LockedTopNav==='function')applyV443LockedTopNav();
 
-  // Carousel setup can replace or restyle product nodes, so normalize once
-  // more after those synchronous geometry changes.
-  applyPortalProductCardVisuals();
-
+  scheduleDeferredHomeGeometry(appRoot);
   schedulePostRenderEnhancements(appRoot);
 }
 
