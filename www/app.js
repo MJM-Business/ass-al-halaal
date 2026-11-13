@@ -474,24 +474,30 @@ function applyPortalProductCardVisuals(){
     const visual=card.querySelector('.product-image');
     const img=visual?.querySelector('img')||card.querySelector('img');
     card.classList.add('portal-image-override-card');
+
     if(visual){
-      visual.style.width='100%';
-      visual.style.margin='0';
-      visual.style.padding='0';
-      visual.style.overflow='hidden';
-      visual.style.aspectRatio='4 / 3';
-      visual.style.position='relative';
+      visual.style.setProperty('width','100%','important');
+      visual.style.setProperty('height','auto','important');
+      visual.style.setProperty('margin','0','important');
+      visual.style.setProperty('padding','0','important');
+      visual.style.setProperty('overflow','hidden','important');
+      visual.style.setProperty('aspect-ratio','4 / 3','important');
+      visual.style.setProperty('position','relative','important');
+      visual.style.setProperty('background','transparent','important');
     }
+
     if(img){
       if(img.getAttribute('src')!==o.image)img.setAttribute('src',o.image);
-      img.style.display='block';
-      img.style.width='100%';
-      img.style.height='100%';
-      img.style.maxWidth='none';
-      img.style.margin='0';
-      img.style.padding='0';
-      img.style.objectFit='cover';
-      img.style.objectPosition='center';
+      img.style.setProperty('display','block','important');
+      img.style.setProperty('width','100%','important');
+      img.style.setProperty('height','100%','important');
+      img.style.setProperty('max-width','none','important');
+      img.style.setProperty('max-height','none','important');
+      img.style.setProperty('margin','0','important');
+      img.style.setProperty('padding','0','important');
+      img.style.setProperty('object-fit','cover','important');
+      img.style.setProperty('object-position','center center','important');
+      img.style.setProperty('transform','none','important');
     }
   });
 }
