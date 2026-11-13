@@ -154,12 +154,11 @@ test('carousel engines do not duplicate their initial DOMContentLoaded setup',as
   const app=await readFile('www/app.js','utf8');
   assert.match(app,/function setupV485MostRequestedSlider\(\)/);
   assert.match(app,/function setupV487StableCarousel\(\)/);
-  assert.match(app,/function setupV527MobileProductCarousel\(\)/);
   assert.match(app,/function setupV528MobileCarousel\(\)/);
   assert.doesNotMatch(app,/DOMContentLoaded[^\n]{0,240}setupV485MostRequestedSlider/);
   assert.doesNotMatch(app,/DOMContentLoaded[^\n]{0,240}setupV487StableCarousel/);
-  assert.doesNotMatch(app,/DOMContentLoaded[^\n]{0,240}setupV527MobileProductCarousel/);
   assert.doesNotMatch(app,/DOMContentLoaded[^\n]{0,240}setupV528MobileCarousel/);
+  assert.doesNotMatch(app,/setupV527MobileProductCarousel/);
 });
 
 
