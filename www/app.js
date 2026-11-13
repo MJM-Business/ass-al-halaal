@@ -11389,8 +11389,18 @@ async function portalPrepareProductImage(file){
   return result||source;
 }
 
+function ensurePortalCropStyles(){
+  if(document.getElementById('portal-crop-style'))return;
+  const link=document.createElement('link');
+  link.id='portal-crop-style';
+  link.rel='stylesheet';
+  link.href='admin-crop.css?v=1';
+  document.head.appendChild(link);
+}
+
 function openPortalProductEditor(id){
   if(!rbacGuard('portal','manage'))return;
+  ensurePortalCropStyles();
   const p=products.find(x=>String(x.id)===String(id));
   if(!p)return;
 
