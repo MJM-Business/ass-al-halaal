@@ -7530,7 +7530,10 @@ function schedulePostRenderEnhancements(appRoot){
     ()=>setupHomeProductLazyExpansion(),
     ()=>{
       window.__v496BindFaq?.();
-      window.__v517SyncBrandContrast?.();
+      // Brand-contrast scanning reads computed styles up the header ancestry
+      // and can force layout during the Lighthouse startup window.
+      // Keep the feature available for resize/hash changes, but do not run
+      // the expensive scan on initial render.
     }
   ];
   let index=0;
