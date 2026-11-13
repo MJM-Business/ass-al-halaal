@@ -11394,7 +11394,7 @@ function ensurePortalCropStyles(){
   const link=document.createElement('link');
   link.id='portal-crop-style';
   link.rel='stylesheet';
-  link.href='admin-crop.css?v=1';
+  link.href='admin-crop.css?v=2';
   document.head.appendChild(link);
 }
 
@@ -11447,13 +11447,13 @@ function openPortalProductEditor(id){
                 <div>
                   <small>${t('ضبط الصورة','IMAGE ADJUSTMENT')}</small>
                   <h3>${t('قص الصورة','Crop image')}</h3>
-                  <p>${t('اسحب الصورة داخل المربع واضبط التكبير.','Drag the image inside the square and adjust zoom.')}</p>
+                  <p>${t('اسحب الصورة داخل إطار بطاقة المنتج واضبط التكبير.','Drag the image inside the product-card frame and adjust zoom.')}</p>
                 </div>
                 <button type="button" id="portal-crop-close" aria-label="${t('إغلاق','Close')}">×</button>
               </header>
 
               <div class="portal-square-crop-frame">
-                <canvas id="portal-crop-canvas" width="800" height="800" aria-label="${t('معاينة قص الصورة','Crop preview')}"></canvas>
+                <canvas id="portal-crop-canvas" width="1200" height="900" aria-label="${t('معاينة قص الصورة','Crop preview')}"></canvas>
                 <div class="portal-square-crop-guide" aria-hidden="true"></div>
               </div>
 
