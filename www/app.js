@@ -9309,26 +9309,31 @@ await yieldStartupTask();
    ========================================================= */
 
 function applyV469MobileExperience(){
-  const mobile = !!window.matchMedia?.('(max-width:900px)').matches;
-  if(!mobile) return;
+  const mobile=!!window.matchMedia?.('(max-width:900px)').matches;
+  if(!mobile)return;
 
-  const root = document.querySelector('#app');
-  if(!root) return;
+  const root=document.querySelector('#app');
+  if(!root)return;
 
   // Keep the active hero physically ordered: image -> copy.
   root.querySelectorAll('.v94-hero-slider .hero-slide').forEach(slide=>{
-    const mobileImage = slide.querySelector('.mobile-hero-image-v468');
-    const copy = slide.querySelector('.hero-copy');
-    if(mobileImage && slide.firstElementChild !== mobileImage){
-      slide.insertBefore(mobileImage, slide.firstElementChild);
+    const mobileImage=slide.querySelector('.mobile-hero-image-v468');
+    const copy=slide.querySelector('.hero-copy');
+    if(mobileImage && slide.firstElementChild!==mobileImage){
+      slide.insertBefore(mobileImage,slide.firstElementChild);
     }
-    if(copy && mobileImage && mobileImage.nextElementSibling !== copy){
-      slide.insertBefore(copy, mobileImage.nextSibling);
+    if(copy && mobileImage && mobileImage.nextElementSibling!==copy){
+      slide.insertBefore(copy,mobileImage.nextSibling);
     }
   });
 
-  // Explicit mobile touch bridge for important customer interactions.
-  const selectors = [
+  // One delegated touch bridge replaces per-element touch listeners.
+  // This preserves the same tap behavior while dramatically reducing
+  // startup listener allocation and selector-loop work.
+  if(root.dataset.v469DelegatedTouch==='1')return;
+  root.dataset.v469DelegatedTouch='1';
+
+  const selector=[
     '[data-nav]',
     '#nav-products',
     '#nav-cart',
@@ -9356,32 +9361,40 @@ function applyV469MobileExperience(){
     '[data-hero-dot]'
   ].join(',');
 
-  root.querySelectorAll(selectors).forEach(el=>{
-    if(el.dataset.v469TouchReady === '1') return;
-    el.dataset.v469TouchReady = '1';
+  let activeTarget=null;
+  let sx=0,sy=0,moved=false;
 
-    let sx = 0, sy = 0, moved = false;
+  root.addEventListener('touchstart',e=>{
+    const target=e.target?.closest?.(selector);
+    if(!target || !root.contains(target))return;
+    const touch=e.touches?.[0];
+    if(!touch)return;
+    activeTarget=target;
+    sx=touch.clientX;
+    sy=touch.clientY;
+    moved=false;
+  },{passive:true});
 
-    el.addEventListener('touchstart', e=>{
-      const t=e.touches?.[0];
-      if(!t) return;
-      sx=t.clientX; sy=t.clientY; moved=false;
-    }, {passive:true});
+  root.addEventListener('touchmove',e=>{
+    if(!activeTarget)return;
+    const touch=e.touches?.[0];
+    if(!touch)return;
+    if(Math.abs(touch.clientX-sx)>12 || Math.abs(touch.clientY-sy)>12)moved=true;
+  },{passive:true});
 
-    el.addEventListener('touchmove', e=>{
-      const t=e.touches?.[0];
-      if(!t) return;
-      if(Math.abs(t.clientX-sx)>12 || Math.abs(t.clientY-sy)>12) moved=true;
-    }, {passive:true});
+  root.addEventListener('touchend',e=>{
+    const target=activeTarget;
+    activeTarget=null;
+    if(!target || moved)return;
+    e.preventDefault();
+    e.stopPropagation();
+    try{target.click()}catch{}
+  },{passive:false});
 
-    el.addEventListener('touchend', e=>{
-      if(moved) return;
-      // Prevent Android/WebView ghost-click delays and fire the existing click handler once.
-      e.preventDefault();
-      e.stopPropagation();
-      try{ el.click(); }catch{}
-    }, {passive:false});
-  });
+  root.addEventListener('touchcancel',()=>{
+    activeTarget=null;
+    moved=false;
+  },{passive:true});
 }
 
 // Re-apply if the viewport changes between desktop/mobile emulation.
