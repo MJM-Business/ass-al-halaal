@@ -10194,26 +10194,30 @@ if(view()==='admin'){
    ========================================================= */
 
 function applyV469MobileExperience(){
-  const mobile = !!window.matchMedia?.('(max-width:900px)').matches;
-  if(!mobile) return;
+  const mobile=!!window.matchMedia?.('(max-width:900px)').matches;
+  if(!mobile)return;
 
-  const root = document.querySelector('#app');
-  if(!root) return;
+  const root=document.querySelector('#app');
+  if(!root)return;
 
-  // Keep the active hero physically ordered: image -> copy.
+  // Preserve the exact mobile hero order synchronously.
   root.querySelectorAll('.v94-hero-slider .hero-slide').forEach(slide=>{
-    const mobileImage = slide.querySelector('.mobile-hero-image-v468');
-    const copy = slide.querySelector('.hero-copy');
-    if(mobileImage && slide.firstElementChild !== mobileImage){
-      slide.insertBefore(mobileImage, slide.firstElementChild);
+    const mobileImage=slide.querySelector('.mobile-hero-image-v468');
+    const copy=slide.querySelector('.hero-copy');
+    if(mobileImage && slide.firstElementChild!==mobileImage){
+      slide.insertBefore(mobileImage,slide.firstElementChild);
     }
-    if(copy && mobileImage && mobileImage.nextElementSibling !== copy){
-      slide.insertBefore(copy, mobileImage.nextSibling);
+    if(copy && mobileImage && mobileImage.nextElementSibling!==copy){
+      slide.insertBefore(copy,mobileImage.nextSibling);
     }
   });
 
-  // Explicit mobile touch bridge for important customer interactions.
-  const selectors = [
+  // One delegated touch bridge replaces three listeners on every clickable
+  // element. This preserves tap behavior while avoiding a large startup scan.
+  if(root.dataset.v469DelegatedTouch==='1')return;
+  root.dataset.v469DelegatedTouch='1';
+
+  const selectors=[
     '[data-nav]',
     '#nav-products',
     '#nav-cart',
@@ -10241,32 +10245,41 @@ function applyV469MobileExperience(){
     '[data-hero-dot]'
   ].join(',');
 
-  root.querySelectorAll(selectors).forEach(el=>{
-    if(el.dataset.v469TouchReady === '1') return;
-    el.dataset.v469TouchReady = '1';
+  let active=null;
+  let sx=0,sy=0,moved=false;
 
-    let sx = 0, sy = 0, moved = false;
+  root.addEventListener('touchstart',e=>{
+    const t=e.touches?.[0];
+    if(!t)return;
+    const target=e.target?.closest?.(selectors);
+    if(!target || !root.contains(target)){
+      active=null;
+      return;
+    }
+    active=target;
+    sx=t.clientX;
+    sy=t.clientY;
+    moved=false;
+  },{passive:true});
 
-    el.addEventListener('touchstart', e=>{
-      const t=e.touches?.[0];
-      if(!t) return;
-      sx=t.clientX; sy=t.clientY; moved=false;
-    }, {passive:true});
+  root.addEventListener('touchmove',e=>{
+    if(!active)return;
+    const t=e.touches?.[0];
+    if(!t)return;
+    if(Math.abs(t.clientX-sx)>12 || Math.abs(t.clientY-sy)>12)moved=true;
+  },{passive:true});
 
-    el.addEventListener('touchmove', e=>{
-      const t=e.touches?.[0];
-      if(!t) return;
-      if(Math.abs(t.clientX-sx)>12 || Math.abs(t.clientY-sy)>12) moved=true;
-    }, {passive:true});
+  root.addEventListener('touchend',e=>{
+    if(!active)return;
+    const target=active;
+    active=null;
+    if(moved)return;
+    e.preventDefault();
+    e.stopPropagation();
+    try{target.click()}catch{}
+  },{passive:false});
 
-    el.addEventListener('touchend', e=>{
-      if(moved) return;
-      // Prevent Android/WebView ghost-click delays and fire the existing click handler once.
-      e.preventDefault();
-      e.stopPropagation();
-      try{ el.click(); }catch{}
-    }, {passive:false});
-  });
+  root.addEventListener('touchcancel',()=>{active=null},{passive:true});
 }
 
 // Re-apply if the viewport changes between desktop/mobile emulation.
