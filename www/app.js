@@ -8099,7 +8099,12 @@ function setupHomeProductLazyExpansion(){
     homeProductsObserver?.disconnect?.();
     homeProductsObserver=null;
     renderProducts();
-  },{rootMargin:'500px 0px',threshold:0.01});
+  // Do not pre-expand the full product catalog hundreds of pixels before it
+  // reaches the viewport. On mobile Lighthouse this caused a large home-only
+  // long task (full card render + carousel rebinding) during initial load.
+  // The user sees the same initial layout; expansion now happens only as the
+  // collection actually approaches the viewport.
+  },{rootMargin:'0px 0px 80px 0px',threshold:0.01});
 
   homeProductsObserver.observe(collection);
 }
