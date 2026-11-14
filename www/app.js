@@ -8886,8 +8886,13 @@ await yieldStartupTask();
       header.insertAdjacentElement('afterend',headerSpacer);
     }
 
+    const announcement=shell.querySelector('.ref-announcement');
+
+    // Batch every layout READ before any style/class WRITE. The previous
+    // read-write-read order forced a synchronous reflow on every home render.
     const shellRect=shell.getBoundingClientRect();
     const headerH=header.offsetHeight || 94;
+    const announcementH=announcement ? (announcement.offsetHeight || 52) : 0;
 
     header.classList.add('v443-fixed-header');
     header.style.setProperty('left',px(shellRect.left),'important');
@@ -8898,7 +8903,6 @@ await yieldStartupTask();
     headerSpacer.style.height=px(headerH);
     headerSpacer.style.minHeight=px(headerH);
 
-    const announcement=shell.querySelector('.ref-announcement');
     let totalH=headerH;
 
     if(announcement){
@@ -8910,7 +8914,6 @@ await yieldStartupTask();
         screen.insertBefore(announcementSpacer,announcement);
       }
 
-      const announcementH=announcement.offsetHeight || 52;
       announcement.classList.add('v443-fixed-announcement');
       announcement.style.setProperty('left',px(shellRect.left),'important');
       announcement.style.setProperty('right','auto','important');
@@ -9572,10 +9575,10 @@ function setupV485MostRequestedSlider(){
     }
   });
 
-  // Keep current position valid after re-render.
-  if(track.scrollWidth<=track.clientWidth){
-    track.scrollLeft=0;
-  }
+  // Start at the same origin without forcing a synchronous width read.
+  // The old scrollWidth/clientWidth comparison caused an avoidable reflow
+  // immediately after carousel classes were written.
+  if(track.scrollLeft<0)track.scrollLeft=0;
 }
 
 /* v485 no-op installer retired */
