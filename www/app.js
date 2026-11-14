@@ -8359,19 +8359,89 @@ function adminOrderCard(o){
   </article>`
 }
 
+function scheduleStartupDomHardening(root){
+  if(!root)return;
+
+  // Keep LCP/image priority behavior synchronous, but move the large
+  // accessibility/UX DOM scans into small tasks so no single task blocks
+  // the main thread for Lighthouse TBT.
+  const images=[...root.querySelectorAll('img')];
+  let priorityAssigned=false;
+  images.forEach(img=>{
+    if(!img.hasAttribute('alt'))img.setAttribute('alt','');
+    const aboveFold=Boolean(img.closest('.ref-customer-header,.mobile-reference-header,.v94-hero-slider,.quality-hero,.simple-auth-logo-wrap'));
+    if(aboveFold&&!priorityAssigned){
+      img.setAttribute('loading','eager');
+      img.setAttribute('fetchpriority','high');
+      img.setAttribute('decoding','sync');
+      priorityAssigned=true;
+    }else{
+      if(!img.hasAttribute('loading'))img.setAttribute('loading','lazy');
+      if(!img.hasAttribute('decoding'))img.setAttribute('decoding','async');
+      if(!img.hasAttribute('fetchpriority'))img.setAttribute('fetchpriority','low');
+    }
+  });
+
+  const jobs=[
+    ()=>root.querySelectorAll('input:not([type="hidden"]),select,textarea').forEach(field=>{
+      if(field.hasAttribute('aria-label')||field.hasAttribute('aria-labelledby')||field.closest('label'))return;
+      const fallback=field.getAttribute('placeholder')||field.getAttribute('name')||field.id||'Form field';
+      field.setAttribute('aria-label',fallback);
+    }),
+    ()=>root.querySelectorAll('button,a,[role="button"]').forEach(el=>{
+      const hasName=Boolean(
+        el.getAttribute('aria-label')?.trim()||
+        el.getAttribute('aria-labelledby')?.trim()||
+        el.getAttribute('title')?.trim()||
+        el.textContent?.trim()||
+        el.querySelector('img[alt]:not([alt=""])')
+      );
+      if(hasName)return;
+      const key=(String(el.id||'')+' '+String(el.dataset?.nav||'')+' '+String(el.className||'')).toLowerCase();
+      let fallback='';
+      if(key.includes('search'))fallback=t('بحث','Search');
+      else if(key.includes('bell')||key.includes('notif'))fallback=t('التنبيهات','Notifications');
+      else if(key.includes('cart')||key.includes('bag'))fallback=t('السلة','Cart');
+      else if(key.includes('language')||key.includes('lang'))fallback=t('لغة التطبيق','App language');
+      else if(key.includes('account'))fallback=t('حسابي','Account');
+      else if(key.includes('order'))fallback=t('تتبع الطلب','Track order');
+      else if(key.includes('home'))fallback=t('الرئيسية','Home');
+      else if(key.includes('close'))fallback=t('إغلاق','Close');
+      if(fallback)el.setAttribute('aria-label',fallback);
+    }),
+    ()=>root.querySelectorAll('[role="button"]').forEach(el=>{
+      if(!el.hasAttribute('tabindex'))el.setAttribute('tabindex','0');
+      if(el.dataset.a11yKeyBound==='1')return;
+      el.dataset.a11yKeyBound='1';
+      el.addEventListener('keydown',event=>{
+        if(event.key!=='Enter'&&event.key!==' ')return;
+        event.preventDefault();
+        el.click();
+      });
+    }),
+    ()=>applyBatch2UxHardening(root)
+  ];
+
+  let i=0;
+  const run=()=>{
+    if(i>=jobs.length)return;
+    jobs[i++]();
+    if(i<jobs.length)setTimeout(run,0);
+  };
+  setTimeout(run,0);
+}
+
 function render(){
   document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';document.title=t('عاس الحلال','Ass Al Halaal');
   const v=view();
   let content=v==='home'?homePage():v==='orders'?ordersPage():v==='account'?accountPage():v==='admin'?adminPage():v.startsWith('livestock/')?livestockCategoryPage(decodeURIComponent(v.slice(10))):v.startsWith('hashi/')?hashiVariantPage(productById('hashi-camel')||products.find(isHashiCamelProduct),decodeURIComponent(v.slice(6))):v.startsWith('product/')?productDetailPage(decodeURIComponent(v.slice(8))):homePage();
   const appRoot=document.querySelector('#app');
   appRoot.innerHTML=shell(content,{admin:v==='admin'});
-  applyAccessibilityHardening(appRoot);
-  applyBatch2UxHardening(appRoot);
+  scheduleStartupDomHardening(appRoot);
   bind();
   applyV469MobileExperience();
   setupV485MostRequestedSlider();
   if(typeof setupV487StableCarousel==='function') setupV487StableCarousel();
-  if(typeof setupV527MobileProductCarousel==='function') setupV527MobileProductCarousel();
   if(typeof setupV528MobileCarousel==='function') setupV528MobileCarousel();
   if(typeof setupV490RequestSection==='function') setupV490RequestSection();
   setupHomeProductLazyExpansion();
@@ -9017,12 +9087,12 @@ function setupHomeProductLazyExpansion(){
     homeProductsObserver?.disconnect?.();
     homeProductsObserver=null;
     renderProducts();
-  },{rootMargin:'500px 0px',threshold:0.01});
+  },{rootMargin:'0px',threshold:0.01});
 
   homeProductsObserver.observe(collection);
 }
 
-function renderProducts(){const el=document.querySelector('#products');if(!el)return;el.innerHTML=productCards();applyPortalProductCardVisuals();document.querySelectorAll('[data-product]').forEach(b=>b.onclick=e=>{e.stopPropagation();productDialog(b.dataset.product)});document.querySelectorAll('[data-product-detail-button]').forEach(b=>b.onclick=e=>{e.stopPropagation();setView('product/'+encodeURIComponent(b.dataset.productDetailButton))});document.querySelectorAll('[data-product-detail]').forEach(card=>{card.onclick=e=>{if(e.target.closest('button'))return;setView('product/'+encodeURIComponent(card.dataset.productDetail))}});document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const id=b.dataset.fav;favourites.has(id)?favourites.delete(id):favourites.add(id);persist();renderProducts()});document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareProduct(b.dataset.share));setupCustomBox3DShowcase();setupV485MostRequestedSlider();if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();if(typeof setupV527MobileProductCarousel==='function')setupV527MobileProductCarousel();if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel()}
+function renderProducts(){const el=document.querySelector('#products');if(!el)return;el.innerHTML=productCards();applyPortalProductCardVisuals();document.querySelectorAll('[data-product]').forEach(b=>b.onclick=e=>{e.stopPropagation();productDialog(b.dataset.product)});document.querySelectorAll('[data-product-detail-button]').forEach(b=>b.onclick=e=>{e.stopPropagation();setView('product/'+encodeURIComponent(b.dataset.productDetailButton))});document.querySelectorAll('[data-product-detail]').forEach(card=>{card.onclick=e=>{if(e.target.closest('button'))return;setView('product/'+encodeURIComponent(card.dataset.productDetail))}});document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const id=b.dataset.fav;favourites.has(id)?favourites.delete(id):favourites.add(id);persist();renderProducts()});document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareProduct(b.dataset.share));setupCustomBox3DShowcase();setupV485MostRequestedSlider();if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel()}
 
 
 function productOptionsDialog(id){
@@ -11862,7 +11932,7 @@ function setupV528MobileCarousel(){
   const track=shell?.querySelector('#products.ref-products.v485-product-carousel-track');
   if(!shell || !track)return;
 
-  track.classList.add('v528-pointer-carousel');
+  track.classList.add('v527-mobile-centered-track','v528-pointer-carousel');
 
   const cards=()=>[...track.querySelectorAll(':scope > .product-card')];
   const maxScroll=()=>Math.max(0,track.scrollWidth-track.clientWidth);
