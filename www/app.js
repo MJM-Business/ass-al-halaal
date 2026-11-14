@@ -2161,8 +2161,6 @@ function homePage(){
 </div>
 <div class="v405-home-ui" hidden></div>
 
-`}
-
 <style id="v405-reference-home-ui">
 /* v405 — home-only visual skin. Keeps all existing IDs/data attributes/handlers intact. */
 :root{--v405-emerald:#063f32;--v405-emerald-2:#0a5a45;--v405-gold:#d9a936;--v405-gold-2:#f0cf72;--v405-cream:#f7f2e7;--v405-ink:#143f34}
@@ -2403,6 +2401,9 @@ html[dir="rtl"] .app-shell:has(.v405-home-ui) .ref-categories #view-all{right:au
   .app-shell:has(.v405-home-ui) .ref-district-card{padding:14px 12px!important}.app-shell:has(.v405-home-ui) .district-title .fast{display:none!important}
 }
 </style>
+
+`}
+
 
 let customBoxPromoTimer=0;
 
