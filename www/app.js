@@ -2163,6 +2163,246 @@ function homePage(){
 
 `}
 
+<style id="v405-reference-home-ui">
+/* v405 — home-only visual skin. Keeps all existing IDs/data attributes/handlers intact. */
+:root{--v405-emerald:#063f32;--v405-emerald-2:#0a5a45;--v405-gold:#d9a936;--v405-gold-2:#f0cf72;--v405-cream:#f7f2e7;--v405-ink:#143f34}
+.app-shell:has(.v405-home-ui){background:#f1eee6!important;width:100%!important;max-width:none!important;min-height:100vh!important;margin:0!important;box-sizing:border-box!important;box-shadow:0 0 0 1px rgba(117,91,33,.05),0 20px 60px rgba(42,45,35,.08)!important}
+.app-shell:has(.v405-home-ui) .screen{background:linear-gradient(180deg,#fbf8f1 0%,#f7f2e8 100%)!important;padding:0 26px 54px!important}
+
+/* Header — dark emerald bar like reference, but same controls/functions. */
+.app-shell:has(.v405-home-ui) .app-header{background:linear-gradient(180deg,#064936 0%,#043b2f 100%)!important;border:0!important;border-radius:0!important;color:#fff!important;box-shadow:0 8px 22px rgba(4,51,39,.16)!important;padding:13px 24px!important;gap:18px!important;position:sticky!important;top:0!important;z-index:90!important}
+.app-shell:has(.v405-home-ui) .customer-brand{gap:10px!important}
+.app-shell:has(.v405-home-ui) .customer-logo{background:transparent!important;border:0!important;box-shadow:none!important;padding:0 4px!important;color:#fff!important}
+.app-shell:has(.v405-home-ui) .customer-logo img{width:54px!important;height:44px!important;object-fit:contain!important;filter:brightness(0) invert(1) sepia(.08)!important}
+.app-shell:has(.v405-home-ui) .customer-logo b{color:#f2d67a!important;font-size:20px!important}
+.app-shell:has(.v405-home-ui) .customer-logo small{color:#e9efe9!important;opacity:.86!important}
+.app-shell:has(.v405-home-ui) .location-pill{background:rgba(255,255,255,.08)!important;border:1px solid rgba(244,210,112,.35)!important;color:#fff!important;box-shadow:none!important}
+.app-shell:has(.v405-home-ui) .location-pill small{color:#dce9e3!important}.app-shell:has(.v405-home-ui) .location-pill b{color:#fff!important}.app-shell:has(.v405-home-ui) .ref-location-pin{background:#d8a937!important;color:#123c31!important}
+.app-shell:has(.v405-home-ui) .desktop-main-nav{gap:4px!important}
+.app-shell:has(.v405-home-ui) .desktop-main-nav button{background:transparent!important;border:0!important;color:#eef5f1!important;border-radius:10px!important;padding:9px 11px!important}
+.app-shell:has(.v405-home-ui) .desktop-main-nav button:hover{background:rgba(255,255,255,.08)!important}
+.app-shell:has(.v405-home-ui) .desktop-main-nav button.active{color:#f7d36e!important;background:rgba(218,170,57,.10)!important;box-shadow:inset 0 -2px 0 #e0ae37!important}
+.app-shell:has(.v405-home-ui) .desktop-main-nav .nav-icon svg{width:19px!important;height:19px!important}
+.app-shell:has(.v405-home-ui) .premium-action-dock{gap:7px!important}
+.app-shell:has(.v405-home-ui) .premium-action-dock .top-action{background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,255,255,.16)!important;color:#fff!important;box-shadow:none!important}
+.app-shell:has(.v405-home-ui) .premium-action-dock .top-search{min-width:240px!important}
+.app-shell:has(.v405-home-ui) .top-search-copy{color:#e7eee9!important}
+.app-shell:has(.v405-home-ui) .top-language .lang-code{color:#f2d171!important}
+
+/* Thin trust band below header. */
+.app-shell:has(.v405-home-ui) .ref-announcement{margin:0 -26px 14px!important;border-radius:0!important;background:#0b5a46!important;color:#fff!important;min-height:42px!important;padding:8px 26px!important;border:0!important;box-shadow:none!important}
+.app-shell:has(.v405-home-ui) .ref-announcement>span{background:#e3b542!important;color:#113e31!important}
+.app-shell:has(.v405-home-ui) .ref-announcement p,.app-shell:has(.v405-home-ui) .ref-announcement small{color:#f4f8f5!important}
+.app-shell:has(.v405-home-ui) .ref-announcement b{background:#126d56!important;color:#e9cd77!important;border-color:rgba(233,205,119,.35)!important}
+
+/* Delivery selector — compact cream control bar, functionality untouched. */
+.app-shell:has(.v405-home-ui) .ref-district-card{background:#f6eddb!important;border:1px solid #eadfc9!important;border-radius:15px!important;box-shadow:0 6px 18px rgba(78,65,35,.07)!important;margin:-14px 0 10px!important;padding:12px 16px 10px!important;overflow:hidden!important;transform:none!important}
+.app-shell:has(.v405-home-ui) .district-visual{opacity:.15!important}
+.app-shell:has(.v405-home-ui) .district-title{margin-bottom:8px!important;gap:10px!important;align-items:center!important}.app-shell:has(.v405-home-ui) .district-title h2{color:#164c3d!important;font-size:18px!important;line-height:1.2!important;margin:0 0 3px!important}.app-shell:has(.v405-home-ui) .district-title p{color:#6d766e!important;font-size:11px!important;margin:0!important}
+.app-shell:has(.v405-home-ui) .district-title .near{background:#0b5b47!important;color:#fff!important;width:44px!important;height:44px!important;min-width:44px!important}.app-shell:has(.v405-home-ui) .district-title .fast{background:linear-gradient(180deg,#f7d77a,#e3ad38)!important;color:#513b10!important;border:1px solid #d19b25!important;padding:8px 15px!important;font-size:11px!important}
+.app-shell:has(.v405-home-ui) .district-chips{gap:7px!important;margin:7px 0 8px!important}.app-shell:has(.v405-home-ui) .district-chips button{background:#fffaf1!important;border:1px solid #d9d5c9!important;color:#28483e!important;border-radius:999px!important;padding:7px 14px!important;min-height:34px!important;font-size:11px!important;box-shadow:0 2px 6px rgba(45,51,43,.04)!important}.app-shell:has(.v405-home-ui) .district-chips button.selected{background:#0c654e!important;color:#fff!important;border-color:#0c654e!important}
+.app-shell:has(.v405-home-ui) .dispatch{background:#e2f2ec!important;color:#276453!important;border-radius:8px!important;border:1px solid #cce6dc!important;min-height:34px!important;padding:7px 10px!important;font-size:10px!important}
+
+/* Categories — text-free artwork + real language-aware name buttons. */
+.app-shell:has(.v405-home-ui) .ref-categories{padding:2px 0 18px!important;margin:0!important}
+.app-shell:has(.v405-home-ui) .ref-categories .section-row{margin-bottom:14px!important;align-items:flex-end!important}
+.app-shell:has(.v405-home-ui) .ref-categories .section-row h2{font-size:22px!important;color:#123f34!important;margin:0 0 2px!important}.app-shell:has(.v405-home-ui) .ref-categories .section-row p{color:#879089!important;margin:0!important}.app-shell:has(.v405-home-ui) .ref-categories #view-all{background:transparent!important;border:0!important;color:#0a5c47!important;font-weight:900!important}
+.app-shell:has(.v405-home-ui) .ref-categories .category-row{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:18px!important;margin-top:0!important}
+.app-shell:has(.v405-home-ui) .ref-categories .livestock-type-card{background:transparent!important;border:0!important;border-radius:18px!important;padding:0!important;overflow:visible!important;box-shadow:none!important;transition:transform .18s ease!important}
+.app-shell:has(.v405-home-ui) .ref-categories .livestock-type-card:hover{transform:translateY(-4px)!important;box-shadow:none!important;filter:none!important}
+.app-shell:has(.v405-home-ui) .ref-categories .category-image-button{width:100%!important;padding:0!important;border:0!important;background:transparent!important;border-radius:18px!important;overflow:hidden!important;box-shadow:0 9px 20px rgba(24,55,45,.15)!important}
+.app-shell:has(.v405-home-ui) .ref-categories .livestock-type-card .category-photo{aspect-ratio:auto!important;border-radius:18px!important;background:transparent!important;overflow:hidden!important}
+.app-shell:has(.v405-home-ui) .ref-categories .livestock-type-card .category-photo img{width:100%!important;height:auto!important;object-fit:contain!important;object-position:center!important;border-radius:18px!important;display:block!important}
+.app-shell:has(.v405-home-ui) .ref-categories .category-name-button{width:82%!important;min-height:46px!important;margin:auto auto 0!important;background:linear-gradient(180deg,#0d654a 0%,#004632 100%)!important;color:#f4cd64!important;border:2px solid #d9b64a!important;border-radius:999px!important;font-size:18px!important;font-weight:900!important;box-shadow:0 6px 14px rgba(0,50,36,.16)!important}
+
+/* Hero — wide emerald + gold banner, still uses the existing working slider and controls. */
+.app-shell:has(.v405-home-ui) .v94-hero-slider{margin:4px 0 24px!important;border:1px solid #d5a739!important;border-radius:20px!important;overflow:hidden!important;background:#063f32!important;box-shadow:0 14px 34px rgba(22,54,44,.18)!important;min-height:390px!important}
+.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-slides{min-height:390px!important}
+.app-shell:has(.v405-home-ui) .v94-hero-slider .quality-hero{min-height:390px!important;display:grid!important;grid-template-columns:1.05fr .95fr!important;align-items:stretch!important;background:radial-gradient(circle at 80% 15%,rgba(30,112,83,.42),transparent 34%),linear-gradient(115deg,#074b3a 0%,#053b30 58%,#082f27 100%)!important;border-radius:0!important;box-shadow:none!important;padding:0!important;overflow:hidden!important}
+.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-copy{order:2!important;padding:34px 38px!important;display:flex!important;flex-direction:column!important;justify-content:center!important;color:#fff!important;position:relative!important;z-index:2!important}
+.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-media{order:1!important;min-height:390px!important;position:relative!important;overflow:hidden!important}
+.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-media:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 56%,rgba(5,59,48,.88) 100%);pointer-events:none}
+.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-media img{width:100%!important;height:100%!important;object-fit:cover!important;object-position:left center!important;border:0!important;border-radius:0!important;filter:saturate(1.05) contrast(1.02)!important}
+.app-shell:has(.v405-home-ui) .luxury-hero-badges{display:flex!important;align-items:center!important;gap:9px!important;flex-wrap:wrap!important;margin-bottom:16px!important}.app-shell:has(.v405-home-ui) .luxury-hero-badges>span{background:linear-gradient(180deg,#f4d77b,#d7a433)!important;color:#49340d!important;border:1px solid #f1d173!important;border-radius:999px!important;padding:9px 16px!important;font-weight:900!important;box-shadow:0 6px 16px rgba(217,169,54,.18)!important}.app-shell:has(.v405-home-ui) .luxury-hero-badges small{color:#f5f4e9!important;font-weight:700!important}.app-shell:has(.v405-home-ui) .luxury-hero-badges i{color:#e9c85e!important}
+.app-shell:has(.v405-home-ui) .luxury-hero-title{font-size:46px!important;line-height:1.06!important;margin:6px 0 14px!important;color:#fff!important}.app-shell:has(.v405-home-ui) .luxury-hero-title .hero-title-gold{display:block!important;color:#e6b84c!important;font-weight:900!important}.app-shell:has(.v405-home-ui) .hero-copy>p{color:#e6eee9!important;font-size:15px!important;line-height:1.8!important;max-width:620px!important}
+.app-shell:has(.v405-home-ui) .luxury-feature-row{display:grid!important;grid-template-columns:repeat(4,1fr)!important;gap:10px!important;margin-top:18px!important}.app-shell:has(.v405-home-ui) .luxury-feature-row>div{background:rgba(255,255,255,.045)!important;border:1px solid rgba(229,189,78,.35)!important;border-radius:12px!important;padding:12px 10px!important;color:#fff!important;text-align:center!important}.app-shell:has(.v405-home-ui) .luxury-feature-row span{display:block!important;color:#f0c95d!important;font-size:20px!important;margin-bottom:4px!important}.app-shell:has(.v405-home-ui) .luxury-feature-row b{font-size:12px!important;color:#f7faf8!important}
+.app-shell:has(.v405-home-ui) .luxury-hero-actions{margin-top:18px!important;display:flex!important;align-items:center!important;gap:14px!important;flex-wrap:wrap!important}.app-shell:has(.v405-home-ui) .unified-login-hero{background:linear-gradient(180deg,#f6d779,#dda936)!important;color:#4d380e!important;border:1px solid #f1d77f!important;border-radius:999px!important;padding:11px 22px!important;font-weight:900!important;box-shadow:0 8px 18px rgba(0,0,0,.16)!important}.app-shell:has(.v405-home-ui) .luxury-hero-actions small{color:#f0f4f1!important}.app-shell:has(.v405-home-ui) .luxury-hero-actions small i{color:#e9bd52!important}
+.app-shell:has(.v405-home-ui) .hero-slider-arrow{width:38px!important;height:38px!important;border-radius:50%!important;background:linear-gradient(180deg,#f3d16f,#d6a02e)!important;border:1px solid #f5dc8d!important;color:#4f3b0f!important;box-shadow:0 6px 15px rgba(0,0,0,.18)!important}.app-shell:has(.v405-home-ui) .hero-slider-dots{bottom:13px!important}.app-shell:has(.v405-home-ui) .hero-slider-dots button{background:#dbe7e1!important;opacity:.7!important}.app-shell:has(.v405-home-ui) .hero-slider-dots button.active{background:#e9bd4d!important;opacity:1!important;width:24px!important}
+
+/* Featured products — compact cream cards like reference, all handlers preserved. */
+.app-shell:has(.v405-home-ui) .ref-collection{background:transparent!important;border:0!important;padding:2px 0 24px!important;margin:0!important;box-shadow:none!important}
+.app-shell:has(.v405-home-ui) .ref-collection>.section-row{margin:0 0 12px!important}.app-shell:has(.v405-home-ui) .ref-collection>.section-row h2{font-size:24px!important;color:#173e34!important}.app-shell:has(.v405-home-ui) .ref-collection>.section-row p{color:#818b84!important}.app-shell:has(.v405-home-ui) .ref-collection .crown{color:#d7a632!important}
+.app-shell:has(.v405-home-ui) .ref-search{background:#fffaf1!important;border:1px solid #e3dccd!important;border-radius:12px!important;height:42px!important;box-shadow:none!important;margin-bottom:10px!important}.app-shell:has(.v405-home-ui) .ref-search input{background:transparent!important;color:#23473d!important}
+.app-shell:has(.v405-home-ui) .ref-collection .filters{display:flex!important;gap:7px!important;flex-wrap:wrap!important;margin:0 0 14px!important}.app-shell:has(.v405-home-ui) .ref-collection .filters button{background:#fffaf1!important;border:1px solid #ded7c7!important;color:#315248!important;border-radius:999px!important;padding:7px 14px!important}.app-shell:has(.v405-home-ui) .ref-collection .filters button.selected{background:#0c624c!important;color:#fff!important;border-color:#0c624c!important;box-shadow:0 4px 10px rgba(12,98,76,.16)!important}
+.app-shell:has(.v405-home-ui) #products.ref-products{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important;align-items:stretch!important}
+.app-shell:has(.v405-home-ui) #products.ref-products>.product-card{background:#fffaf2!important;border:1px solid #e4dccd!important;border-radius:16px!important;box-shadow:0 7px 18px rgba(47,47,37,.07)!important;overflow:hidden!important;min-width:0!important;width:auto!important;margin:0!important;transition:transform .18s ease,box-shadow .18s ease!important}
+.app-shell:has(.v405-home-ui) #products.ref-products>.product-card:hover{transform:translateY(-3px)!important;box-shadow:0 12px 24px rgba(47,47,37,.11)!important}
+.app-shell:has(.v405-home-ui) #products.ref-products .product-image{height:auto!important;aspect-ratio:1501/1048!important;border-radius:0!important;background:#fffaf2!important;overflow:hidden!important;display:flex!important;align-items:center!important;justify-content:center!important}.app-shell:has(.v405-home-ui) #products.ref-products .product-image img{width:100%!important;height:100%!important;object-fit:contain!important;object-position:center center!important;display:block!important;transform:none!important}
+/* v406: preserve full product hero artwork on homepage cards */
+.app-shell:has(.v405-home-ui) #products.ref-products>.product-card .product-image,
+.app-shell:has(.v405-home-ui) #products.ref-products>.product-card .harri-final-visual,
+.app-shell:has(.v405-home-ui) #products.ref-products>.product-card .hashi-final-visual{
+  height:auto!important;
+  min-height:0!important;
+  aspect-ratio:1501/1048!important;
+  overflow:hidden!important;
+  background:#fffaf2!important;
+}
+.app-shell:has(.v405-home-ui) #products.ref-products>.product-card .product-image>img,
+.app-shell:has(.v405-home-ui) #products.ref-products>.product-card .harri-final-visual>img,
+.app-shell:has(.v405-home-ui) #products.ref-products>.product-card .hashi-final-visual>img{
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  transform:none!important;
+}
+
+.app-shell:has(.v405-home-ui) #products.ref-products .product-content{padding:13px!important;gap:9px!important}.app-shell:has(.v405-home-ui) #products.ref-products h3{font-size:17px!important;color:#153f34!important;margin:0!important}.app-shell:has(.v405-home-ui) #products.ref-products .product-title-block p{font-size:11px!important;color:#7a837e!important;line-height:1.45!important}.app-shell:has(.v405-home-ui) #products.ref-products .clean-meta-row,.app-shell:has(.v405-home-ui) #products.ref-products .harri-chip-row{gap:6px!important}.app-shell:has(.v405-home-ui) #products.ref-products .weight,.app-shell:has(.v405-home-ui) #products.ref-products .delivery-badge{font-size:10px!important;padding:5px 8px!important}.app-shell:has(.v405-home-ui) #products.ref-products .clean-price-row,.app-shell:has(.v405-home-ui) #products.ref-products .harri-price-row{padding-top:6px!important}.app-shell:has(.v405-home-ui) #products.ref-products .price b,.app-shell:has(.v405-home-ui) #products.ref-products .harri-price-row b{font-size:20px!important;color:#0c684f!important}.app-shell:has(.v405-home-ui) #products.ref-products .clean-prep-line,.app-shell:has(.v405-home-ui) #products.ref-products .harri-prep-line{font-size:10px!important;padding:8px 0!important}.app-shell:has(.v405-home-ui) #products.ref-products .product-details-link{font-size:11px!important;padding:7px 0!important;color:#0b5c48!important}.app-shell:has(.v405-home-ui) #products.ref-products .premium-card-actions{gap:7px!important;margin-top:auto!important}.app-shell:has(.v405-home-ui) #products.ref-products .premium-add-button{min-height:38px!important;border-radius:999px!important;background:#0c654e!important;color:#fff!important;border-color:#0c654e!important;font-size:11px!important}.app-shell:has(.v405-home-ui) #products.ref-products .premium-card-share{width:38px!important;height:38px!important;border-radius:50%!important;background:#f3eee1!important;border:1px solid #ddd4bf!important;color:#0b604a!important}
+
+/* Lower quality/safety area gets same premium visual language. */
+.app-shell:has(.v405-home-ui) .premium-safety-standards{background:#f6eddd!important;border:1px solid #e3d6bd!important;border-radius:18px!important;box-shadow:0 8px 20px rgba(59,49,29,.06)!important}.app-shell:has(.v405-home-ui) .standards-title h2{color:#123f34!important}.app-shell:has(.v405-home-ui) .standards-certified-pill{background:#0b604a!important;color:#fff!important}.app-shell:has(.v405-home-ui) .standard-card{background:#fffaf2!important;border:1px solid #e0d7c5!important;box-shadow:none!important}
+
+
+/* v500 — website structure inspired by the supplied reference screenshots.
+   Visual/layout only: existing IDs, data attributes and handlers remain untouched. */
+.app-shell:has(.v405-home-ui) .screen{padding-left:0!important;padding-right:0!important;background:#fff!important}
+.app-shell:has(.v405-home-ui) .screen > .ref-announcement,
+.app-shell:has(.v405-home-ui) .screen > .v94-hero-slider{width:100%!important}
+.app-shell:has(.v405-home-ui) .screen > .ref-categories,
+.app-shell:has(.v405-home-ui) .screen > .ref-district-card,
+.app-shell:has(.v405-home-ui) .screen > .ref-collection,
+.app-shell:has(.v405-home-ui) .screen > .v490-request-section,
+.app-shell:has(.v405-home-ui) .screen > .premium-safety-standards,
+.app-shell:has(.v405-home-ui) .screen > .v500-proof-section,
+.app-shell:has(.v405-home-ui) .screen > .v500-guide-section,
+.app-shell:has(.v405-home-ui) .screen > .v500-faq-section{
+  width:min(1420px,calc(100% - 64px))!important;margin-left:auto!important;margin-right:auto!important
+}
+.app-shell:has(.v405-home-ui) .ref-announcement{margin:0!important;padding-left:max(28px,calc((100vw - 1420px)/2))!important;padding-right:max(28px,calc((100vw - 1420px)/2))!important}
+.app-shell:has(.v405-home-ui) .v94-hero-slider{margin:0!important;border-left:0!important;border-right:0!important;border-radius:0!important;min-height:520px!important}
+.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-slides,
+.app-shell:has(.v405-home-ui) .v94-hero-slider .quality-hero{min-height:520px!important}
+.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-copy{padding-left:max(48px,calc((100vw - 1340px)/2))!important;padding-right:max(48px,calc((100vw - 1340px)/2))!important}
+.app-shell:has(.v405-home-ui) .ref-district-card{margin-top:18px!important;margin-bottom:68px!important;box-shadow:0 8px 24px rgba(31,45,38,.08)!important}
+.app-shell:has(.v405-home-ui) .ref-categories{padding:0 0 70px!important}
+.app-shell:has(.v405-home-ui) .ref-categories .section-row{justify-content:center!important;text-align:center!important;position:relative!important;margin-bottom:30px!important}
+.app-shell:has(.v405-home-ui) .ref-categories .section-row>div{width:100%!important}
+.app-shell:has(.v405-home-ui) .ref-categories .section-row h2{font-size:34px!important;letter-spacing:-.02em!important}
+.app-shell:has(.v405-home-ui) .ref-categories .section-row p{font-size:13px!important;margin-top:7px!important}
+.app-shell:has(.v405-home-ui) .ref-categories #view-all{position:absolute!important;right:0!important;top:10px!important}
+html[dir="rtl"] .app-shell:has(.v405-home-ui) .ref-categories #view-all{right:auto!important;left:0!important}
+.app-shell:has(.v405-home-ui) .ref-categories .category-row{gap:24px!important}
+.app-shell:has(.v405-home-ui) .ref-collection{padding:0 0 90px!important}
+.app-shell:has(.v405-home-ui) .ref-collection>.section-row{justify-content:center!important;text-align:center!important;margin-bottom:32px!important}
+.app-shell:has(.v405-home-ui) .ref-collection>.section-row>div{width:100%!important}
+.app-shell:has(.v405-home-ui) .ref-collection>.section-row h2{font-size:38px!important;letter-spacing:.04em!important}
+.app-shell:has(.v405-home-ui) #products.ref-products{gap:24px!important}
+.app-shell:has(.v405-home-ui) #products.ref-products>.product-card{border-radius:14px!important;background:#fff!important;box-shadow:0 5px 18px rgba(15,38,30,.07)!important}
+.app-shell:has(.v405-home-ui) .v490-request-section{margin-bottom:90px!important;padding-top:24px!important}
+.app-shell:has(.v405-home-ui) .premium-safety-standards{margin-bottom:90px!important}
+
+.v500-proof-section,.v500-guide-section,.v500-faq-section{box-sizing:border-box}
+.v500-section-heading{text-align:center;max-width:900px;margin:0 auto 38px}
+.v500-section-heading>small{display:block;color:#b78922;font-weight:900;font-size:12px;letter-spacing:.16em;margin-bottom:9px}
+.v500-section-heading h2{margin:0;color:#183e34;font-size:clamp(30px,3vw,46px);line-height:1.2;letter-spacing:-.025em}
+.v500-section-heading p{margin:10px auto 0;color:#5f6f68;font-size:15px;line-height:1.8}
+.v500-heading-rule{display:flex;align-items:center;justify-content:center;gap:12px;margin:18px auto 0}
+.v500-heading-rule i{display:block;width:72px;height:2px;background:#274d42;opacity:.65}.v500-heading-rule b{display:block;width:11px;height:11px;border:2px solid #274d42;border-radius:50%;box-sizing:border-box}
+
+.v500-proof-section{padding:14px 0 96px}
+.v500-proof-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.v500-proof-grid article{min-height:178px;background:#fff;border:1px solid #e5e6e2;border-radius:14px;box-shadow:0 5px 18px rgba(25,44,36,.06);padding:28px;display:flex;gap:18px;align-items:flex-start}
+.v500-proof-grid article>span{width:48px;height:48px;min-width:48px;border-radius:50%;display:grid;place-items:center;background:#f3e6b9;color:#07533f;font-size:22px;font-weight:900}
+.v500-proof-grid b{display:block;color:#163d33;font-size:18px;margin:2px 0 10px}.v500-proof-grid p{margin:0;color:#6e7974;line-height:1.8;font-size:14px}
+
+.v500-guide-section{padding:70px 0 82px;border-top:1px solid #eef0ed}
+.v500-guide-copy{max-width:1060px;margin:0 auto;text-align:center}
+.v500-guide-copy p{font-size:18px;line-height:2;color:#5d6964;margin:0}
+
+.v500-faq-section{padding:70px 0 120px}
+.v500-faq-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px}
+.v500-faq-grid details{background:#fff;border:1px solid #ccd4d0;border-radius:10px;overflow:hidden}
+.v500-faq-grid summary{list-style:none;cursor:pointer;padding:18px 20px;color:#173e34;font-weight:800;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.v500-faq-grid summary::-webkit-details-marker{display:none}
+.v500-faq-grid summary:after{content:"⌄";width:30px;height:30px;min-width:30px;border-radius:50%;display:grid;place-items:center;background:#0b5c47;color:#fff;font-size:15px;transition:transform .18s ease}
+.v500-faq-grid details[open] summary:after{transform:rotate(180deg)}
+.v500-faq-grid details p{margin:0;padding:0 20px 20px;color:#68746f;line-height:1.8;font-size:14px}
+.app-shell:has(.v405-home-ui) .customer-mega-footer{margin-top:0!important;border-radius:0!important}
+
+
+/* v501 — footer width + visible Ass Al Halaal logo only */
+.app-shell:has(.v405-home-ui) .customer-mega-footer-inner,
+.app-shell:has(.v405-home-ui) .customer-mega-footer .mega-footer-bottom{
+  width:min(1760px,calc(100% - 72px))!important;
+  max-width:none!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+.app-shell:has(.v405-home-ui) .customer-mega-footer-inner{
+  column-gap:64px!important;
+}
+.app-shell:has(.v405-home-ui) .customer-mega-footer .mega-footer-brand-head img{
+  width:82px!important;
+  height:82px!important;
+  min-width:82px!important;
+  max-width:82px!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  display:block!important;
+  filter:none!important;
+  opacity:1!important;
+}
+@media(max-width:900px){
+  .app-shell:has(.v405-home-ui) .customer-mega-footer-inner,
+  .app-shell:has(.v405-home-ui) .customer-mega-footer .mega-footer-bottom{
+    width:calc(100% - 28px)!important;
+  }
+}
+
+@media(max-width:1180px){
+  .app-shell:has(.v405-home-ui) .desktop-main-nav{display:none!important}
+  .app-shell:has(.v405-home-ui) .premium-action-dock .top-search{min-width:170px!important}
+  .app-shell:has(.v405-home-ui) #products.ref-products{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+
+@media(max-width:900px){
+  .app-shell:has(.v405-home-ui) .screen > .ref-categories,
+  .app-shell:has(.v405-home-ui) .screen > .ref-district-card,
+  .app-shell:has(.v405-home-ui) .screen > .ref-collection,
+  .app-shell:has(.v405-home-ui) .screen > .v490-request-section,
+  .app-shell:has(.v405-home-ui) .screen > .premium-safety-standards,
+  .app-shell:has(.v405-home-ui) .screen > .v500-proof-section,
+  .app-shell:has(.v405-home-ui) .screen > .v500-guide-section,
+  .app-shell:has(.v405-home-ui) .screen > .v500-faq-section{width:calc(100% - 28px)!important}
+  .app-shell:has(.v405-home-ui) .ref-district-card{margin-bottom:44px!important}
+  .app-shell:has(.v405-home-ui) .ref-categories{padding-bottom:52px!important}
+  .app-shell:has(.v405-home-ui) .ref-categories .section-row h2,
+  .app-shell:has(.v405-home-ui) .ref-collection>.section-row h2{font-size:29px!important}
+  .app-shell:has(.v405-home-ui) .ref-categories #view-all{position:static!important;margin-top:10px!important}
+  .v500-proof-grid{grid-template-columns:1fr!important}
+  .v500-faq-grid{grid-template-columns:1fr!important}
+  .v500-guide-copy p{font-size:16px!important}
+}
+@media(max-width:900px){
+  .app-shell:has(.v405-home-ui) .screen{padding:0 14px 36px!important}
+  .app-shell:has(.v405-home-ui) .ref-announcement{margin:0 -14px 10px!important;padding-inline:14px!important}
+  .app-shell:has(.v405-home-ui) .ref-categories .category-row{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;overflow:visible!important;gap:11px!important}
+  .app-shell:has(.v405-home-ui) .ref-categories .livestock-type-card{width:100%!important;min-width:0!important}
+  .app-shell:has(.v405-home-ui) .v94-hero-slider,.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-slides{min-height:560px!important}
+  .app-shell:has(.v405-home-ui) .v94-hero-slider .quality-hero{grid-template-columns:1fr!important;grid-template-rows:240px auto!important;min-height:560px!important}
+  .app-shell:has(.v405-home-ui) .v94-hero-slider .hero-media{order:1!important;min-height:240px!important}.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-media:after{background:linear-gradient(180deg,transparent 50%,rgba(5,59,48,.92) 100%)!important}.app-shell:has(.v405-home-ui) .v94-hero-slider .hero-copy{order:2!important;padding:24px!important}.app-shell:has(.v405-home-ui) .luxury-hero-title{font-size:34px!important}.app-shell:has(.v405-home-ui) .luxury-feature-row{grid-template-columns:repeat(2,1fr)!important}
+  .app-shell:has(.v405-home-ui) #products.ref-products{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:620px){
+  .app-shell:has(.v405-home-ui) .app-header{padding:10px 12px!important}.app-shell:has(.v405-home-ui) .customer-logo span,.app-shell:has(.v405-home-ui) .location-pill{display:none!important}.app-shell:has(.v405-home-ui) .premium-action-dock .top-search{display:none!important}
+  .app-shell:has(.v405-home-ui) .ref-categories .category-row{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .app-shell:has(.v405-home-ui) #products.ref-products{grid-template-columns:1fr!important}
+  .app-shell:has(.v405-home-ui) .ref-district-card{padding:14px 12px!important}.app-shell:has(.v405-home-ui) .district-title .fast{display:none!important}
+}
+</style>
 
 let customBoxPromoTimer=0;
 
