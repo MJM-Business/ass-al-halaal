@@ -24,9 +24,13 @@
   <link rel="icon" href="apple-touch-icon.png" type="image/png" />
   <link rel="shortcut icon" href="apple-touch-icon.png" type="image/png" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  
+  <!-- PERFORMANCE OPTIMIZED: Asynchronous non-blocking full stylesheet load to eliminate render-blocking and lower TBT -->
   <link rel="stylesheet" href="critical.css?v=568" />
   <link rel="preload" as="style" href="dist/style.min.css?v=581" />
-  <link id="full-style" rel="stylesheet" href="dist/style.min.css?v=581" media="print" />
+  <link id="full-style" rel="stylesheet" href="dist/style.min.css?v=581" media="print" onload="this.media='all'" />
+  <noscript><link rel="stylesheet" href="dist/style.min.css?v=581" /></noscript>
+
   <link rel="modulepreload" href="dist/app.min.js?v=601" />
   <link rel="preconnect" href="https://accounts.google.com" crossorigin />
 </head>
@@ -42,7 +46,8 @@
   <dialog id="modal" aria-label="Ass Al Halaal dialog" aria-modal="true"></dialog>
   <div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-  <script type="module" src="dist/app.min.js?v=601"></script>
+  <!-- PERFORMANCE OPTIMIZED: Deferred non-critical script loading -->
+  <script type="module" src="dist/app.min.js?v=601" defer></script>
   <script src="style-loader.js?v=575" defer></script>
 </body>
 </html>
