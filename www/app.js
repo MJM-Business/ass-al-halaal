@@ -2453,9 +2453,12 @@ function customBoxPromoCard(){
 }
 
 function setupCustomBox3DShowcase(){
-  if(customBoxPromoTimer){clearInterval(customBoxPromoTimer);customBoxPromoTimer=0}
   const root=document.querySelector('[data-custom-box-showcase]');
   if(!root)return;
+  if(root.dataset.promoBound==='1')return;
+  root.dataset.promoBound='1';
+
+  if(customBoxPromoTimer){clearInterval(customBoxPromoTimer);customBoxPromoTimer=0}
   const slides=[...root.querySelectorAll('[data-promo-slide]')];
   const dots=[...root.querySelectorAll('[data-promo-dot]')];
   if(slides.length<2)return;
@@ -2482,9 +2485,23 @@ function setupCustomBox3DShowcase(){
   root.querySelector('[data-promo-prev]')?.addEventListener('click',()=>{paint(index-1);resetAuto()});
   root.querySelector('[data-promo-next]')?.addEventListener('click',()=>{paint(index+1);resetAuto()});
   dots.forEach(dot=>dot.addEventListener('click',()=>{paint(Number(dot.dataset.promoDot||0));resetAuto()}));
-  /* v335: autoplay continues even while the pointer is over the showcase. */
+
+  // Keep the exact first visual state, but do not run the below-fold autoplay
+  // during initial page startup. Start it when the showcase actually enters
+  // the viewport, preserving the same behavior for real users.
   paint(0);
-  start();
+  if(reduce)return;
+  if('IntersectionObserver' in window){
+    const io=new IntersectionObserver(entries=>{
+      if(entries.some(entry=>entry.isIntersecting)){
+        io.disconnect();
+        start();
+      }
+    },{rootMargin:'0px',threshold:0.05});
+    io.observe(root);
+  }else{
+    start();
+  }
 }
 
 function productCards(limit=Infinity){
