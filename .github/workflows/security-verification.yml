@@ -22,8 +22,29 @@ jobs:
       - name: Install dependencies
         run: npm install --no-fund --no-audit
 
-      - name: Static checks and automated tests
-        run: npm run check
+      - name: Syntax check app
+        run: node --check www/app.js
+
+      - name: Syntax check shop
+        run: node --check www/shop.js
+
+      - name: Syntax check server
+        run: node --check scripts/serve.mjs
+
+      - name: Secret scan
+        run: node scripts/secret-scan.mjs
+
+      - name: Shop tests
+        run: node --test scripts/shop.test.mjs
+
+      - name: Security tests
+        run: node --test scripts/security.test.mjs
+
+      - name: Accessibility tests
+        run: node --test scripts/accessibility.test.mjs
+
+      - name: Performance regression tests
+        run: node --test scripts/performance.test.mjs
 
       - name: Dependency audit
         run: npm audit --audit-level=high
