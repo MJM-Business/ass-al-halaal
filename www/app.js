@@ -9851,8 +9851,12 @@ if(view()==='admin'){
       header.insertAdjacentElement('afterend',headerSpacer);
     }
 
+    const announcement=shell.querySelector('.ref-announcement');
+
+    // Read all geometry before mutating classes/styles to avoid forced reflow.
     const shellRect=shell.getBoundingClientRect();
     const headerH=header.offsetHeight || 94;
+    const announcementH=announcement ? (announcement.offsetHeight || 52) : 0;
 
     header.classList.add('v443-fixed-header');
     header.style.setProperty('left',px(shellRect.left),'important');
@@ -9863,7 +9867,6 @@ if(view()==='admin'){
     headerSpacer.style.height=px(headerH);
     headerSpacer.style.minHeight=px(headerH);
 
-    const announcement=shell.querySelector('.ref-announcement');
     let totalH=headerH;
 
     if(announcement){
@@ -9875,7 +9878,6 @@ if(view()==='admin'){
         screen.insertBefore(announcementSpacer,announcement);
       }
 
-      const announcementH=announcement.offsetHeight || 52;
       announcement.classList.add('v443-fixed-announcement');
       announcement.style.setProperty('left',px(shellRect.left),'important');
       announcement.style.setProperty('right','auto','important');
@@ -10387,14 +10389,19 @@ if(!window.__v469ResizeBound){
   }
 
   if(!window.__v482HeroObserver){
-    window.__v482HeroObserver=new MutationObserver(()=>{
-      requestAnimationFrame(normalizeActiveHero);
-    });
-    window.__v482HeroObserver.observe(document.documentElement,{
-      subtree:true,
-      attributes:true,
-      attributeFilter:['class','dir']
-    });
+    const heroRoot=document.querySelector('.v94-hero-slider');
+    if(heroRoot){
+      let heroRaf=0;
+      window.__v482HeroObserver=new MutationObserver(()=>{
+        cancelAnimationFrame(heroRaf);
+        heroRaf=requestAnimationFrame(normalizeActiveHero);
+      });
+      window.__v482HeroObserver.observe(heroRoot,{
+        subtree:true,
+        attributes:true,
+        attributeFilter:['class']
+      });
+    }
   }
 })();
 
@@ -10535,10 +10542,8 @@ function setupV485MostRequestedSlider(){
     }
   });
 
-  // Keep current position valid after re-render.
-  if(track.scrollWidth<=track.clientWidth){
-    track.scrollLeft=0;
-  }
+  // Avoid synchronous width reads immediately after class/DOM writes.
+  if(track.scrollLeft<0)track.scrollLeft=0;
 }
 
 ;(()=>{
