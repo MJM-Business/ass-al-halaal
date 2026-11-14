@@ -7417,6 +7417,7 @@ function schedulePostRenderEnhancements(appRoot){
   const queue=[
     ()=>applyAccessibilityHardening(appRoot),
     ()=>applyBatch2UxHardening(appRoot),
+    ()=>setupHomeProductLazyExpansion(),
     ()=>window.__v496BindFaq?.()
   ];
 
@@ -7444,75 +7445,6 @@ function schedulePostRenderEnhancements(appRoot){
   }
 }
 
-function scheduleHomeBelowFoldWork(){
-  if(view()!=='home')return;
-
-  // Do not expand/rebuild the full product catalog during Lighthouse's
-  // initial idle window. Arm it on the visitor's first real scroll instead.
-  if(!window.__homeProductExpansionArmed){
-    window.__homeProductExpansionArmed=true;
-    window.addEventListener('scroll',()=>{
-      if(view()==='home')setupHomeProductLazyExpansion();
-    },{once:true,passive:true});
-  }
-
-  // Carousel geometry work is below the fold on mobile. Set it up shortly
-  // before the collection becomes visible instead of forcing layout at boot.
-  const collection=document.querySelector('#collection.ref-collection');
-  if(collection && !collection.dataset.initialCarouselObserved){
-    collection.dataset.initialCarouselObserved='1';
-    const startCarousel=()=>{
-      setupV485MostRequestedSlider();
-      if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();
-      if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel();
-    };
-    if('IntersectionObserver' in window){
-      const io=new IntersectionObserver(entries=>{
-        if(!entries.some(entry=>entry.isIntersecting))return;
-        io.disconnect();
-        startCarousel();
-      },{rootMargin:'320px 0px',threshold:0.01});
-      io.observe(collection);
-    }else{
-      startCarousel();
-    }
-  }
-
-  const observeNear=(node,start)=>{
-    if(!node || node.dataset.homeDeferredObserved==='1')return;
-    node.dataset.homeDeferredObserved='1';
-    if('IntersectionObserver' in window){
-      const io=new IntersectionObserver(entries=>{
-        if(!entries.some(entry=>entry.isIntersecting))return;
-        io.disconnect();
-        start();
-      },{rootMargin:'320px 0px',threshold:0.01});
-      io.observe(node);
-    }else{
-      start();
-    }
-  };
-
-  observeNear(document.querySelector('[data-custom-box-showcase]'),()=>setupCustomBox3DShowcase());
-  observeNear(document.querySelector('.premium-safety-standards'),()=>setupStandardsExperience());
-
-  const requestSection=document.querySelector('#request-fit.v490-request-section');
-  if(requestSection && !requestSection.dataset.initialSetupObserved){
-    requestSection.dataset.initialSetupObserved='1';
-    const startRequest=()=>setupV490RequestSection();
-    if('IntersectionObserver' in window){
-      const io=new IntersectionObserver(entries=>{
-        if(!entries.some(entry=>entry.isIntersecting))return;
-        io.disconnect();
-        startRequest();
-      },{rootMargin:'320px 0px',threshold:0.01});
-      io.observe(requestSection);
-    }else{
-      startRequest();
-    }
-  }
-}
-
 function render(){
   document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';document.title=t('عاس الحلال','Ass Al Halaal');
   const v=view();
@@ -7523,14 +7455,13 @@ function render(){
 
   // Keep all geometry/layout-affecting setup in the first render so LCP and
   // CLS settle immediately. Only non-visual scans/enhancements are deferred.
-  if(v!=='home'){
-    setupV485MostRequestedSlider();
-    if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();
-    if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel();
-    if(typeof setupV490RequestSection==='function')setupV490RequestSection();
-  }
+  setupV485MostRequestedSlider();
+  if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();
+  // v528 supersedes v527 runtime handlers. Keep the same visual class in v528,
+  // but avoid duplicate touch/scroll/layout bindings during startup.
+  if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel();
+  if(typeof setupV490RequestSection==='function')setupV490RequestSection();
   if(typeof applyV443LockedTopNav==='function')applyV443LockedTopNav();
-  if(v==='home')scheduleHomeBelowFoldWork();
 
   schedulePostRenderEnhancements(appRoot);
 }
@@ -7969,6 +7900,8 @@ function bind(){
   document.querySelectorAll('.js-products,#nav-products').forEach(el=>el.addEventListener('click',()=>{if(view()!=='home')setView('home');setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'}),100)}));
   document.querySelectorAll('[data-hero-browse]').forEach(btn=>btn.addEventListener('click',()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'})));
   if(isHome)setupHeroSlider();
+  if(isHome)setupCustomBox3DShowcase();
+  if(isHome)setupStandardsExperience();
   setupFloatingWhatsapp();
   if(isProductView){
     bindReferenceProductDetail();
