@@ -1,0 +1,59 @@
+name: Security Verification
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Static checks and automated tests
+        run: npm run check
+
+      - name: Dependency audit
+        run: npm audit --audit-level=high
+
+      - name: Verify production security headers
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://ass-al-halaal.onrender.com/"
+          headers="$(curl --fail --silent --show-error --location --head "$URL" | tr -d '\r')"
+          printf '%s\n' "$headers"
+          for h in             "content-security-policy:"             "x-frame-options:"             "x-content-type-options:"             "strict-transport-security:"             "referrer-policy:"
+          do
+            printf '%s\n' "$headers" | grep -qi "^$h" || {
+              echo "Missing required header: $h"
+              exit 1
+            }
+          done
+
+      - name: OWASP ZAP baseline scan
+        run: |
+          docker run --rm             -v "$PWD:/zap/wrk/:rw"             ghcr.io/zaproxy/zaproxy:stable             zap-baseline.py             -t https://ass-al-halaal.onrender.com             -r zap-report.html             -J zap-report.json             -I
+
+      - name: Upload ZAP reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-zap-report
+          path: |
+            zap-report.html
+            zap-report.json
+          if-no-files-found: ignore
