@@ -54531,3 +54531,56 @@ html[dir="rtl"] .reference-sidebar-foot .admin-2fa-prominent-v534::before{
 .form-status[data-state="error"]{color:var(--danger,#b72f35)}
 form[aria-busy="true"]{cursor:progress}
 form[aria-busy="true"] button[type="submit"]{cursor:wait}
+
+
+/* =====================================================================
+   WAVE contrast-safe pass — stable baseline preserving
+   Only foreground colors/opacity on dark green customer surfaces.
+   No layout, dimensions, positioning, animation, or JS-related properties.
+   ===================================================================== */
+html body .app-shell:not(.admin-shell) .ref-announcement,
+html body .app-shell:not(.admin-shell) .ref-announcement p,
+html body .app-shell:not(.admin-shell) .ref-announcement small,
+html body .app-shell:not(.admin-shell) .ref-announcement b,
+html body .app-shell:not(.admin-shell) .announcement,
+html body .app-shell:not(.admin-shell) .announcement p,
+html body .app-shell:not(.admin-shell) .announcement small,
+html body .app-shell:not(.admin-shell) .announcement b,
+html body .app-shell:has(.v405-home-ui) .ref-announcement,
+html body .app-shell:has(.v405-home-ui) .ref-announcement p,
+html body .app-shell:has(.v405-home-ui) .ref-announcement small,
+html body .app-shell:has(.v405-home-ui) .ref-announcement b{
+  color:#ffffff!important;
+  opacity:1!important;
+}
+
+html body .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p,
+html body .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges small,
+html body .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row b,
+html body .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions small,
+html body .app-shell:has(.v405-home-ui) .v94-hero-slider .hero-copy>p,
+html body .app-shell:has(.v405-home-ui) .v94-hero-slider .luxury-hero-badges small,
+html body .app-shell:has(.v405-home-ui) .v94-hero-slider .luxury-feature-row b,
+html body .app-shell:has(.v405-home-ui) .v94-hero-slider .luxury-hero-actions small{
+  color:#ffffff!important;
+  opacity:1!important;
+}
+
+/* Header normal-size text on green must be high contrast. */
+html body .ref-customer-header .ref-location-copy small,
+html body .ref-customer-header .ref-location-copy b,
+html body .ref-customer-header .desktop-main-nav button:not(.active),
+html body .ref-customer-header .desktop-main-nav button:not(.active) small,
+html body .ref-customer-header .premium-action-dock .top-action,
+html body .ref-customer-header .premium-action-dock .top-action small{
+  color:#ffffff!important;
+  opacity:1!important;
+}
+
+/* Preserve premium gold only for large display/active emphasis. */
+html body .app-shell:not(.admin-shell) .luxury-hero-title,
+html body .app-shell:not(.admin-shell) .luxury-hero-title .hero-title-gold,
+html body .app-shell:has(.v405-home-ui) .luxury-hero-title,
+html body .app-shell:has(.v405-home-ui) .luxury-hero-title .hero-title-gold{
+  color:#f2c556!important;
+}
