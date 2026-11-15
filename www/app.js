@@ -1452,6 +1452,17 @@ function applyAccessibilityHardening(root=document){
       if(!img.hasAttribute('fetchpriority'))img.setAttribute('fetchpriority','low');
     }
   });
+  // WAVE: decorative/repeated card images do not need duplicate alternative text
+  // when the same product/category name is already visible in the same card.
+  images.forEach(img=>{
+    const alt=String(img.getAttribute('alt')||'').trim();
+    if(!alt)return;
+    const card=img.closest('article,.product-card,.livestock-type-card,.standard-card,.category');
+    if(!card)return;
+    const visible=String(card.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
+    if(visible.includes(alt.toLowerCase()))img.setAttribute('alt','');
+  });
+
   scope.querySelectorAll('input:not([type="hidden"]),select,textarea').forEach(field=>{
     if(field.hasAttribute('aria-label')||field.hasAttribute('aria-labelledby')||field.closest('label'))return;
     const fallback=field.getAttribute('placeholder')||field.getAttribute('name')||field.id||'Form field';
@@ -3260,6 +3271,19 @@ html[dir="rtl"] .app-shell:has(.v405-home-ui) .ref-categories #view-all{right:au
   .app-shell:has(.v405-home-ui) .ref-categories .category-row{grid-template-columns:repeat(2,minmax(0,1fr))!important}
   .app-shell:has(.v405-home-ui) #products.ref-products{grid-template-columns:1fr!important}
   .app-shell:has(.v405-home-ui) .ref-district-card{padding:14px 12px!important}.app-shell:has(.v405-home-ui) .district-title .fast{display:none!important}
+}
+
+/* v560 WAVE small-text pass: homepage-only typography, no box/layout changes */
+.app-shell:has(.v405-home-ui) .ref-announcement small,
+.app-shell:has(.v405-home-ui) .ref-announcement b,
+.app-shell:has(.v405-home-ui) .luxury-hero-badges small,
+.app-shell:has(.v405-home-ui) .luxury-hero-actions small,
+.app-shell:has(.v405-home-ui) .dispatch,
+.app-shell:has(.v405-home-ui) #products.ref-products .weight,
+.app-shell:has(.v405-home-ui) #products.ref-products .delivery-badge,
+.app-shell:has(.v405-home-ui) #products.ref-products .clean-prep-line,
+.app-shell:has(.v405-home-ui) #products.ref-products .harri-prep-line{
+  font-size:11px!important;
 }
 </style>
 `}
