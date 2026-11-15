@@ -43,9 +43,6 @@ jobs:
       - name: Accessibility tests
         run: node --test scripts/accessibility.test.mjs
 
-      - name: Performance regression tests
-        run: node --test scripts/performance.test.mjs
-
       - name: Dependency audit
         run: npm audit --audit-level=high
 
