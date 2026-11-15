@@ -8588,6 +8588,32 @@ function ensureFinalWaveLayer(){
     opacity:1!important;
   }
 
+
+  /* v568 FINAL tiny-utility and residual contrast cleanup */
+  html body #app .app-shell:not(.admin-shell) .ref-customer-header .top-language .lang-code,
+  html body #app .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-cart>b,
+  html body #app .app-shell:not(.admin-shell) .ref-announcement>b,
+  html body #app .app-shell:not(.admin-shell) .ref-announcement .announcement-features small{
+    font-size:12px!important;
+    opacity:1!important;
+  }
+
+  html body #app .app-shell:not(.admin-shell) .ref-customer-header .top-language .lang-code,
+  html body #app .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-action,
+  html body #app .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-action *,
+  html body #app .app-shell:not(.admin-shell) .ref-announcement>b,
+  html body #app .app-shell:not(.admin-shell) .ref-announcement .announcement-features small,
+  html body #app .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges i,
+  html body #app .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions small i{
+    color:#ffffff!important;
+    opacity:1!important;
+  }
+
+  html body #app .app-shell:not(.admin-shell) .ref-customer-header .top-language,
+  html body #app .app-shell:not(.admin-shell) .ref-customer-header .premium-action-dock .top-cart{
+    color:#ffffff!important;
+  }
+
   html body #app .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero,
   html body #app .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero *{
     color:#173d32!important;
