@@ -8621,8 +8621,8 @@ function normalizeFinalWaveDom(root=document.querySelector('#app')){
   };
   const preserveGold=el=>Boolean(el.closest('.luxury-hero-title,.hero-title-gold,.crown'));
   const goldControl=el=>Boolean(el.closest('.unified-login-hero,.luxury-hero-badges>span,.hero-slider-arrow,.ref-location-pin'));
-  const darkSurface=el=>Boolean(el.closest('.ref-customer-header,.ref-announcement,.v94-hero-slider,.floating-whatsapp-trigger,.floating-whatsapp-card'));
-  const lightSurface=el=>Boolean(el.closest('.ref-district-card,.ref-categories,.ref-collection,.product-card,.premium-safety-standards,.v500-proof-section,.v500-guide-section,.v500-faq-section,.customer-mega-footer'));
+  const darkSurface=el=>Boolean(el.closest('.ref-customer-header,.ref-announcement,.v94-hero-slider,.floating-whatsapp-trigger,.floating-whatsapp-card,.premium-safety-standards .standard-card .standard-verified,.v490-advisor-card,.request-fit-summary button'));
+  const lightSurface=el=>Boolean(el.closest('.ref-district-card,.ref-categories,.ref-collection,.product-card,.premium-safety-standards,.v500-proof-section,.v500-guide-section,.v500-faq-section,.customer-mega-footer,.v490-request-section,.request-fit-summary,.standards-title'));
 
   root.querySelectorAll('*').forEach(el=>{
     if(skipTags.has(el.tagName))return;
