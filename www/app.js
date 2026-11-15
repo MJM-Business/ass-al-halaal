@@ -8440,16 +8440,25 @@ function render(){
   scheduleStartupDomHardening(appRoot);
   bind();
   applyV469MobileExperience();
-  setupV485MostRequestedSlider();
-  if(typeof setupV487StableCarousel==='function') setupV487StableCarousel();
-  if(typeof setupV528MobileCarousel==='function') setupV528MobileCarousel();
-  if(typeof setupV490RequestSection==='function') setupV490RequestSection();
   setupHomeProductLazyExpansion();
-  requestAnimationFrame(()=>{
+
+  // Keep first paint and primary interaction light. Below-the-fold carousel,
+  // request-section, FAQ and contrast normalization can safely bind once the
+  // browser has idle time; timeout guarantees they still become available.
+  const bindDeferredHomeUi=()=>{
+    setupV485MostRequestedSlider();
+    if(typeof setupV487StableCarousel==='function') setupV487StableCarousel();
+    if(typeof setupV528MobileCarousel==='function') setupV528MobileCarousel();
+    if(typeof setupV490RequestSection==='function') setupV490RequestSection();
     if(typeof applyV443LockedTopNav==='function') applyV443LockedTopNav();
     window.__v496BindFaq?.();
     window.__v517SyncBrandContrast?.();
-  });
+  };
+  if('requestIdleCallback' in window){
+    requestIdleCallback(bindDeferredHomeUi,{timeout:1200});
+  }else{
+    setTimeout(bindDeferredHomeUi,180);
+  }
 }
 
 
