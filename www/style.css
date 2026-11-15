@@ -54584,3 +54584,71 @@ html body .app-shell:has(.v405-home-ui) .luxury-hero-title,
 html body .app-shell:has(.v405-home-ui) .luxury-hero-title .hero-title-gold{
   color:#f2c556!important;
 }
+
+
+/* =========================================================
+   v562 FINAL WAVE desktop-home override
+   Last-in-cascade accessibility pass. Typography/color only.
+   No dimensions, positioning, animation, or behavior changes.
+   ========================================================= */
+@media (min-width:901px){
+  html body .app-shell:not(.admin-shell) .ref-customer-header small,
+  html body .app-shell:not(.admin-shell) .ref-customer-header .top-language .lang-code,
+  html body .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav small,
+  html body .app-shell:not(.admin-shell) .ref-announcement,
+  html body .app-shell:not(.admin-shell) .ref-announcement p,
+  html body .app-shell:not(.admin-shell) .ref-announcement small,
+  html body .app-shell:not(.admin-shell) .ref-announcement b,
+  html body .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges>span,
+  html body .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges small,
+  html body .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row b,
+  html body .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small,
+  html body .app-shell:not(.admin-shell) .district-title p,
+  html body .app-shell:not(.admin-shell) .district-chips button,
+  html body .app-shell:not(.admin-shell) .dispatch,
+  html body .app-shell:not(.admin-shell) .ref-categories .section-row p,
+  html body .app-shell:not(.admin-shell) .ref-collection .section-row p,
+  html body .app-shell:not(.admin-shell) #products.ref-products .product-title-block p,
+  html body .app-shell:not(.admin-shell) #products.ref-products .weight,
+  html body .app-shell:not(.admin-shell) #products.ref-products .delivery-badge,
+  html body .app-shell:not(.admin-shell) #products.ref-products .clean-prep-line,
+  html body .app-shell:not(.admin-shell) #products.ref-products .harri-prep-line,
+  html body .app-shell:not(.admin-shell) #products.ref-products .product-details-link,
+  html body .app-shell:not(.admin-shell) #products.ref-products .premium-add-button,
+  html body .app-shell:not(.admin-shell) .standard-card small,
+  html body .app-shell:not(.admin-shell) .mega-footer small,
+  html body .app-shell:not(.admin-shell) .floating-whatsapp-card small{
+    font-size:12px!important;
+    opacity:1!important;
+  }
+
+  /* Dark green surfaces: small/normal copy must use a high-contrast foreground. */
+  html body .app-shell:not(.admin-shell) .ref-customer-header small,
+  html body .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav button,
+  html body .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav small,
+  html body .app-shell:not(.admin-shell) .ref-announcement,
+  html body .app-shell:not(.admin-shell) .ref-announcement p,
+  html body .app-shell:not(.admin-shell) .ref-announcement small,
+  html body .app-shell:not(.admin-shell) .ref-announcement b,
+  html body .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges small,
+  html body .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row b,
+  html body .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small{
+    color:#ffffff!important;
+  }
+
+  /* Light/cream surfaces: secondary text gets a darker AA-safe foreground. */
+  html body .app-shell:not(.admin-shell) .district-title p,
+  html body .app-shell:not(.admin-shell) .ref-categories .section-row p,
+  html body .app-shell:not(.admin-shell) .ref-collection .section-row p,
+  html body .app-shell:not(.admin-shell) #products.ref-products .product-title-block p,
+  html body .app-shell:not(.admin-shell) .standard-card small,
+  html body .app-shell:not(.admin-shell) .mega-footer small{
+    color:#3f5049!important;
+  }
+
+  /* Keep premium gold display text unchanged; only small gold accents become readable. */
+  html body .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-title,
+  html body .app-shell:not(.admin-shell) .v94-hero-slider .hero-title-gold{
+    color:#f2c556!important;
+  }
+}
