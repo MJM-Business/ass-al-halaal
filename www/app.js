@@ -8544,6 +8544,50 @@ function ensureFinalWaveLayer(){
     opacity:1!important;
   }
 
+
+  /* Remaining WAVE small-text alerts are mostly lower-page metadata. */
+  html body #app .app-shell:not(.admin-shell) small,
+  html body #app .app-shell:not(.admin-shell) .harri-rating-row,
+  html body #app .app-shell:not(.admin-shell) .harri-rating-row span,
+  html body #app .app-shell:not(.admin-shell) .price del,
+  html body #app .app-shell:not(.admin-shell) .harri-price-row del,
+  html body #app .app-shell:not(.admin-shell) .quick-detail,
+  html body #app .app-shell:not(.admin-shell) .quick-detail b,
+  html body #app .app-shell:not(.admin-shell) .v500-proof-grid p,
+  html body #app .app-shell:not(.admin-shell) .v500-faq-grid p,
+  html body #app .app-shell:not(.admin-shell) .mini-footer,
+  html body #app .app-shell:not(.admin-shell) .bottom-nav small{
+    font-size:12px!important;
+    opacity:1!important;
+  }
+
+  /* AA-safe secondary copy on known light/cream homepage surfaces. */
+  html body #app .app-shell:not(.admin-shell) .ref-district-card p,
+  html body #app .app-shell:not(.admin-shell) .ref-categories p,
+  html body #app .app-shell:not(.admin-shell) .ref-collection p,
+  html body #app .app-shell:not(.admin-shell) #products.ref-products p,
+  html body #app .app-shell:not(.admin-shell) #products.ref-products small,
+  html body #app .app-shell:not(.admin-shell) .premium-safety-standards p,
+  html body #app .app-shell:not(.admin-shell) .premium-safety-standards small,
+  html body #app .app-shell:not(.admin-shell) .v500-proof-section p,
+  html body #app .app-shell:not(.admin-shell) .v500-guide-section p,
+  html body #app .app-shell:not(.admin-shell) .v500-faq-section p,
+  html body #app .app-shell:not(.admin-shell) .customer-mega-footer p,
+  html body #app .app-shell:not(.admin-shell) .customer-mega-footer small{
+    color:#23382f!important;
+    opacity:1!important;
+  }
+
+  /* Dark-green homepage bands: use white for normal-size text. */
+  html body #app .app-shell:not(.admin-shell) .ref-announcement .announcement-features small,
+  html body #app .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p,
+  html body #app .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges small,
+  html body #app .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row b,
+  html body #app .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small{
+    color:#fff!important;
+    opacity:1!important;
+  }
+
   html body #app .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero,
   html body #app .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero *{
     color:#173d32!important;
