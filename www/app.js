@@ -8597,6 +8597,55 @@ function ensureFinalWaveLayer(){
   document.head.appendChild(style);
 }
 
+function normalizeFinalWaveDom(root=document.querySelector('#app')){
+  if(!root)return;
+  const skipTags=new Set(['SCRIPT','STYLE','NOSCRIPT','SVG','PATH','DEFS','CLIPPATH','USE']);
+  const hasOwnText=el=>[...el.childNodes].some(n=>n.nodeType===Node.TEXT_NODE&&String(n.textContent||'').trim());
+  const darkSurface=el=>el.closest(
+    '.ref-customer-header,.ref-announcement,.v94-hero-slider,.floating-whatsapp-trigger,.floating-whatsapp-card'
+  );
+  const forceDarkText=el=>el.closest(
+    '.unified-login-hero,.luxury-hero-badges>span,.hero-slider-arrow,.ref-location-pin,.district-chips button.selected,.premium-add-button,.category-name-button'
+  );
+  const lightSurface=el=>el.closest(
+    '.ref-district-card,.ref-categories,.ref-collection,.product-card,.premium-safety-standards,.v500-proof-section,.v500-guide-section,.v500-faq-section,.customer-mega-footer'
+  );
+  const preserveGold=el=>el.closest('.luxury-hero-title,.hero-title-gold,.crown');
+
+  root.querySelectorAll('*').forEach(el=>{
+    if(skipTags.has(el.tagName))return;
+    const cs=getComputedStyle(el);
+    if(cs.display==='none'||cs.visibility==='hidden'||Number(cs.opacity)===0)return;
+    const text=String(el.textContent||'').trim();
+    if(!text)return;
+
+    // WAVE "very small text": normalize actual rendered text rather than guessing selectors.
+    const size=parseFloat(cs.fontSize)||0;
+    if(size>0&&size<12&&hasOwnText(el)){
+      el.style.setProperty('font-size','12px','important');
+      el.style.setProperty('opacity','1','important');
+    }
+
+    // Final contrast normalization on known dark/light customer surfaces.
+    if(preserveGold(el))return;
+    if(forceDarkText(el)){
+      if(hasOwnText(el))el.style.setProperty('color','#173d32','important');
+      return;
+    }
+    if(darkSurface(el)){
+      if(hasOwnText(el)){
+        el.style.setProperty('color','#ffffff','important');
+        el.style.setProperty('opacity','1','important');
+      }
+      return;
+    }
+    if(lightSurface(el)&&hasOwnText(el)){
+      el.style.setProperty('color','#23382f','important');
+      el.style.setProperty('opacity','1','important');
+    }
+  });
+}
+
 function render(){
   document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';document.title=t('عاس الحلال','Ass Al Halaal');
   const v=view();
@@ -8621,9 +8670,13 @@ function render(){
     window.__v517SyncBrandContrast?.();
   };
   ensureFinalWaveLayer();
+  normalizeFinalWaveDom(appRoot);
+  requestAnimationFrame(()=>normalizeFinalWaveDom(appRoot));
   scheduleAfterInitialPerformanceWindow(()=>{
     bindDeferredHomeUi();
     ensureFinalWaveLayer();
+    normalizeFinalWaveDom(appRoot);
+    setTimeout(()=>normalizeFinalWaveDom(appRoot),120);
   },6200);
 }
 
