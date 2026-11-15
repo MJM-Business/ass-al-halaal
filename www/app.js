@@ -8912,9 +8912,16 @@ function bind(){
   }else{
     setTimeout(bindDeferredInteractions,160);
   }
-  document.querySelectorAll('[data-hashi-variant-button]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();setView('hashi/'+encodeURIComponent(b.dataset.hashiVariantButton))}));
-  document.querySelectorAll('[data-hashi-variant]').forEach(card=>{const openVariant=e=>{if(e.target.closest('button'))return;setView('hashi/'+encodeURIComponent(card.dataset.hashiVariant))};card.addEventListener('click',openVariant);card.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('button')){e.preventDefault();openVariant(e)}})});
-  document.querySelectorAll('[data-hashi-product]').forEach(card=>{const choose=()=>{const source=hashiVariantById(card.dataset.hashiSource);const item=HASHI_VARIANT_PRODUCTS.find(x=>x.id===card.dataset.hashiProduct);toast(t(`تم اختيار ${item?.ar||''} من ${source?.ar||''}. ستفتح خيارات التقطيع والتغليف في المرحلة التالية.`,`Selected ${item?.en||''} from ${source?.en||''}. Cutting and packaging options are the next layer.`))};card.addEventListener('click',choose);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose()}})});
+  const bindDeferredCatalogDetails=()=>{
+    document.querySelectorAll('[data-hashi-variant-button]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();setView('hashi/'+encodeURIComponent(b.dataset.hashiVariantButton))}));
+    document.querySelectorAll('[data-hashi-variant]').forEach(card=>{const openVariant=e=>{if(e.target.closest('button'))return;setView('hashi/'+encodeURIComponent(card.dataset.hashiVariant))};card.addEventListener('click',openVariant);card.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('button')){e.preventDefault();openVariant(e)}})});
+    document.querySelectorAll('[data-hashi-product]').forEach(card=>{const choose=()=>{const source=hashiVariantById(card.dataset.hashiSource);const item=HASHI_VARIANT_PRODUCTS.find(x=>x.id===card.dataset.hashiProduct);toast(t(`تم اختيار ${item?.ar||''} من ${source?.ar||''}. ستفتح خيارات التقطيع والتغليف في المرحلة التالية.`,`Selected ${item?.en||''} from ${source?.en||''}. Cutting and packaging options are the next layer.`))};card.addEventListener('click',choose);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose()}})});
+  };
+  if('requestIdleCallback' in window){
+    requestIdleCallback(bindDeferredCatalogDetails,{timeout:700});
+  }else{
+    setTimeout(bindDeferredCatalogDetails,140);
+  }
   document.querySelector('#view-all')?.addEventListener('click',()=>{filter='all';render();setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'}),60)});
   document.querySelectorAll('[data-district]').forEach(b=>b.onclick=()=>{district=b.dataset.district;persist();render()});
   document.querySelectorAll('[data-livestock-category]').forEach(b=>b.onclick=()=>setView('livestock/'+encodeURIComponent(b.dataset.livestockCategory)));
@@ -8929,13 +8936,20 @@ function bind(){
     setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({block:'start'}),10);
   });
   document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;query='';render();setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({block:'start'}),10)});
-  document.querySelectorAll('[data-product]').forEach(b=>b.onclick=e=>{e.stopPropagation();productDialog(b.dataset.product)});
-  document.querySelectorAll('[data-product-options]').forEach(b=>b.onclick=e=>{e.stopPropagation();productOptionsDialog(b.dataset.productOptions)});
-  document.querySelectorAll('[data-product-detail-button]').forEach(b=>b.onclick=e=>{e.stopPropagation();setView('product/'+encodeURIComponent(b.dataset.productDetailButton))});
-  document.querySelectorAll('[data-product-detail]').forEach(card=>{const openDetail=e=>{if(e.target.closest('button'))return;setView('product/'+encodeURIComponent(card.dataset.productDetail))};card.addEventListener('click',openDetail);card.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('button')){e.preventDefault();openDetail(e)}})});
-  document.querySelectorAll('[data-scroll-products]').forEach(b=>b.addEventListener('click',()=>setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'}),80)));
-  document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const id=b.dataset.fav;favourites.has(id)?favourites.delete(id):favourites.add(id);persist();renderProducts()});
-  document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareProduct(b.dataset.share));
+  const bindDeferredProductActions=()=>{
+    document.querySelectorAll('[data-product]').forEach(b=>b.onclick=e=>{e.stopPropagation();productDialog(b.dataset.product)});
+    document.querySelectorAll('[data-product-options]').forEach(b=>b.onclick=e=>{e.stopPropagation();productOptionsDialog(b.dataset.productOptions)});
+    document.querySelectorAll('[data-product-detail-button]').forEach(b=>b.onclick=e=>{e.stopPropagation();setView('product/'+encodeURIComponent(b.dataset.productDetailButton))});
+    document.querySelectorAll('[data-product-detail]').forEach(card=>{const openDetail=e=>{if(e.target.closest('button'))return;setView('product/'+encodeURIComponent(card.dataset.productDetail))};card.addEventListener('click',openDetail);card.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('button')){e.preventDefault();openDetail(e)}})});
+    document.querySelectorAll('[data-scroll-products]').forEach(b=>b.addEventListener('click',()=>setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'}),80)));
+    document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const id=b.dataset.fav;favourites.has(id)?favourites.delete(id):favourites.add(id);persist();renderProducts()});
+    document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareProduct(b.dataset.share));
+  };
+  if('requestIdleCallback' in window){
+    requestIdleCallback(bindDeferredProductActions,{timeout:750});
+  }else{
+    setTimeout(bindDeferredProductActions,160);
+  }
   const search=document.querySelector('#search');if(search)search.oninput=e=>{query=e.target.value;renderProducts()};
   const orderForm=document.querySelector('#orders-form');if(orderForm)orderForm.onsubmit=async e=>{e.preventDefault();if(ordersLoading)return;const code=String(new FormData(orderForm).get('code')||'').trim();ordersLookupTouched=true;ordersLookupQuery=code;ordersLookupStatus={message:t('جاري البحث عن الطلبات…','Searching your orders…'),state:'loading'};await loadMyOrders(code)};
   if(view()==='account') bindCustomerAuth();
