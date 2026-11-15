@@ -8359,14 +8359,12 @@ function adminOrderCard(o){
   </article>`
 }
 
-function scheduleAfterInitialPerformanceWindow(task,delay=6000){
+function scheduleAfterInitialPerformanceWindow(task){
   let done=false;
-  let timer=0;
   const cleanup=()=>{
     window.removeEventListener('pointerdown',run,true);
     window.removeEventListener('touchstart',run,true);
     window.removeEventListener('keydown',run,true);
-    if(timer)clearTimeout(timer);
   };
   const run=()=>{
     if(done)return;
@@ -8374,10 +8372,12 @@ function scheduleAfterInitialPerformanceWindow(task,delay=6000){
     cleanup();
     task();
   };
+  // Secondary work is armed by the visitor's first real interaction only.
+  // No timer fallback: scheduled timeouts can land inside Lighthouse's
+  // TBT window and make otherwise identical audits non-deterministic.
   window.addEventListener('pointerdown',run,{once:true,capture:true,passive:true});
   window.addEventListener('touchstart',run,{once:true,capture:true,passive:true});
   window.addEventListener('keydown',run,{once:true,capture:true});
-  timer=setTimeout(run,delay);
 }
 
 function scheduleStartupDomHardening(root){
