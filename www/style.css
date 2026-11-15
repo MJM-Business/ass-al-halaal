@@ -142,3 +142,23 @@
   color:#183b2f!important;
   opacity:1!important;
 }
+
+
+/* =====================================================================
+   Ass Al Halaal — WAVE contrast pass 3
+   Targeted hero gold text fix. Color-only; no layout/performance changes.
+   WAVE observed #E9CD77 on #126D56 = 4.02:1 (AA fail for normal text).
+   #F7DF7A on the same green background is ~4.72:1 (AA pass).
+   ===================================================================== */
+.app-shell:not(.admin-shell) .hero-copy small,
+.app-shell:not(.admin-shell) .hero-copy p,
+.app-shell:not(.admin-shell) .hero-copy .eyebrow,
+.app-shell:not(.admin-shell) .hero-copy .kicker,
+.app-shell:not(.admin-shell) .hero-copy .microcopy,
+.app-shell:not(.admin-shell) .hero-copy .luxury-feature-row b,
+.app-shell:not(.admin-shell) .hero-copy .luxury-feature-row small,
+.app-shell:not(.admin-shell) .hero-copy .luxury-hero-badges span,
+.app-shell:not(.admin-shell) .hero-copy .luxury-hero-badges small{
+  color:#F7DF7A!important;
+  opacity:1!important;
+}
