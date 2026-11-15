@@ -8601,21 +8601,62 @@ function normalizeFinalWaveDom(root=document.querySelector('#app')){
   if(!root)return;
   const skipTags=new Set(['SCRIPT','STYLE','NOSCRIPT','SVG','PATH','DEFS','CLIPPATH','USE']);
   const hasOwnText=el=>[...el.childNodes].some(n=>n.nodeType===Node.TEXT_NODE&&String(n.textContent||'').trim());
+  const parseRgb=value=>{
+    const m=String(value||'').match(/rgba?\((\d+)\D+(\d+)\D+(\d+)(?:\D+([\d.]+))?\)/i);
+    return m?{r:+m[1],g:+m[2],b:+m[3],a:m[4]===undefined?1:+m[4]}:null;
+  };
+  const lum=c=>{
+    const f=v=>{v/=255;return v<=.03928?v/12.92:((v+.055)/1.055)**2.4};
+    return .2126*f(c.r)+.7152*f(c.g)+.0722*f(c.b);
+  };
+  const ratio=(a,b)=>{
+    const l1=lum(a),l2=lum(b);return (Math.max(l1,l2)+.05)/(Math.min(l1,l2)+.05);
+  };
+  const nearestBg=el=>{
+    for(let n=el;n&&n!==document.documentElement;n=n.parentElement){
+      const bg=parseRgb(getComputedStyle(n).backgroundColor);
+      if(bg&&bg.a>.85)return bg;
+    }
+    return null;
+  };
+  const preserveGold=el=>Boolean(el.closest('.luxury-hero-title,.hero-title-gold,.crown'));
+  const goldControl=el=>Boolean(el.closest('.unified-login-hero,.luxury-hero-badges>span,.hero-slider-arrow,.ref-location-pin'));
+  const darkSurface=el=>Boolean(el.closest('.ref-customer-header,.ref-announcement,.v94-hero-slider,.floating-whatsapp-trigger,.floating-whatsapp-card'));
+  const lightSurface=el=>Boolean(el.closest('.ref-district-card,.ref-categories,.ref-collection,.product-card,.premium-safety-standards,.v500-proof-section,.v500-guide-section,.v500-faq-section,.customer-mega-footer'));
 
   root.querySelectorAll('*').forEach(el=>{
     if(skipTags.has(el.tagName))return;
     const cs=getComputedStyle(el);
     if(cs.display==='none'||cs.visibility==='hidden'||Number(cs.opacity)===0)return;
     const text=String(el.textContent||'').trim();
-    if(!text)return;
+    if(!text||!hasOwnText(el))return;
 
-    // Preserve the successful alert reduction only.
-    // Do not mutate colors here: contrast is handled by the locked final CSS layer.
     const size=parseFloat(cs.fontSize)||0;
-    if(size>0&&size<12&&hasOwnText(el)){
+    if(size>0&&size<12){
       el.style.setProperty('font-size','12px','important');
       el.style.setProperty('opacity','1','important');
     }
+
+    if(preserveGold(el))return;
+    const fg=parseRgb(cs.color);
+    if(!fg)return;
+    let bg=nearestBg(el);
+    if(goldControl(el))bg={r:239,g:193,b:78,a:1};
+    else if(!bg&&darkSurface(el))bg={r:5,g:72,b:54,a:1};
+    else if(!bg&&lightSurface(el))bg={r:255,g:255,b:255,a:1};
+    if(!bg)return;
+
+    const threshold=(parseFloat(getComputedStyle(el).fontSize)>=24||((parseFloat(getComputedStyle(el).fontSize)>=18)&&Number(cs.fontWeight)>=700))?3:4.5;
+    if(ratio(fg,bg)>=threshold)return;
+
+    if(goldControl(el)){
+      el.style.setProperty('color','#173d32','important');
+    }else if(darkSurface(el)){
+      el.style.setProperty('color','#ffffff','important');
+    }else if(lightSurface(el)){
+      el.style.setProperty('color','#1f332b','important');
+    }
+    el.style.setProperty('opacity','1','important');
   });
 }
 
