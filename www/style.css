@@ -56,3 +56,89 @@
 .app-shell:not(.admin-shell) .product-card .status{
   color:#23463a!important;
 }
+
+
+/* =====================================================================
+   Ass Al Halaal — WAVE contrast pass 2
+   Customer portal only. Color/opacity only; no geometry or JS changes.
+   ===================================================================== */
+
+/* Strong default text contrast on light customer surfaces. */
+.app-shell:not(.admin-shell) .screen,
+.app-shell:not(.admin-shell) .ref-categories,
+.app-shell:not(.admin-shell) .ref-collection,
+.app-shell:not(.admin-shell) .ref-standards,
+.app-shell:not(.admin-shell) .product-card,
+.app-shell:not(.admin-shell) .ref-category{
+  color:#203a31!important;
+}
+
+.app-shell:not(.admin-shell) .screen p,
+.app-shell:not(.admin-shell) .screen small,
+.app-shell:not(.admin-shell) .screen label,
+.app-shell:not(.admin-shell) .screen .meta,
+.app-shell:not(.admin-shell) .screen .sub,
+.app-shell:not(.admin-shell) .screen .caption,
+.app-shell:not(.admin-shell) .screen .helper,
+.app-shell:not(.admin-shell) .screen .hint{
+  color:#334b42!important;
+  opacity:1!important;
+}
+
+/* White/light cards and navigation need dark labels. */
+.app-shell:not(.admin-shell) .product-card,
+.app-shell:not(.admin-shell) .ref-category,
+.app-shell:not(.admin-shell) .bottom-nav,
+.app-shell:not(.admin-shell) .ref-customer-header{
+  --wave-light-text:#274238;
+}
+.app-shell:not(.admin-shell) .product-card small,
+.app-shell:not(.admin-shell) .product-card p,
+.app-shell:not(.admin-shell) .product-card span,
+.app-shell:not(.admin-shell) .ref-category small,
+.app-shell:not(.admin-shell) .ref-category span,
+.app-shell:not(.admin-shell) .bottom-nav small,
+.app-shell:not(.admin-shell) .bottom-nav button,
+.app-shell:not(.admin-shell) .ref-customer-header small{
+  color:var(--wave-light-text)!important;
+  opacity:1!important;
+}
+
+/* Preserve premium gold while making it readable on pale backgrounds. */
+.app-shell:not(.admin-shell) .price,
+.app-shell:not(.admin-shell) .price small,
+.app-shell:not(.admin-shell) .price b,
+.app-shell:not(.admin-shell) .product-card .badge,
+.app-shell:not(.admin-shell) .product-card .tag,
+.app-shell:not(.admin-shell) .ref-category>span:last-child,
+.app-shell:not(.admin-shell) .section-row>button{
+  color:#5a400c!important;
+  opacity:1!important;
+}
+
+/* Dark green surfaces: force bright text and remove muted alpha. */
+.app-shell:not(.admin-shell) .ref-announcement *,
+.app-shell:not(.admin-shell) .luxury-quality-hero *,
+.app-shell:not(.admin-shell) .hero-copy *,
+.app-shell:not(.admin-shell) .premium-quality-hero *{
+  opacity:1!important;
+}
+.app-shell:not(.admin-shell) .ref-announcement p,
+.app-shell:not(.admin-shell) .ref-announcement small,
+.app-shell:not(.admin-shell) .ref-announcement b,
+.app-shell:not(.admin-shell) .luxury-quality-hero p,
+.app-shell:not(.admin-shell) .luxury-quality-hero small,
+.app-shell:not(.admin-shell) .hero-copy p,
+.app-shell:not(.admin-shell) .hero-copy small{
+  color:#f8fbfa!important;
+}
+
+/* Pale status chips/buttons: dark foreground. */
+.app-shell:not(.admin-shell) .dispatch,
+.app-shell:not(.admin-shell) .fast,
+.app-shell:not(.admin-shell) .availability,
+.app-shell:not(.admin-shell) .status,
+.app-shell:not(.admin-shell) .district-chips button{
+  color:#183b2f!important;
+  opacity:1!important;
+}
