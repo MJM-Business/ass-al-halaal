@@ -8896,13 +8896,22 @@ function bind(){
   document.querySelector('#mobile-header-cart')?.addEventListener('click',showCart);
   document.querySelectorAll('.js-products,#nav-products').forEach(el=>el.addEventListener('click',()=>{if(view()!=='home')setView('home');setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'}),100)}));
   document.querySelectorAll('[data-hero-browse]').forEach(btn=>btn.addEventListener('click',()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'})));
-  setupHeroSlider();
-  setupCustomBox3DShowcase();
-  setupStandardsExperience();
-  setupFloatingWhatsapp();
-  bindReferenceProductDetail();
-  bindSheepBreedCatalog();
-  bindHashiReferenceDetail();
+  // Secondary rich interactions are not required for the first usable paint.
+  // Bind them during idle time so they do not inflate Lighthouse TBT.
+  const bindDeferredInteractions=()=>{
+    setupHeroSlider();
+    setupCustomBox3DShowcase();
+    setupStandardsExperience();
+    setupFloatingWhatsapp();
+    bindReferenceProductDetail();
+    bindSheepBreedCatalog();
+    bindHashiReferenceDetail();
+  };
+  if('requestIdleCallback' in window){
+    requestIdleCallback(bindDeferredInteractions,{timeout:900});
+  }else{
+    setTimeout(bindDeferredInteractions,160);
+  }
   document.querySelectorAll('[data-hashi-variant-button]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();setView('hashi/'+encodeURIComponent(b.dataset.hashiVariantButton))}));
   document.querySelectorAll('[data-hashi-variant]').forEach(card=>{const openVariant=e=>{if(e.target.closest('button'))return;setView('hashi/'+encodeURIComponent(card.dataset.hashiVariant))};card.addEventListener('click',openVariant);card.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&!e.target.closest('button')){e.preventDefault();openVariant(e)}})});
   document.querySelectorAll('[data-hashi-product]').forEach(card=>{const choose=()=>{const source=hashiVariantById(card.dataset.hashiSource);const item=HASHI_VARIANT_PRODUCTS.find(x=>x.id===card.dataset.hashiProduct);toast(t(`تم اختيار ${item?.ar||''} من ${source?.ar||''}. ستفتح خيارات التقطيع والتغليف في المرحلة التالية.`,`Selected ${item?.en||''} from ${source?.en||''}. Cutting and packaging options are the next layer.`))};card.addEventListener('click',choose);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose()}})});
