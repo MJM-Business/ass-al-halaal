@@ -35,3 +35,39 @@
 .app-shell:not(.admin-shell) .premium-district-card .district-chips button.selected{
   color:#ffffff!important;
 }
+
+
+/* =====================================================================
+   Ass Al Halaal — WAVE contrast pass 5
+   Target the active v405 homepage selector chain directly.
+   Color-only overrides; no layout/JS/performance changes.
+   ===================================================================== */
+.app-shell:has(.v405-home-ui) .hero-copy>p,
+.app-shell:has(.v405-home-ui) .luxury-hero-badges small,
+.app-shell:has(.v405-home-ui) .luxury-feature-row b,
+.app-shell:has(.v405-home-ui) .luxury-hero-actions small,
+.app-shell:has(.v405-home-ui) .ref-announcement,
+.app-shell:has(.v405-home-ui) .ref-announcement p,
+.app-shell:has(.v405-home-ui) .ref-announcement small,
+.app-shell:has(.v405-home-ui) .ref-announcement b,
+.app-shell:has(.v405-home-ui) .announcement,
+.app-shell:has(.v405-home-ui) .announcement p,
+.app-shell:has(.v405-home-ui) .announcement small,
+.app-shell:has(.v405-home-ui) .announcement b{
+  color:#ffffff!important;
+  opacity:1!important;
+}
+
+/* Keep large display heading premium gold. */
+.app-shell:has(.v405-home-ui) .luxury-hero-title .hero-title-gold{
+  color:#f2c556!important;
+}
+
+/* Small text on dark green category/name buttons must be white. */
+.app-shell:has(.v405-home-ui) .category-name-button,
+.app-shell:has(.v405-home-ui) .category-name-button *,
+.app-shell:has(.v405-home-ui) .district-chips button.selected,
+.app-shell:has(.v405-home-ui) .filters button.selected{
+  color:#ffffff!important;
+  opacity:1!important;
+}
