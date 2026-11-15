@@ -1452,16 +1452,6 @@ function applyAccessibilityHardening(root=document){
       if(!img.hasAttribute('fetchpriority'))img.setAttribute('fetchpriority','low');
     }
   });
-  // WAVE: avoid redundant alternative text when the same readable label is already beside the image.
-  images.forEach(img=>{
-    const alt=String(img.getAttribute('alt')||'').trim();
-    if(!alt)return;
-    const parent=img.parentElement;
-    if(!parent)return;
-    const nearby=String(parent.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
-    if(nearby&&nearby.includes(alt.toLowerCase()))img.setAttribute('alt','');
-  });
-
   scope.querySelectorAll('input:not([type="hidden"]),select,textarea').forEach(field=>{
     if(field.hasAttribute('aria-label')||field.hasAttribute('aria-labelledby')||field.closest('label'))return;
     const fallback=field.getAttribute('placeholder')||field.getAttribute('name')||field.id||'Form field';
