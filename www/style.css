@@ -54584,3 +54584,78 @@ html body .app-shell:has(.v405-home-ui) .luxury-hero-title,
 html body .app-shell:has(.v405-home-ui) .luxury-hero-title .hero-title-gold{
   color:#f2c556!important;
 }
+
+
+/* WAVE zero-alert/contrast pass v560 */
+/* Scoped to the customer portal. No dimensions, positioning, animation, or JS behavior changed. */
+html body .app-shell:not(.admin-shell){
+  color:#14231e!important;
+}
+html body .app-shell:not(.admin-shell) small{
+  font-size:11px!important;
+  opacity:1!important;
+}
+html body .app-shell:not(.admin-shell) p,
+html body .app-shell:not(.admin-shell) .muted,
+html body .app-shell:not(.admin-shell) [class*="subtitle"],
+html body .app-shell:not(.admin-shell) [class*="description"]{
+  color:#33443d!important;
+  opacity:1!important;
+}
+
+/* Dark customer surfaces: force normal-size copy to a WCAG-safe foreground. */
+html body .app-shell:not(.admin-shell) .ref-customer-header small,
+html body .app-shell:not(.admin-shell) .ref-customer-header b,
+html body .app-shell:not(.admin-shell) .ref-customer-header span,
+html body .app-shell:not(.admin-shell) .ref-customer-header button,
+html body .app-shell:not(.admin-shell) .ref-announcement,
+html body .app-shell:not(.admin-shell) .ref-announcement p,
+html body .app-shell:not(.admin-shell) .ref-announcement small,
+html body .app-shell:not(.admin-shell) .ref-announcement b,
+html body .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p,
+html body .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges small,
+html body .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row b,
+html body .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small,
+html body .app-shell:has(.v405-home-ui) .ref-customer-header small,
+html body .app-shell:has(.v405-home-ui) .ref-customer-header b,
+html body .app-shell:has(.v405-home-ui) .ref-customer-header span,
+html body .app-shell:has(.v405-home-ui) .ref-customer-header button,
+html body .app-shell:has(.v405-home-ui) .ref-announcement,
+html body .app-shell:has(.v405-home-ui) .ref-announcement p,
+html body .app-shell:has(.v405-home-ui) .ref-announcement small,
+html body .app-shell:has(.v405-home-ui) .ref-announcement b,
+html body .app-shell:has(.v405-home-ui) .v94-hero-slider .hero-copy>p,
+html body .app-shell:has(.v405-home-ui) .v94-hero-slider .luxury-hero-badges small,
+html body .app-shell:has(.v405-home-ui) .v94-hero-slider .luxury-feature-row b,
+html body .app-shell:has(.v405-home-ui) .v94-hero-slider .luxury-hero-actions>small{
+  color:#ffffff!important;
+  opacity:1!important;
+}
+
+/* Keep dark-on-gold controls readable. */
+html body .app-shell:not(.admin-shell) .unified-login-hero,
+html body .app-shell:not(.admin-shell) .unified-login-hero span,
+html body .app-shell:not(.admin-shell) .unified-login-hero i{
+  color:#143f34!important;
+}
+
+/* Preserve the premium gold display title; it is large text and already passes. */
+html body .app-shell:not(.admin-shell) .luxury-hero-title,
+html body .app-shell:not(.admin-shell) .luxury-hero-title .hero-title-gold,
+html body .app-shell:has(.v405-home-ui) .luxury-hero-title,
+html body .app-shell:has(.v405-home-ui) .luxury-hero-title .hero-title-gold{
+  color:#f2c556!important;
+}
+
+/* Common light customer cards: darker secondary copy for AA contrast. */
+html body .app-shell:not(.admin-shell) .district-card p,
+html body .app-shell:not(.admin-shell) .product-card p,
+html body .app-shell:not(.admin-shell) .product-card small,
+html body .app-shell:not(.admin-shell) .standards small,
+html body .app-shell:not(.admin-shell) .mega-footer small,
+html body .app-shell:not(.admin-shell) .account-card p,
+html body .app-shell:not(.admin-shell) .order-card p,
+html body .app-shell:not(.admin-shell) .order-card small{
+  color:#34443e!important;
+  opacity:1!important;
+}
