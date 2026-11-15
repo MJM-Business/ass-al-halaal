@@ -8481,6 +8481,78 @@ function scheduleStartupDomHardening(root){
   scheduleAfterInitialPerformanceWindow(runNext,6000);
 }
 
+function ensureFinalWaveLayer(){
+  let style=document.getElementById('wave-final-runtime-v563');
+  if(!style){
+    style=document.createElement('style');
+    style.id='wave-final-runtime-v563';
+    document.head.appendChild(style);
+  }
+  style.textContent=`
+@media (min-width:901px){
+  html body #app .app-shell:not(.admin-shell) .ref-customer-header small,
+  html body #app .app-shell:not(.admin-shell) .ref-customer-header .top-language .lang-code,
+  html body #app .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav small,
+  html body #app .app-shell:not(.admin-shell) .ref-announcement,
+  html body #app .app-shell:not(.admin-shell) .ref-announcement p,
+  html body #app .app-shell:not(.admin-shell) .ref-announcement small,
+  html body #app .app-shell:not(.admin-shell) .ref-announcement b,
+  html body #app .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges>span,
+  html body #app .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges small,
+  html body #app .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row b,
+  html body #app .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small,
+  html body #app .app-shell:not(.admin-shell) .district-title p,
+  html body #app .app-shell:not(.admin-shell) .district-chips button,
+  html body #app .app-shell:not(.admin-shell) .dispatch,
+  html body #app .app-shell:not(.admin-shell) .ref-categories .section-row p,
+  html body #app .app-shell:not(.admin-shell) .ref-collection .section-row p,
+  html body #app .app-shell:not(.admin-shell) #products.ref-products .product-title-block p,
+  html body #app .app-shell:not(.admin-shell) #products.ref-products .weight,
+  html body #app .app-shell:not(.admin-shell) #products.ref-products .delivery-badge,
+  html body #app .app-shell:not(.admin-shell) #products.ref-products .clean-prep-line,
+  html body #app .app-shell:not(.admin-shell) #products.ref-products .harri-prep-line,
+  html body #app .app-shell:not(.admin-shell) #products.ref-products .product-details-link,
+  html body #app .app-shell:not(.admin-shell) #products.ref-products .premium-add-button,
+  html body #app .app-shell:not(.admin-shell) .standard-card small,
+  html body #app .app-shell:not(.admin-shell) .mega-footer small,
+  html body #app .app-shell:not(.admin-shell) .floating-whatsapp-card small{
+    font-size:12px!important;
+    opacity:1!important;
+  }
+
+  html body #app .app-shell:not(.admin-shell) .ref-customer-header small,
+  html body #app .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav button,
+  html body #app .app-shell:not(.admin-shell) .ref-customer-header .desktop-main-nav small,
+  html body #app .app-shell:not(.admin-shell) .ref-announcement,
+  html body #app .app-shell:not(.admin-shell) .ref-announcement p,
+  html body #app .app-shell:not(.admin-shell) .ref-announcement small,
+  html body #app .app-shell:not(.admin-shell) .ref-announcement b,
+  html body #app .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-badges small,
+  html body #app .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row b,
+  html body #app .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small{
+    color:#fff!important;
+    opacity:1!important;
+  }
+
+  html body #app .app-shell:not(.admin-shell) .district-title p,
+  html body #app .app-shell:not(.admin-shell) .ref-categories .section-row p,
+  html body #app .app-shell:not(.admin-shell) .ref-collection .section-row p,
+  html body #app .app-shell:not(.admin-shell) #products.ref-products .product-title-block p,
+  html body #app .app-shell:not(.admin-shell) .standard-card small,
+  html body #app .app-shell:not(.admin-shell) .mega-footer small{
+    color:#253a32!important;
+    opacity:1!important;
+  }
+
+  html body #app .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero,
+  html body #app .app-shell:not(.admin-shell) .v94-hero-slider .unified-login-hero *{
+    color:#173d32!important;
+  }
+}
+`;
+  document.head.appendChild(style);
+}
+
 function render(){
   document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';document.title=t('عاس الحلال','Ass Al Halaal');
   const v=view();
@@ -8504,7 +8576,11 @@ function render(){
     window.__v496BindFaq?.();
     window.__v517SyncBrandContrast?.();
   };
-  scheduleAfterInitialPerformanceWindow(bindDeferredHomeUi,6200);
+  ensureFinalWaveLayer();
+  scheduleAfterInitialPerformanceWindow(()=>{
+    bindDeferredHomeUi();
+    ensureFinalWaveLayer();
+  },6200);
 }
 
 
