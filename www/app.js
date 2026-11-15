@@ -1857,7 +1857,7 @@ function applyBatch2UxHardening(root=document){
 
 function customerAuthMarkup(){
   return `<div class="simple-auth-shell" data-auth-mode="login">
-    <div class="simple-auth-icon simple-auth-logo-wrap"><img src="assets/ass-al-halaal-logo-colored.png" alt="Ass Al Halaal"></div>
+    <div class="simple-auth-icon simple-auth-logo-wrap"><img src="assets/ass-al-halaal-logo-colored.png" alt=""></div>
     <div class="simple-auth-heading">
       <small>ASS AL HALAAL</small>
       <h2>${t('تسجيل الدخول','Login')}</h2>
@@ -2857,7 +2857,7 @@ function homePage(){
 
     <section class="mega-footer-brand">
       <div class="mega-footer-brand-head">
-        <img src="assets/ass-al-halaal-logo-colored.png" alt="Ass Al Halaal">
+        <img src="assets/ass-al-halaal-logo-colored.png" alt="">
         <div>
           <small>${t('عاس الحلال','ASS AL HALAAL')}</small>
           <h3>${t('مؤسسة عاس الحلال','Ass Al Halaal Establishment')}</h3>
@@ -2909,7 +2909,7 @@ function homePage(){
       </div>
 
       <div class="mega-footer-registration">
-        <img src="assets/saudi-ministry-commerce-v139.png" alt="${t('وزارة التجارة السعودية','Saudi Ministry of Commerce')}">
+        <img src="assets/saudi-ministry-commerce-v139.png" alt="">
         <div>
           <span><small>${t('السجل التجاري','Commercial Registration')}</small><b dir="ltr">7014006428</b></span>
           <span><small>${t('الرقم الضريبي','VAT Registration')}</small><b dir="ltr">300225678600003</b></span>
@@ -3008,7 +3008,7 @@ function homePage(){
         <b>${t('عاس الحلال','Ass Al Halaal')}</b>
         <small>${t('سنرد عليكم في أقرب وقت ممكن','We will respond as soon as possible.')}</small>
       </div>
-      <span class="floating-whatsapp-logo"><img src="assets/ass-al-halaal-logo-colored.png" alt="Ass Al Halaal"></span>
+      <span class="floating-whatsapp-logo"><img src="assets/ass-al-halaal-logo-colored.png" alt=""></span>
     </div>
 
     <div class="floating-whatsapp-body">
@@ -3285,6 +3285,11 @@ html[dir="rtl"] .app-shell:has(.v405-home-ui) .ref-categories #view-all{right:au
 .app-shell:has(.v405-home-ui) #products.ref-products .harri-prep-line{
   font-size:11px!important;
 }
+
+/* v561 WAVE small-text pass: make all semantic secondary text readable on home. */
+.app-shell:has(.v405-home-ui) small{
+  font-size:11px!important;
+}
 </style>
 `}
 
@@ -3300,7 +3305,7 @@ function customBoxPromoCard(){
   ];
   return `<aside class="custom-box-promo custom-box-promo-3d" data-custom-box-showcase aria-label="${t('اصنع صندوقك بنفسك','Build your own meat box')}">
     <div class="custom-box-promo-brand">
-      <img src="assets/ass-al-halaal-logo-v135.png" alt="Ass Al Halaal">
+      <img src="assets/ass-al-halaal-logo-v135.png" alt="">
       <span>${t('عاس الحلال','ASS AL HALAAL')}</span>
     </div>
 
@@ -5940,7 +5945,7 @@ function openCustomerInvoice(orderId){
   const o=myOrders.find(x=>x.id===orderId);if(!o)return;
   const vat=customerInvoiceVat(o),items=(o.items||[]),verificationRef=customerVerificationRef(o),discount=Math.max(0,Number(o.discount_amount||0));
   open(`<div class="customer-invoice-modal invoice-v90">
-    <div class="customer-invoice-head"><div><small>${t('فاتورة الطلب الرقمية','DIGITAL ORDER INVOICE')}</small><h2>${t('فاتورة الطلب','Order invoice')}</h2><p dir="ltr">${safe(customerOrderCode(o))}</p></div><div class="invoice-brand-lockup"><img src="assets/ass-al-halaal-logo-v135.png" alt="Ass Al Halaal"><span>${t('موثق بالطلب المحفوظ','Linked to saved order')}</span></div></div>
+    <div class="customer-invoice-head"><div><small>${t('فاتورة الطلب الرقمية','DIGITAL ORDER INVOICE')}</small><h2>${t('فاتورة الطلب','Order invoice')}</h2><p dir="ltr">${safe(customerOrderCode(o))}</p></div><div class="invoice-brand-lockup"><img src="assets/ass-al-halaal-logo-v135.png" alt=""><span>${t('موثق بالطلب المحفوظ','Linked to saved order')}</span></div></div>
     <div class="invoice-status-strip"><span>✓ ${t('مرجع الطلب محفوظ','Order record saved')}</span><span>${t('ضريبة 15% ضمن الإجمالي','15% VAT included')}</span></div>
     <div class="invoice-v90-grid">
       <div>
@@ -8107,7 +8112,7 @@ function newOrdersBadge(){
   return count?`<i class="executive-notification-dot"><span>${count}</span></i>`:'';
 }
 function adminPage(){
-  if(!adminAuthReady)return `<section class="admin-login unified-admin-gate"><img src="assets/ass-al-halaal-logo-v135.png" alt="Ass Al Halaal"><small>ASS AL HALAAL</small><h1>${t('تسجيل الدخول مطلوب','Login required')}</h1><p>${t('استخدم بوابة تسجيل الدخول الموحدة للدخول إلى حساب العميل أو لوحة الإدارة.','Use the unified Login gateway for either your customer account or the administration portal.')}</p><button data-nav="account" class="unified-admin-gate-btn">${t('تسجيل الدخول','Login')}</button><button data-nav="home" class="text-link">${t('العودة للرئيسية','Back to home')}</button></section>`;
+  if(!adminAuthReady)return `<section class="admin-login unified-admin-gate"><img src="assets/ass-al-halaal-logo-v135.png" alt=""><small>ASS AL HALAAL</small><h1>${t('تسجيل الدخول مطلوب','Login required')}</h1><p>${t('استخدم بوابة تسجيل الدخول الموحدة للدخول إلى حساب العميل أو لوحة الإدارة.','Use the unified Login gateway for either your customer account or the administration portal.')}</p><button data-nav="account" class="unified-admin-gate-btn">${t('تسجيل الدخول','Login')}</button><button data-nav="home" class="text-link">${t('العودة للرئيسية','Back to home')}</button></section>`;
 
   const navItems=[
     ['dashboard','dashboard','لوحة الإدارة العامة','Dashboard'],
@@ -8140,7 +8145,7 @@ function adminPage(){
     <aside class="reference-sidebar" id="admin-responsive-sidebar" aria-label="${t('قائمة الإدارة','Admin navigation')}">
       <button type="button" id="admin-sidebar-close" class="admin-responsive-close" aria-label="${t('إغلاق القائمة','Close menu')}">×</button>
       <div class="reference-brand">
-        <div class="reference-brand-mark admin-brand-logo-v531"><img src="assets/ass-al-halaal-mobile-logo-v519.png" alt="Ass Al Halaal"></div>
+        <div class="reference-brand-mark admin-brand-logo-v531"><img src="assets/ass-al-halaal-mobile-logo-v519.png" alt=""></div>
         <div><b>${t('عاس الحلال','ASS AL HALAAL')}</b><small>${t('الإدارة والعمليات','ADMIN & OPERATIONS')}</small></div>
       </div>
 
