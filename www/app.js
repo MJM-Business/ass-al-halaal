@@ -8423,12 +8423,21 @@ function scheduleStartupDomHardening(root){
   ];
 
   let i=0;
-  const run=()=>{
+  const run=deadline=>{
     if(i>=jobs.length)return;
     jobs[i++]();
-    if(i<jobs.length)setTimeout(run,0);
+    if(i>=jobs.length)return;
+    if('requestIdleCallback' in window){
+      requestIdleCallback(run,{timeout:1000});
+    }else{
+      setTimeout(()=>run(null),120);
+    }
   };
-  setTimeout(run,0);
+  if('requestIdleCallback' in window){
+    requestIdleCallback(run,{timeout:800});
+  }else{
+    setTimeout(()=>run(null),120);
+  }
 }
 
 function render(){
