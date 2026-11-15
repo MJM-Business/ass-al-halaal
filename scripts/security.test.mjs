@@ -652,3 +652,71 @@ test('loopback origin is allowed only when the request itself reaches the local 
   assert.equal(response.status,201);
   assert.equal(payload?.user?.email,'local-origin@example.test');
 });
+
+
+test('production security headers are present and restrictive',async t=>{
+  const temp=await mkdtemp(path.join(os.tmpdir(),'ahl-security-headers-'));
+  const dbPath=path.join(temp,'security.sqlite3');
+  const port=await freePort();
+  const base=`http://127.0.0.1:${port}`;
+  const logs=[];
+
+  const child=spawn(process.execPath,['scripts/serve.mjs'],{
+    cwd:path.resolve('.'),
+    env:{
+      ...process.env,
+      NODE_ENV:'production',
+      HOST:'127.0.0.1',
+      PORT:String(port),
+      AHL_DB_PATH:dbPath,
+      AHL_TRUST_PROXY:'1',
+      AHL_COOKIE_SECURE:'1',
+      AHL_ENFORCE_HTTPS:'0',
+      AHL_PUBLIC_ORIGIN:base,
+      AHL_OTP_PEPPER:'production-test-pepper-not-a-real-secret'
+    },
+    stdio:['ignore','pipe','pipe']
+  });
+  child.stdout.on('data',chunk=>logs.push(String(chunk)));
+  child.stderr.on('data',chunk=>logs.push(String(chunk)));
+
+  t.after(async()=>{
+    if(child.exitCode===null){
+      child.kill('SIGTERM');
+      await new Promise(resolve=>{
+        const timer=setTimeout(resolve,1500);
+        child.once('exit',()=>{clearTimeout(timer);resolve()});
+      });
+    }
+    await rm(temp,{recursive:true,force:true});
+  });
+
+  await waitForHealth(base,child,logs);
+
+  const response=await fetch(`${base}/api/health`,{
+    headers:{'X-Forwarded-Proto':'https'}
+  });
+  assert.equal(response.status,200);
+
+  assert.equal(response.headers.get('x-content-type-options'),'nosniff');
+  assert.equal(response.headers.get('x-frame-options'),'DENY');
+  assert.equal(response.headers.get('referrer-policy'),'strict-origin-when-cross-origin');
+  assert.equal(response.headers.get('permissions-policy'),'camera=(), microphone=(), geolocation=()');
+  assert.equal(response.headers.get('cross-origin-opener-policy'),'same-origin-allow-popups');
+  assert.equal(response.headers.get('cross-origin-resource-policy'),'same-origin');
+  assert.equal(response.headers.get('x-dns-prefetch-control'),'off');
+  assert.equal(response.headers.get('origin-agent-cluster'),'?1');
+
+  const hsts=response.headers.get('strict-transport-security')||'';
+  assert.match(hsts,/max-age=63072000/i);
+  assert.match(hsts,/includeSubDomains/i);
+  assert.match(hsts,/preload/i);
+
+  const csp=response.headers.get('content-security-policy')||'';
+  assert.match(csp,/default-src 'self'/);
+  assert.match(csp,/base-uri 'self'/);
+  assert.match(csp,/object-src 'none'/);
+  assert.match(csp,/frame-ancestors 'none'/);
+  assert.match(csp,/form-action 'self'/);
+  assert.match(csp,/upgrade-insecure-requests/);
+});
