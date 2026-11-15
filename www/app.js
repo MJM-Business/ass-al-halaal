@@ -8620,6 +8620,7 @@ function normalizeFinalWaveDom(root=document.querySelector('#app')){
     return null;
   };
   const preserveGold=el=>Boolean(el.closest('.luxury-hero-title,.hero-title-gold,.crown'));
+  const categoryNameButton=el=>Boolean(el.closest('.category-name-button'));
   const goldControl=el=>Boolean(el.closest('.unified-login-hero,.luxury-hero-badges>span,.hero-slider-arrow,.ref-location-pin'));
   const darkSurface=el=>Boolean(el.closest('.ref-customer-header,.ref-announcement,.v94-hero-slider,.floating-whatsapp-trigger,.floating-whatsapp-card,.premium-safety-standards .standard-card .standard-verified,.v490-advisor-card,.request-fit-summary button'));
   const lightSurface=el=>Boolean(el.closest('.ref-district-card,.ref-categories,.ref-collection,.product-card,.premium-safety-standards,.v500-proof-section,.v500-guide-section,.v500-faq-section,.customer-mega-footer,.v490-request-section,.request-fit-summary,.standards-title'));
@@ -8637,6 +8638,11 @@ function normalizeFinalWaveDom(root=document.querySelector('#app')){
       el.style.setProperty('opacity','1','important');
     }
 
+    if(categoryNameButton(el)){
+      el.style.setProperty('color','#ffffff','important');
+      el.style.setProperty('opacity','1','important');
+      return;
+    }
     if(preserveGold(el))return;
     const fg=parseRgb(cs.color);
     if(!fg)return;
