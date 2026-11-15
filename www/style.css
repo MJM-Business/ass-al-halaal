@@ -54652,3 +54652,17 @@ html body .app-shell:has(.v405-home-ui) .luxury-hero-title .hero-title-gold{
     color:#f2c556!important;
   }
 }
+
+
+/* v567 WAVE generated-text cleanup — home only */
+@media (min-width:901px){
+  html body #app .app-shell:not(.admin-shell) .ref-customer-header::before,
+  html body #app .app-shell:not(.admin-shell) .ref-customer-header::after,
+  html body #app .app-shell:not(.admin-shell) .ref-standards .standards-grid article::before,
+  html body #app .app-shell:not(.admin-shell) .ref-standards .standards-grid article::after,
+  html body #app .app-shell:not(.admin-shell) .premium-safety-standards .standard-card::before,
+  html body #app .app-shell:not(.admin-shell) .premium-safety-standards .standard-card::after{
+    font-size:12px!important;
+    opacity:1!important;
+  }
+}
