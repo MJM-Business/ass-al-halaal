@@ -10238,72 +10238,58 @@ function applyV469MobileExperience(){
   if(!root) return;
 
   // Keep the active hero physically ordered: image -> copy.
+  // Only move nodes when a dedicated mobile image actually exists.
   root.querySelectorAll('.v94-hero-slider .hero-slide').forEach(slide=>{
     const mobileImage = slide.querySelector('.mobile-hero-image-v468');
     const copy = slide.querySelector('.hero-copy');
-    if(mobileImage && slide.firstElementChild !== mobileImage){
+    if(!mobileImage) return;
+    if(slide.firstElementChild !== mobileImage){
       slide.insertBefore(mobileImage, slide.firstElementChild);
     }
-    if(copy && mobileImage && mobileImage.nextElementSibling !== copy){
+    if(copy && mobileImage.nextElementSibling !== copy){
       slide.insertBefore(copy, mobileImage.nextSibling);
     }
   });
 
-  // Explicit mobile touch bridge for important customer interactions.
-  const selectors = [
-    '[data-nav]',
-    '#nav-products',
-    '#nav-cart',
-    '#header-cart',
-    '#top-search',
-    '#language',
-    '#location-top',
-    '#view-all',
-    '.js-products',
-    '.js-cart',
-    '[data-district]',
-    '[data-livestock-category]',
-    '[data-livestock-open]',
-    '[data-livestock-quick-add]',
-    '[data-category-query]',
-    '[data-product]',
-    '[data-product-options]',
-    '[data-product-detail-button]',
-    '[data-product-detail]',
-    '[data-scroll-products]',
-    '[data-standard-detail]',
-    '[data-hero-browse]',
-    '[data-hero-prev]',
-    '[data-hero-next]',
-    '[data-hero-dot]'
+  // One delegated touch bridge replaces dozens of per-element listeners.
+  if(root.dataset.v469DelegatedTouchReady==='1') return;
+  root.dataset.v469DelegatedTouchReady='1';
+
+  const interactiveSelector = [
+    '[data-nav]','#nav-products','#nav-cart','#header-cart','#top-search',
+    '#language','#location-top','#view-all','.js-products','.js-cart',
+    '[data-district]','[data-livestock-category]','[data-livestock-open]',
+    '[data-livestock-quick-add]','[data-category-query]','[data-product]',
+    '[data-product-options]','[data-product-detail-button]','[data-product-detail]',
+    '[data-scroll-products]','[data-standard-detail]','[data-hero-browse]',
+    '[data-hero-prev]','[data-hero-next]','[data-hero-dot]'
   ].join(',');
 
-  root.querySelectorAll(selectors).forEach(el=>{
-    if(el.dataset.v469TouchReady === '1') return;
-    el.dataset.v469TouchReady = '1';
+  let touchTarget=null, sx=0, sy=0, moved=false;
 
-    let sx = 0, sy = 0, moved = false;
+  root.addEventListener('touchstart',e=>{
+    const target=e.target?.closest?.(interactiveSelector);
+    const t=e.touches?.[0];
+    if(!target||!t){touchTarget=null;return}
+    touchTarget=target;
+    sx=t.clientX; sy=t.clientY; moved=false;
+  },{passive:true});
 
-    el.addEventListener('touchstart', e=>{
-      const t=e.touches?.[0];
-      if(!t) return;
-      sx=t.clientX; sy=t.clientY; moved=false;
-    }, {passive:true});
+  root.addEventListener('touchmove',e=>{
+    if(!touchTarget)return;
+    const t=e.touches?.[0];
+    if(!t)return;
+    if(Math.abs(t.clientX-sx)>12 || Math.abs(t.clientY-sy)>12)moved=true;
+  },{passive:true});
 
-    el.addEventListener('touchmove', e=>{
-      const t=e.touches?.[0];
-      if(!t) return;
-      if(Math.abs(t.clientX-sx)>12 || Math.abs(t.clientY-sy)>12) moved=true;
-    }, {passive:true});
-
-    el.addEventListener('touchend', e=>{
-      if(moved) return;
-      // Prevent Android/WebView ghost-click delays and fire the existing click handler once.
-      e.preventDefault();
-      e.stopPropagation();
-      try{ el.click(); }catch{}
-    }, {passive:false});
-  });
+  root.addEventListener('touchend',e=>{
+    const target=touchTarget;
+    touchTarget=null;
+    if(!target||moved)return;
+    e.preventDefault();
+    e.stopPropagation();
+    try{target.click()}catch{}
+  },{passive:false});
 }
 
 // Re-apply if the viewport changes between desktop/mobile emulation.
