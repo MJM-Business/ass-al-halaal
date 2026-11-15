@@ -51,15 +51,17 @@ jobs:
         run: |
           set -euo pipefail
           URL="https://ass-al-halaal.onrender.com/"
-          headers="$(curl --fail --silent --show-error --location --head "$URL" | tr -d '\r')"
+          headers="$(curl --fail --silent --show-error --location --dump-header - --output /dev/null "$URL" | tr -d '\r')"
           printf '%s\n' "$headers"
+          missing=0
           for h in             "content-security-policy:"             "x-frame-options:"             "x-content-type-options:"             "strict-transport-security:"             "referrer-policy:"
           do
-            printf '%s\n' "$headers" | grep -qi "^$h" || {
-              echo "Missing required header: $h"
-              exit 1
-            }
+            if ! printf '%s\n' "$headers" | grep -qi "^$h"; then
+              echo "::error title=Missing production security header::$h"
+              missing=1
+            fi
           done
+          exit "$missing"
 
       - name: OWASP ZAP baseline scan
         run: |
