@@ -1424,7 +1424,13 @@ const toastEl=document.querySelector('#toast');
 let opener=null;
 let heroSliderTimer=null;
 let standardsDetailTimer=null;
-const t=(ar,en)=>lang==='ar'?ar:en;
+const t=(ar,en)=>{
+  const arText=String(ar??'');
+  const enText=String(en??'');
+  if(arText==='حيوان كامل'||arText==='حیوان كامل') return lang==='ar'?'كامل':'Whole';
+  if(enText==='Whole animal'||enText==='Whole Animal') return lang==='ar'?'كامل':'Whole';
+  return lang==='ar'?ar:en;
+};
 const money=n=>new Intl.NumberFormat(lang==='ar'?'ar-SA':'en-SA',{maximumFractionDigits:2}).format(Number(n||0))+' '+t('ر.س','SAR');
 const view=()=>location.hash.replace('#','')||'home';
 const districts=['حي الروضة','أبحر الشمالية','الحمدانية','الصفا','الزهراء','المرجان'];
