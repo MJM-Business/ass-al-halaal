@@ -11284,20 +11284,7 @@ function setupV487StableCarousel(){
     }
   };
 
-  const boot=()=>{
-    installV488OverflowFix();
-    requestAnimationFrame(()=>{
-      resetHorizontalPageOffset();
-      // v487 setup already ran from render(); only reset page offset here.
-    });
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',boot,{once:true});
-  }else{
-    boot();
-  }
-
+  // CSS is already part of the final stylesheet; avoid a startup scroll/layout pass.
   window.addEventListener('resize',()=>{
     requestAnimationFrame(resetHorizontalPageOffset);
   },{passive:true});
@@ -11492,16 +11479,8 @@ function setupV489RequestFitSelector(){
     if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
-  const boot=()=>{
-    installV489RequestFitCSS();
-    setupV489RequestFitSelector();
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',boot,{once:true});
-  }else{
-    boot();
-  }
+  // v490 is the active request-section implementation.
+  // Do not run the retired v489 DOM scan during initial page startup.
 })();
 
 
@@ -11611,11 +11590,7 @@ function setupV490RequestSection(){
     };
 
     window.__v496BindFaq=bindFaq;
-    if(document.readyState==='loading'){
-      document.addEventListener('DOMContentLoaded',bindFaq,{once:true});
-    }else{
-      bindFaq();
-    }
+    // FAQ binding is invoked by the deferred home UI path after first interaction.
   };
 
   installV496FaqSingleOpen();
