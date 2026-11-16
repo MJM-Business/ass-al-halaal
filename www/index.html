@@ -1272,7 +1272,8 @@ body{background:#f3f6f4;color:#14231e;font-family:Tahoma,Arial,sans-serif}
 }
 
   </style>
-  <link rel="preload" as="style" href="dist/style.min.css?v=572" />
+  <link rel="preload" as="style" href="dist/style.min.css?v=569" />
+  <link id="full-style" rel="stylesheet" href="dist/style.min.css?v=569" />
   <link rel="preconnect" href="https://accounts.google.com" crossorigin />
 </head>
 <body>
@@ -1319,27 +1320,6 @@ body{background:#f3f6f4;color:#14231e;font-family:Tahoma,Arial,sans-serif}
   <dialog id="modal" aria-label="Ass Al Halaal dialog" aria-modal="true"></dialog>
   <div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-  <script>
-    (() => {
-      let loaded=false;
-      const loadFullStyle=()=>{
-        if(loaded)return;
-        loaded=true;
-        const link=document.createElement('link');
-        link.rel='stylesheet';
-        link.href='dist/style.min.css?v=572';
-        link.id='full-style';
-        document.head.appendChild(link);
-      };
-      ['pointerdown','keydown','touchstart'].forEach(type=>{
-        window.addEventListener(type,loadFullStyle,{once:true,passive:type!=='keydown'});
-      });
-      const lateLoad=()=>('requestIdleCallback' in window)
-        ? requestIdleCallback(loadFullStyle,{timeout:12000})
-        : setTimeout(loadFullStyle,12000);
-      window.addEventListener('load',lateLoad,{once:true});
-    })();
-  </script>
   <script type="module" src="dist/app.min.js?v=571"></script>
 </body>
 </html>
