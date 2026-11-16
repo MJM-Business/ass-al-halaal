@@ -23,17 +23,39 @@
 
   <link rel="icon" href="assets/ass-al-halaal-logo-v135.png" type="image/png" />
   <link rel="stylesheet" href="critical.css?v=570" />
-  <link rel="preload" as="style" href="dist/style.min.css?v=569" />
-  <link id="full-style" rel="stylesheet" href="dist/style.min.css?v=569" />
-  <link rel="modulepreload" href="dist/app.min.js?v=570" />
+  <style>
+    #boot-shell{min-height:100vh;background:#f7f8fc}
+    #boot-shell .boot-head{height:112px;background:#fff;border-bottom:1px solid #e7ece9;display:flex;align-items:center;justify-content:center;padding:14px}
+    #boot-shell .boot-brand{display:flex;align-items:center;gap:10px;font-weight:800;color:#173f35}
+    #boot-shell .boot-brand img{width:58px;height:58px;object-fit:contain}
+    #boot-shell .boot-hero{margin:0;background:linear-gradient(135deg,#063d2e,#064b38 70%,#345f34);color:#fff;padding:34px 24px 38px;min-height:290px;display:flex;flex-direction:column;justify-content:center;text-align:center}
+    #boot-shell .boot-badge{align-self:center;background:#f8dda4;color:#79590e;border-radius:999px;padding:7px 12px;font-size:12px;font-weight:800}
+    #boot-shell h1{font-size:30px;line-height:1.35;margin:18px auto 10px;max-width:340px}
+    #boot-shell h1 span{color:#f0c65a}
+    #boot-shell p{font-size:13px;line-height:1.8;margin:0 auto;max-width:360px;color:#e0f0e8}
+    #boot-shell .boot-actions{display:flex;justify-content:center;gap:10px;margin-top:18px}
+    #boot-shell .boot-actions span{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:10px;background:#cf8f16;color:#fff;font-size:12px;font-weight:800}
+    @media(min-width:901px){#boot-shell .boot-head{height:76px}#boot-shell .boot-hero{min-height:330px;text-align:start;align-items:flex-start;padding-inline:48px}#boot-shell .boot-badge{align-self:flex-start}#boot-shell h1,#boot-shell p{margin-inline:0}}
+  </style>
+  <link rel="preload" as="style" href="dist/style.min.css?v=572" />
+  <link id="full-style" rel="stylesheet" href="dist/style.min.css?v=572" media="print" />
+  <link rel="modulepreload" href="dist/app.min.js?v=572" />
   <link rel="preconnect" href="https://accounts.google.com" crossorigin />
 </head>
 <body>
   <a class="skip-link" href="#app-main">تخطي إلى المحتوى الرئيسي / Skip to main content</a>
-  <div id="app"></div>
+  <div id="app"><div id="boot-shell" aria-hidden="true">
+    <div class="boot-head"><div class="boot-brand"><img src="dist/assets/ass-al-halaal-mobile-logo-v519.webp" alt=""><span>Ass Al Halaal</span></div></div>
+    <section class="boot-hero">
+      <span class="boot-badge">ASS AL HALAAL</span>
+      <h1><span>Premium halal,</span><br>prepared with care</h1>
+      <p>Fresh livestock and meat selection with professional preparation and chilled delivery across Jeddah.</p>
+      <div class="boot-actions"><span>Explore products</span></div>
+    </section>
+  </div></div>
   <dialog id="modal" aria-label="Ass Al Halaal dialog" aria-modal="true"></dialog>
   <div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
-  <script type="module" src="dist/app.min.js?v=570"></script>
+  <script type="module" src="bootstrap.js?v=572"></script>
 </body>
 </html>
