@@ -9973,20 +9973,7 @@ async function shareProduct(id){
   try{if(navigator.share)await navigator.share({title:'Ass Al Halaal',text});else{await navigator.clipboard.writeText(text);toast(t('تم نسخ تفاصيل المنتج','Product details copied'))}}catch{}
 }
 
-function ensureFullStyleForCurrentRoute(){
-  if(view()==='home')return;
-  if(document.getElementById('route-full-style'))return;
-  const current=document.getElementById('full-style');
-  if(current&&/\/dist\/style\.min\.css(?:\?|$)/.test(current.href))return;
-  const link=document.createElement('link');
-  link.id='route-full-style';
-  link.rel='stylesheet';
-  link.href='dist/style.min.css?v=573';
-  document.head.appendChild(link);
-}
-
 window.addEventListener('hashchange',async()=>{
-  ensureFullStyleForCurrentRoute();
   render();
   if(view()==='orders'&&customerSession)await loadMyOrders();
   if(view()==='admin'){
