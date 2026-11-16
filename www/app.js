@@ -8708,7 +8708,8 @@ function render(){
     window.__v517SyncBrandContrast?.();
   };
   ensureFinalWaveLayer();
-  normalizeFinalWaveDom(appRoot);
+  const isMobileInitialPaint=window.matchMedia?.('(max-width: 900px)')?.matches;
+  if(!isMobileInitialPaint) normalizeFinalWaveDom(appRoot);
   scheduleAfterInitialPerformanceWindow(()=>{
     bindDeferredHomeUi();
     ensureFinalWaveLayer();
