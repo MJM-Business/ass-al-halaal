@@ -1424,13 +1424,7 @@ const toastEl=document.querySelector('#toast');
 let opener=null;
 let heroSliderTimer=null;
 let standardsDetailTimer=null;
-const t=(ar,en)=>{
-  const arText=String(ar??'');
-  const enText=String(en??'');
-  if(arText==='حيوان كامل'||arText==='حیوان كامل') return lang==='ar'?'كامل':'Whole';
-  if(enText==='Whole animal'||enText==='Whole Animal') return lang==='ar'?'كامل':'Whole';
-  return lang==='ar'?ar:en;
-};
+const t=(ar,en)=>lang==='ar'?ar:en;
 const money=n=>new Intl.NumberFormat(lang==='ar'?'ar-SA':'en-SA',{maximumFractionDigits:2}).format(Number(n||0))+' '+t('ر.س','SAR');
 const view=()=>location.hash.replace('#','')||'home';
 const districts=['حي الروضة','أبحر الشمالية','الحمدانية','الصفا','الزهراء','المرجان'];
@@ -4334,7 +4328,7 @@ function livestockCategoryPage(key){
 
 function quickAddLivestockProduct(id){
   const p=productById(id);if(!p)return;
-  const item={key:crypto.randomUUID(),id:p.id,qty:1,purchaseMode:'whole',purchaseLabel:t('كامل','Whole'),sizeChoice:'whole',sizeLabel:t('كامل','Whole'),boxChoice:'standard',boxLabel:t('صندوق عاس الحلال','Ass Al Halaal box'),cut:'medium',pack:'bags',fat:'regular',head:'raw',tripe:'cleaned',organs:'separate',slaughter:'municipality',deliveryChoice:'',dishCount:'1',partPrefs:{},breedId:p.breedId||'',breedName:p.en||'',unit:Number(p.price||0)};
+  const item={key:crypto.randomUUID(),id:p.id,qty:1,purchaseMode:'whole',purchaseLabel:t('حيوان كامل','Whole animal'),sizeChoice:'whole',sizeLabel:t('حيوان كامل','Whole animal'),boxChoice:'standard',boxLabel:t('صندوق عاس الحلال','Ass Al Halaal box'),cut:'medium',pack:'bags',fat:'regular',head:'raw',tripe:'cleaned',organs:'separate',slaughter:'municipality',deliveryChoice:'',dishCount:'1',partPrefs:{},breedId:p.breedId||'',breedName:p.en||'',unit:Number(p.price||0)};
   cart.push(item);persist();toast(t('تمت الإضافة للسلة','Added to cart'));
 }
 
@@ -4711,23 +4705,23 @@ function goatBreedSection(p,breeds){
 }
 
 const PRODUCT_PART_META={
-  head:{price:95,image:'assets/cuts/head-meat-v110.webp'},
-  neck:{price:85,image:'assets/cuts/neck-meat-v110.webp'},
-  shoulder:{price:210,image:'assets/cuts/shoulder-front-leg-v110.webp'},
-  ribs:{price:260,image:'assets/cuts/ribs-v110.webp'},
-  chest:{price:190,image:'assets/cuts/ribs-v110.webp'},
-  loin:{price:280,image:'assets/cuts/loin-back-v110.webp'},
-  hindleg:{price:240,image:'assets/cuts/hind-leg-v110.webp'},
-  liver:{price:75,image:'assets/cuts/liver-offal-v110.webp'},
-  fat:{price:35,image:'assets/cuts/fat-tail-v110.webp'},
-  trotters:{price:45,image:'assets/cuts/trotters-v110.webp'},
-  tripe:{price:55,image:'assets/cuts/tripe-v110.webp'},
-  cubes:{price:120,image:'assets/cuts/shoulder-front-leg-v110.webp'},
-  mince:{price:115,image:'assets/cuts/loin-back-v110.webp'},
-  bones:{price:35,image:'assets/cuts/ribs-v110.webp'}
+  head:{price:95,image:'/assets/cuts/head-meat-v110.webp'},
+  neck:{price:85,image:'/assets/cuts/neck-meat-v110.webp'},
+  shoulder:{price:210,image:'/assets/cuts/shoulder-front-leg-v110.webp'},
+  ribs:{price:260,image:'/assets/cuts/ribs-v110.webp'},
+  chest:{price:190,image:'/assets/cuts/ribs-v110.webp'},
+  loin:{price:280,image:'/assets/cuts/loin-back-v110.webp'},
+  hindleg:{price:240,image:'/assets/cuts/hind-leg-v110.webp'},
+  liver:{price:75,image:'/assets/cuts/liver-offal-v110.webp'},
+  fat:{price:35,image:'/assets/cuts/fat-tail-v110.webp'},
+  trotters:{price:45,image:'/assets/cuts/trotters-v110.webp'},
+  tripe:{price:55,image:'/assets/cuts/tripe-v110.webp'},
+  cubes:{price:120,image:'/assets/cuts/shoulder-front-leg-v110.webp'},
+  mince:{price:115,image:'/assets/cuts/loin-back-v110.webp'},
+  bones:{price:35,image:'/assets/cuts/ribs-v110.webp'}
 };
 function productPartMeta(part){
-  return PRODUCT_PART_META[part?.id]||PRODUCT_PART_META[part?.type]||{price:0,image:'assets/cuts/loin-back-v110.webp'};
+  return PRODUCT_PART_META[part?.id]||PRODUCT_PART_META[part?.type]||{price:0,image:'/assets/cuts/loin-back-v110.webp'};
 }
 
 function productPartIcon(type){
@@ -4805,7 +4799,7 @@ const HARRI_CUT_PACKAGES=[
     ar:'الكتف / اليد الأمامية',en:'Shoulder / front leg',
     descAr:'قطع مناسبة للمندي والتحمير والطبخ البطيء.',
     descEn:'Rich front cut suited to mandi, roasting and slow cooking.',
-    image:'assets/cuts/shoulder-front-leg-v110.webp',
+    image:'/assets/cuts/shoulder-front-leg-v110.webp',
     options:[
       ['shoulder-1','1 كجم · مكعبات','1 kg · cubes',145],
       ['shoulder-2','2 كجم · قطع كبيرة','2 kg · large cuts',280],
@@ -4817,7 +4811,7 @@ const HARRI_CUT_PACKAGES=[
     ar:'الريش / الضلوع',en:'Ribs',
     descAr:'للشواء، الفرن أو التقديم كريش منفصلة.',
     descEn:'For grilling, roasting or portioning into individual rib chops.',
-    image:'assets/cuts/ribs-v110.webp',
+    image:'/assets/cuts/ribs-v110.webp',
     options:[
       ['ribs-1','1 كجم · ريش منفصلة','1 kg · rib chops',165],
       ['ribs-2','2 كجم · ريش للشواء','2 kg · grill ribs',320],
@@ -4829,7 +4823,7 @@ const HARRI_CUT_PACKAGES=[
     ar:'الفخذ / الرجل الخلفية',en:'Hind leg',
     descAr:'قطعة رئيسية للمناسبات، الفرن والمندي.',
     descEn:'Main cut for feasts, roasting and mandi-style preparation.',
-    image:'assets/cuts/hind-leg-v110.webp',
+    image:'/assets/cuts/hind-leg-v110.webp',
     options:[
       ['leg-1','1 كجم · قطع','1 kg · portions',150],
       ['leg-half','نصف فخذ','Half leg',225],
@@ -4841,7 +4835,7 @@ const HARRI_CUT_PACKAGES=[
     ar:'الرقبة',en:'Neck',
     descAr:'مناسبة للمرق، المقلقل والطبخ البطيء.',
     descEn:'Ideal for broth, muqalqal and slow-cooked dishes.',
-    image:'assets/cuts/neck-meat-v110.webp',
+    image:'/assets/cuts/neck-meat-v110.webp',
     options:[
       ['neck-1','1 كجم · مكعبات','1 kg · cubes',120],
       ['neck-15','1.5 كجم · قطع مرق','1.5 kg · stew cuts',175],
@@ -4853,7 +4847,7 @@ const HARRI_CUT_PACKAGES=[
     ar:'الظهر / بيت الكلاوي',en:'Loin / back',
     descAr:'قطع طرية مناسبة للستيك والشواء السريع.',
     descEn:'Tender back cuts suited to steaks and quick grilling.',
-    image:'assets/cuts/loin-back-v110.webp',
+    image:'/assets/cuts/loin-back-v110.webp',
     options:[
       ['loin-1','1 كجم · شرائح','1 kg · steaks',185],
       ['loin-15','1.5 كجم · شرائح سميكة','1.5 kg · thick cuts',270],
@@ -4865,7 +4859,7 @@ const HARRI_CUT_PACKAGES=[
     ar:'مفروم ومكعبات',en:'Mince & cooking cubes',
     descAr:'خيار يومي للطبخ السريع، الكباب واليخنات.',
     descEn:'Everyday option for quick cooking, kebabs and stews.',
-    image:'assets/cuts/shoulder-front-leg-v110.webp',
+    image:'/assets/cuts/shoulder-front-leg-v110.webp',
     options:[
       ['mince-1','1 كجم · مفروم','1 kg · mince',115],
       ['cubes-1','1 كجم · مكعبات','1 kg · cubes',125],
@@ -4877,7 +4871,7 @@ const HARRI_CUT_PACKAGES=[
     ar:'الكبدة والقلب والكلاوي',en:'Liver, heart & kidneys',
     descAr:'أحشاء مختارة ومعبأة بشكل منفصل حسب الطلب.',
     descEn:'Selected offal cleaned and packed separately on request.',
-    image:'assets/cuts/liver-offal-v110.webp',
+    image:'/assets/cuts/liver-offal-v110.webp',
     options:[
       ['offal-pack','باك أحشاء كامل','Complete offal pack',75],
       ['liver-only','كبدة فقط','Liver only',45],
@@ -5724,11 +5718,11 @@ function productDetailPage(id){
             .pdp-order-format{margin:14px 0;border:1px solid #d9e7e2;background:#fbfdfc;border-radius:16px;padding:14px}.pdp-order-format header{display:flex;justify-content:space-between;gap:10px;align-items:end;margin-bottom:10px}.pdp-order-format header b{color:#0b4f3d}.pdp-order-format header small{color:#7b8883}.pdp-order-format-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.pdp-order-format-grid button{border:1px solid #d0e5dd;background:#fff;border-radius:12px;padding:10px 8px;color:#215a4b;font-weight:900;cursor:pointer}.pdp-order-format-grid button.selected{background:#0b6a50;color:#fff;border-color:#0b6a50;box-shadow:0 6px 14px rgba(11,106,80,.18)}.pdp-custom-kg{margin-top:10px;display:flex;gap:8px;align-items:center}.pdp-custom-kg[hidden]{display:none}.pdp-custom-kg input{width:110px;border:1px solid #cfe2db;border-radius:10px;padding:9px;text-align:center}.pdp-custom-kg span{color:#64756f;font-size:12px}@media(max-width:620px){.pdp-order-format-grid{grid-template-columns:1fr 1fr}}
           </style>
           <header><b>${t('اختر شكل الطلب','Choose order format')}</b><small>${t('الحيوان الكامل أو كمية محددة','Whole animal or selected kilograms')}</small></header>
-          <div class="pdp-order-format-grid"><button type="button" class="selected" data-pdp-purchase-mode="whole">${t('كامل','Whole')}</button><button type="button" data-pdp-purchase-mode="half">${t('نصف','Half')}</button><button type="button" data-pdp-purchase-mode="quarter">${t('ربع','Quarter')}</button><button type="button" data-pdp-purchase-mode="kg">${t('بالكيلو','By KG')}</button></div>
+          <div class="pdp-order-format-grid"><button type="button" class="selected" data-pdp-purchase-mode="whole">${t('حيوان كامل','Whole animal')}</button><button type="button" data-pdp-purchase-mode="half">${t('نصف','Half')}</button><button type="button" data-pdp-purchase-mode="quarter">${t('ربع','Quarter')}</button><button type="button" data-pdp-purchase-mode="kg">${t('بالكيلو','By KG')}</button></div>
           <div class="pdp-custom-kg" data-pdp-custom-kg-wrap hidden><input id="pdp-custom-kg" type="number" min="1" max="50" step="0.5" value="3"><span>${t('أدخل الكمية المطلوبة بالكيلو. يتم تأكيد الوزن النهائي قبل التجهيز.','Enter required kilograms. Final weight is confirmed before preparation.')}</span></div>
         </section>
 
-        <div class="ref-product-specs"><p><span>${t('شكل الطلب','Order format')}</span><b id="pdp-selected-weight">${t('كامل','Whole')}</b></p><p><span>${t('السعر التقديري','Estimated price')}</span><b id="pdp-unit-price">${money(Number(p.price)+15)}</b></p></div>
+        <div class="ref-product-specs"><p><span>${t('شكل الطلب','Order format')}</span><b id="pdp-selected-weight">${t('حيوان كامل','Whole animal')}</b></p><p><span>${t('السعر التقديري','Estimated price')}</span><b id="pdp-unit-price">${money(Number(p.price)+15)}</b></p></div>
         <div class="ref-product-quantity"><span>${t('الكمية','Quantity')}</span><div><button type="button" data-pdp-qty="-1">−</button><b id="pdp-qty">1</b><button type="button" data-pdp-qty="1">＋</button></div></div>
         <div class="ref-product-buy-actions"><button type="button" class="ref-buy-now" data-pdp-buy-now>${t('اشترِ الآن','BUY IT NOW')} <span>▣</span></button><button type="button" class="ref-add-cart" data-pdp-add-main>${t('أضف إلى السلة','Add to cart')}</button></div>
         <button type="button" class="pdp-product-options-entry" data-product-options="${p.id}">
@@ -5780,7 +5774,7 @@ function bindReferenceProductDetail(){
     medium:t('8 كجم · متوسط','8 kg · Medium'),
     large:t('14 كجم · كبير','14 kg · Large')
   })[size?.value||'small']||weight;
-  const purchaseLabel=()=>purchaseMode==='whole'?t('كامل','Whole'):purchaseMode==='half'?t('نصف حيوان','Half animal'):purchaseMode==='quarter'?t('ربع حيوان','Quarter animal'):`${customKg} ${t('كجم','kg')}`;
+  const purchaseLabel=()=>purchaseMode==='whole'?t('حيوان كامل','Whole animal'):purchaseMode==='half'?t('نصف حيوان','Half animal'):purchaseMode==='quarter'?t('ربع حيوان','Quarter animal'):`${customKg} ${t('كجم','kg')}`;
   const extraUnit=()=>((pack?.value==='vacuum')?(isFreshLocalArdiProduct(p)?0:25):(pack?.value==='double-vacuum'?20:0))+((head?.value==='cleaned')?15:0);
   const basePrice=()=>{const base=Number(p.price||0),baseKg=Math.max(1,Number(p.kg||15)),kgRate=base/baseKg;if(purchaseMode==='half')return base*.52;if(purchaseMode==='quarter')return base*.28;if(purchaseMode==='kg')return kgRate*customKg;return base};
   const mainUnit=()=>Math.round(basePrice()+extraUnit());
@@ -8422,18 +8416,15 @@ function scheduleStartupDomHardening(root){
   // accessibility/UX DOM scans into small tasks so no single task blocks
   // the main thread for Lighthouse TBT.
   const images=[...root.querySelectorAll('img')];
-  const heroLcpImage=root.querySelector('.v94-hero-slider .hero-slide.is-active img,.v94-hero-slider .quality-hero img');
+  let priorityAssigned=false;
   images.forEach(img=>{
     if(!img.hasAttribute('alt'))img.setAttribute('alt','');
-    const headerImage=Boolean(img.closest('.ref-customer-header,.mobile-reference-header,.simple-auth-logo-wrap'));
-    if(img===heroLcpImage){
+    const aboveFold=Boolean(img.closest('.ref-customer-header,.mobile-reference-header,.v94-hero-slider,.quality-hero,.simple-auth-logo-wrap'));
+    if(aboveFold&&!priorityAssigned){
       img.setAttribute('loading','eager');
       img.setAttribute('fetchpriority','high');
       img.setAttribute('decoding','sync');
-    }else if(headerImage){
-      img.setAttribute('loading','eager');
-      img.setAttribute('fetchpriority','auto');
-      img.setAttribute('decoding','async');
+      priorityAssigned=true;
     }else{
       if(!img.hasAttribute('loading'))img.setAttribute('loading','lazy');
       if(!img.hasAttribute('decoding'))img.setAttribute('decoding','async');
@@ -8630,10 +8621,8 @@ function normalizeFinalWaveDom(root=document.querySelector('#app')){
   };
   const preserveGold=el=>Boolean(el.closest('.luxury-hero-title,.hero-title-gold,.crown'));
   const categoryNameButton=el=>Boolean(el.closest('.category-name-button'));
-  const storeBadgeText=el=>Boolean(el.closest('.mega-store-badge .store-copy'));
-  const advisorReadableText=el=>Boolean(el.closest('.v490-advisor-head'));
   const goldControl=el=>Boolean(el.closest('.unified-login-hero,.luxury-hero-badges>span,.hero-slider-arrow,.ref-location-pin'));
-  const darkSurface=el=>Boolean(el.closest('.ref-customer-header,.ref-announcement,.v94-hero-slider,.floating-whatsapp-trigger,.floating-whatsapp-card,.premium-safety-standards .standard-card .standard-verified,.request-fit-summary button'));
+  const darkSurface=el=>Boolean(el.closest('.ref-customer-header,.ref-announcement,.v94-hero-slider,.floating-whatsapp-trigger,.floating-whatsapp-card,.premium-safety-standards .standard-card .standard-verified,.v490-advisor-card,.request-fit-summary button'));
   const lightSurface=el=>Boolean(el.closest('.ref-district-card,.ref-categories,.ref-collection,.product-card,.premium-safety-standards,.v500-proof-section,.v500-guide-section,.v500-faq-section,.customer-mega-footer,.v490-request-section,.request-fit-summary,.standards-title'));
 
   root.querySelectorAll('*').forEach(el=>{
@@ -8651,16 +8640,6 @@ function normalizeFinalWaveDom(root=document.querySelector('#app')){
 
     if(categoryNameButton(el)){
       el.style.setProperty('color','#ffffff','important');
-      el.style.setProperty('opacity','1','important');
-      return;
-    }
-    if(storeBadgeText(el)){
-      el.style.setProperty('color','#ffffff','important');
-      el.style.setProperty('opacity','1','important');
-      return;
-    }
-    if(advisorReadableText(el)){
-      el.style.setProperty('color','#1f332b','important');
       el.style.setProperty('opacity','1','important');
       return;
     }
@@ -8711,8 +8690,8 @@ function render(){
     window.__v517SyncBrandContrast?.();
   };
   ensureFinalWaveLayer();
-  const isMobileInitialPaint=window.matchMedia?.('(max-width: 900px)')?.matches;
-  if(!isMobileInitialPaint) normalizeFinalWaveDom(appRoot);
+  normalizeFinalWaveDom(appRoot);
+  requestAnimationFrame(()=>normalizeFinalWaveDom(appRoot));
   scheduleAfterInitialPerformanceWindow(()=>{
     bindDeferredHomeUi();
     ensureFinalWaveLayer();
