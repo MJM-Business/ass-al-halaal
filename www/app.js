@@ -1310,28 +1310,11 @@ function portalApplyProductOverrides(list=[]){
     };
   });
 }
-function homeOptimizedAsset(src){
-  const value=String(src||'');
-  const map={
-    'assets/kabsh-top-v397.png':'dist/assets/kabsh-top-v397.webp',
-    'assets/jamal-top-v397.png':'dist/assets/jamal-top-v397.webp',
-    'assets/baqar-top-v397.png':'dist/assets/baqar-top-v397.webp',
-    'assets/maaz-top-v397.png':'dist/assets/maaz-top-v397.webp',
-    'assets/hashi-card-final-v344.webp':'dist/assets/hashi-card-final-v344.webp',
-    'assets/huwar-jaml-card-v362.png':'dist/assets/huwar-jaml-card-v362.webp',
-    'assets/baqar-ajl-card-v368.png':'dist/assets/baqar-ajl-card-v368.webp',
-    'assets/beshi-card-v371.png':'dist/assets/beshi-card-v371.webp',
-    'assets/ass-al-halaal-mobile-logo-v519.png':'dist/assets/ass-al-halaal-mobile-logo-v519.webp',
-    'assets/order-now-preparation-sameday-3d-stamp.png':'dist/assets/order-now-preparation-sameday-3d-stamp.webp'
-  };
-  return map[value]||value;
-}
-
 function portalCategoryRows(){
   const order=['kabsh','jamal','baqar','maaz'];
   return order.map(id=>[id,portalManagerState.categories[id]])
     .filter(([,c])=>c&&c.visible!==false)
-    .map(([id,c])=>[id,homeOptimizedAsset(c.image),c.ar,c.en]);
+    .map(([id,c])=>[id,c.image,c.ar,c.en]);
 }
 function portalFaqRows(){
   return (portalManagerState.faqs||[]).filter(x=>x&&(x.qAr||x.qEn));
@@ -2374,7 +2357,7 @@ function header(){const v=view();return `<header class="app-header ref-customer-
       </div>
 
       <button class="mobile-ref-brand" type="button" data-nav="home" aria-label="Ass Al Halaal Home">
-        <img src="dist/assets/ass-al-halaal-mobile-logo-v519.webp" alt="">
+        <img src="assets/ass-al-halaal-mobile-logo-v519.png" alt="">
         <strong>Ass Al Halaal</strong>
       </button>
 
@@ -2401,7 +2384,7 @@ function header(){const v=view();return `<header class="app-header ref-customer-
   </div>
 
   <button class="mobile-brand-wordmark ${v==='home'?'is-home-brand':'is-light-brand'}" type="button" data-nav="home" aria-label="Ass Al Halaal Home">
-    <span class="mobile-brand-logo"><img src="dist/assets/ass-al-halaal-mobile-logo-v519.webp" alt=""></span>
+    <span class="mobile-brand-logo"><img src="assets/ass-al-halaal-mobile-logo-v519.png" alt=""></span>
     <strong>Ass Al Halaal</strong>
   </button>
 
@@ -2540,7 +2523,7 @@ function homePage(){
     <div><h2>${t('اختر منطقة التوصيل في جدة','Choose your delivery area in Jeddah')}</h2><p>${t('توصيل مبرد 4°C يحافظ على طلبك طازجاً','Chilled 4°C delivery keeps every order fresh')}</p></div>
   </div>
   <div class="district-prep-stamp" aria-hidden="true">
-    <img class="district-prep-stamp-image" src="dist/assets/order-now-preparation-sameday-3d-stamp.webp" alt="">
+    <img class="district-prep-stamp-image" src="assets/order-now-preparation-sameday-3d-stamp.png" alt="">
   </div>
   <div class="district-chips">${districts.map(d=>`<button data-district="${safe(d)}" class="${d===district?'selected':''}">${t(d,districtEn[d])}</button>`).join('')}</div>
 </section>
@@ -3428,7 +3411,7 @@ function productCards(limit=Infinity){
     if(hashi){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card hashi-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل السلالة','View breed details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual hashi-final-visual">
-          <img src="dist/assets/hashi-card-final-v344.webp" alt="" loading="lazy" decoding="async" fetchpriority="low">
+          <img src="assets/hashi-card-final-v344.webp" alt="" loading="lazy" decoding="async" fetchpriority="low">
         </div>
 
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
@@ -3485,7 +3468,7 @@ function productCards(limit=Infinity){
     if(huwar){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card hashi-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual hashi-final-visual">
-          <img src="dist/assets/huwar-jaml-card-v362.webp" alt="" loading="lazy">
+          <img src="assets/huwar-jaml-card-v362.png" alt="" loading="lazy">
         </div>
 
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
@@ -3541,7 +3524,7 @@ function productCards(limit=Infinity){
     if(baqar){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card hashi-final-card baqar-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual hashi-final-visual">
-          <img src="dist/assets/baqar-ajl-card-v368.webp" alt="" loading="lazy">
+          <img src="assets/baqar-ajl-card-v368.png" alt="" loading="lazy">
         </div>
 
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
@@ -3597,7 +3580,7 @@ function productCards(limit=Infinity){
     if(beshi){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card hashi-final-card beshi-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual hashi-final-visual">
-          <img src="dist/assets/beshi-card-v371.webp" alt="" loading="lazy">
+          <img src="assets/beshi-card-v371.png" alt="" loading="lazy">
         </div>
 
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
@@ -5684,7 +5667,7 @@ function hashiVariantPage(p,variantId){
     </nav>
 
     <section class="hashi-variant-hero">
-      <div class="hashi-variant-hero-photo"><img src="dist/assets/hashi-card-final-v344.webp" alt="${safe(t(v.ar,v.en))}"><span>${safe(t(v.regionAr,v.regionEn))}</span></div>
+      <div class="hashi-variant-hero-photo"><img src="assets/hashi-card-final-v344.webp" alt="${safe(t(v.ar,v.en))}"><span>${safe(t(v.regionAr,v.regionEn))}</span></div>
       <div class="hashi-variant-hero-copy"><small>ASS AL HALAAL · ${t('اختيار الحاشي','HASHI SELECTION')}</small><h1>${safe(t(v.ar,v.en))}</h1><p>${safe(t(v.noteAr,v.noteEn))}</p>
         <div class="hashi-variant-facts"><span>✓ ${t('تأكيد الحيوان قبل التجهيز','Animal confirmed before preparation')}</span><span>⚖ ${t('الوزن الفعلي عند الاختيار','Live weight at selection')}</span><span>❄ ${t('توصيل مبرد','Chilled delivery')}</span></div>
       </div>
@@ -8168,7 +8151,7 @@ function adminPage(){
     <aside class="reference-sidebar" id="admin-responsive-sidebar" aria-label="${t('قائمة الإدارة','Admin navigation')}">
       <button type="button" id="admin-sidebar-close" class="admin-responsive-close" aria-label="${t('إغلاق القائمة','Close menu')}">×</button>
       <div class="reference-brand">
-        <div class="reference-brand-mark admin-brand-logo-v531"><img src="dist/assets/ass-al-halaal-mobile-logo-v519.webp" alt=""></div>
+        <div class="reference-brand-mark admin-brand-logo-v531"><img src="assets/ass-al-halaal-mobile-logo-v519.png" alt=""></div>
         <div><b>${t('عاس الحلال','ASS AL HALAAL')}</b><small>${t('الإدارة والعمليات','ADMIN & OPERATIONS')}</small></div>
       </div>
 
@@ -8725,17 +8708,14 @@ function render(){
     window.__v517SyncBrandContrast?.();
   };
   ensureFinalWaveLayer();
-  const mobilePerformancePath=window.matchMedia('(max-width:900px)').matches&&v==='home';
-  if(!mobilePerformancePath){
-    normalizeFinalWaveDom(appRoot);
-    requestAnimationFrame(()=>normalizeFinalWaveDom(appRoot));
-  }
+  normalizeFinalWaveDom(appRoot);
+  requestAnimationFrame(()=>normalizeFinalWaveDom(appRoot));
   scheduleAfterInitialPerformanceWindow(()=>{
     bindDeferredHomeUi();
     ensureFinalWaveLayer();
     normalizeFinalWaveDom(appRoot);
     setTimeout(()=>normalizeFinalWaveDom(appRoot),120);
-  });
+  },6200);
 }
 
 
@@ -9367,12 +9347,14 @@ let homeProductsObserver=null;
 
 function setupHomeProductLazyExpansion(){
   if(view()!=='home'||homeProductsExpanded)return;
-  const trigger=document.querySelector('#request-fit')||document.querySelector('#collection');
-  if(!trigger)return;
+  const collection=document.querySelector('#collection');
+  if(!collection)return;
 
   homeProductsObserver?.disconnect?.();
 
   if(!('IntersectionObserver' in window)){
+    homeProductsExpanded=true;
+    renderProducts();
     return;
   }
 
@@ -9382,9 +9364,9 @@ function setupHomeProductLazyExpansion(){
     homeProductsObserver?.disconnect?.();
     homeProductsObserver=null;
     renderProducts();
-  },{rootMargin:'280px 0px',threshold:0.01});
+  },{rootMargin:'0px',threshold:0.01});
 
-  homeProductsObserver.observe(trigger);
+  homeProductsObserver.observe(collection);
 }
 
 function renderProducts(){const el=document.querySelector('#products');if(!el)return;el.innerHTML=productCards();applyPortalProductCardVisuals();document.querySelectorAll('[data-product]').forEach(b=>b.onclick=e=>{e.stopPropagation();productDialog(b.dataset.product)});document.querySelectorAll('[data-product-detail-button]').forEach(b=>b.onclick=e=>{e.stopPropagation();setView('product/'+encodeURIComponent(b.dataset.productDetailButton))});document.querySelectorAll('[data-product-detail]').forEach(card=>{card.onclick=e=>{if(e.target.closest('button'))return;setView('product/'+encodeURIComponent(card.dataset.productDetail))}});document.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{const id=b.dataset.fav;favourites.has(id)?favourites.delete(id):favourites.add(id);persist();renderProducts()});document.querySelectorAll('[data-share]').forEach(b=>b.onclick=()=>shareProduct(b.dataset.share));setupCustomBox3DShowcase();setupV485MostRequestedSlider();if(typeof setupV487StableCarousel==='function')setupV487StableCarousel();if(typeof setupV528MobileCarousel==='function')setupV528MobileCarousel()}
@@ -10622,9 +10604,68 @@ if(!window.__v469ResizeBound){
 
 
 ;(()=>{
-  // v482 startup observer retired.
-  // Initial hero ARIA state is emitted directly by homePage(), and
-  // setupHeroSlider() maintains it after the visitor interacts.
+  const OLD_HERO_STYLES=[
+    'v478-pure-green-gold-hero',
+    'v479-centered-hero',
+    'v480-true-center-hero',
+    'v481-hero-cleanup'
+  ];
+
+  const removeOldHeroOverrides=()=>{
+    OLD_HERO_STYLES.forEach(id=>document.getElementById(id)?.remove());
+    try{
+      if(window.__v480HeroCenterObserver){
+        window.__v480HeroCenterObserver.disconnect();
+        window.__v480HeroCenterObserver=null;
+      }
+    }catch{}
+  };
+
+  const installV482HeroSystem=()=>{
+    if(document.getElementById('v482-hero-system')) return;
+    removeOldHeroOverrides();
+
+    const style=document.createElement('style');
+    style.id='v482-hero-system';
+    style.textContent=``;
+    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
+  };
+
+  const normalizeActiveHero=()=>{
+    const root=document.querySelector('.v94-hero-slider');
+    if(!root) return;
+    root.querySelectorAll('.hero-slide').forEach(slide=>{
+      const active=slide.classList.contains('is-active');
+      slide.setAttribute('aria-hidden',active?'false':'true');
+    });
+  };
+
+  const boot=()=>{
+    installV482HeroSystem();
+    requestAnimationFrame(normalizeActiveHero);
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',boot,{once:true});
+  }else{
+    boot();
+  }
+
+  if(!window.__v482HeroObserver){
+    const heroRoot=document.querySelector('.v94-hero-slider');
+    if(heroRoot){
+      let heroRaf=0;
+      window.__v482HeroObserver=new MutationObserver(()=>{
+        cancelAnimationFrame(heroRaf);
+        heroRaf=requestAnimationFrame(normalizeActiveHero);
+      });
+      window.__v482HeroObserver.observe(heroRoot,{
+        subtree:true,
+        attributes:true,
+        attributeFilter:['class']
+      });
+    }
+  }
 })();
 
 
@@ -11225,7 +11266,20 @@ function setupV487StableCarousel(){
     }
   };
 
-  // CSS is already part of the final stylesheet; avoid a startup scroll/layout pass.
+  const boot=()=>{
+    installV488OverflowFix();
+    requestAnimationFrame(()=>{
+      resetHorizontalPageOffset();
+      // v487 setup already ran from render(); only reset page offset here.
+    });
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',boot,{once:true});
+  }else{
+    boot();
+  }
+
   window.addEventListener('resize',()=>{
     requestAnimationFrame(resetHorizontalPageOffset);
   },{passive:true});
@@ -11420,8 +11474,16 @@ function setupV489RequestFitSelector(){
     if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
-  // v490 is the active request-section implementation.
-  // Do not run the retired v489 DOM scan during initial page startup.
+  const boot=()=>{
+    installV489RequestFitCSS();
+    setupV489RequestFitSelector();
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',boot,{once:true});
+  }else{
+    boot();
+  }
 })();
 
 
@@ -11531,7 +11593,11 @@ function setupV490RequestSection(){
     };
 
     window.__v496BindFaq=bindFaq;
-    // FAQ binding is invoked by the deferred home UI path after first interaction.
+    if(document.readyState==='loading'){
+      document.addEventListener('DOMContentLoaded',bindFaq,{once:true});
+    }else{
+      bindFaq();
+    }
   };
 
   installV496FaqSingleOpen();
