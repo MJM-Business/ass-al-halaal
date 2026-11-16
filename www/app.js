@@ -8631,6 +8631,12 @@ function normalizeFinalWaveDom(root=document.querySelector('#app')){
     el.style.setProperty('opacity','1','important');
   });
 
+  root.querySelectorAll('.ref-announcement .announcement-features small').forEach(el=>{
+    el.style.setProperty('font-size','13px','important');
+    el.style.setProperty('line-height','1.35','important');
+    el.style.setProperty('opacity','1','important');
+  });
+
   const preserveGold=el=>Boolean(el.closest('.luxury-hero-title,.hero-title-gold,.crown'));
   const categoryNameButton=el=>Boolean(el.closest('.category-name-button'));
   const storeBadgeText=el=>Boolean(el.closest('.mega-store-badge .store-copy'));
