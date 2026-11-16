@@ -10622,68 +10622,9 @@ if(!window.__v469ResizeBound){
 
 
 ;(()=>{
-  const OLD_HERO_STYLES=[
-    'v478-pure-green-gold-hero',
-    'v479-centered-hero',
-    'v480-true-center-hero',
-    'v481-hero-cleanup'
-  ];
-
-  const removeOldHeroOverrides=()=>{
-    OLD_HERO_STYLES.forEach(id=>document.getElementById(id)?.remove());
-    try{
-      if(window.__v480HeroCenterObserver){
-        window.__v480HeroCenterObserver.disconnect();
-        window.__v480HeroCenterObserver=null;
-      }
-    }catch{}
-  };
-
-  const installV482HeroSystem=()=>{
-    if(document.getElementById('v482-hero-system')) return;
-    removeOldHeroOverrides();
-
-    const style=document.createElement('style');
-    style.id='v482-hero-system';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
-  };
-
-  const normalizeActiveHero=()=>{
-    const root=document.querySelector('.v94-hero-slider');
-    if(!root) return;
-    root.querySelectorAll('.hero-slide').forEach(slide=>{
-      const active=slide.classList.contains('is-active');
-      slide.setAttribute('aria-hidden',active?'false':'true');
-    });
-  };
-
-  const boot=()=>{
-    installV482HeroSystem();
-    requestAnimationFrame(normalizeActiveHero);
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',boot,{once:true});
-  }else{
-    boot();
-  }
-
-  if(!window.__v482HeroObserver){
-    const heroRoot=document.querySelector('.v94-hero-slider');
-    if(heroRoot){
-      let heroRaf=0;
-      window.__v482HeroObserver=new MutationObserver(()=>{
-        cancelAnimationFrame(heroRaf);
-        heroRaf=requestAnimationFrame(normalizeActiveHero);
-      });
-      window.__v482HeroObserver.observe(heroRoot,{
-        subtree:true,
-        attributes:true,
-        attributeFilter:['class']
-      });
-    }
-  }
+  // v482 startup observer retired.
+  // Initial hero ARIA state is emitted directly by homePage(), and
+  // setupHeroSlider() maintains it after the visitor interacts.
 })();
 
 
