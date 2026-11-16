@@ -1,8 +1,8 @@
-import {mkdir,stat} from 'node:fs/promises';
+import {mkdir,stat,readFile,writeFile} from 'node:fs/promises';
 import sharp from 'sharp';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {build} from 'esbuild';
+import {build,transform} from 'esbuild';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const outDir=path.join(root,'www','dist');
@@ -94,6 +94,95 @@ await Promise.all([
   })
 ]);
 
+
+function splitCssSelectors(value){
+  const out=[];let start=0,paren=0,bracket=0,quote='',escaped=false;
+  for(let i=0;i<value.length;i++){
+    const ch=value[i];
+    if(quote){
+      if(escaped){escaped=false;continue}
+      if(ch==='\\'){escaped=true;continue}
+      if(ch===quote)quote='';
+      continue;
+    }
+    if(ch==='"'||ch==="'"){quote=ch;continue}
+    if(ch==='(')paren++;
+    else if(ch===')')paren=Math.max(0,paren-1);
+    else if(ch==='[')bracket++;
+    else if(ch===']')bracket=Math.max(0,bracket-1);
+    else if(ch===','&&paren===0&&bracket===0){out.push(value.slice(start,i));start=i+1}
+  }
+  out.push(value.slice(start));
+  return out;
+}
+
+const homeSelectorPattern=/(?:^|[\s>+~,(])(?::root|html|body|\*|button|input|select|textarea|img|#app|#toast|\.skip-link|\.screen|\.app-shell:not\(\.admin-shell\)|\.ref-customer-header|\.customer-brand|\.desktop-main-nav|\.ref-top-actions|\.header-quick|\.top-(?:search|language|cart|action)|\.location|\.mobile-ref|\.mobile-reference-header|\.premium-action|\.signed-customer|\.ref-announcement|\.announcement|\.v94-hero-slider|\.hero-|\.luxury-|\.unified-login|\.quality-hero|\.ref-district-card|\.district-|\.categories|\.ref-categories|\.category|\.section-row|\.collection|\.ref-collection|#products|\.product-|\.weight|\.delivery-badge|\.price|\.quick-detail|\.card-actions|\.customise|\.share|\.most-requested|\.v485-|\.v487-|\.v490-|\.request-fit|\.premium-safety-standards|\.standards|\.v500-|\.faq|\.customer-mega-footer|\.mega-footer|\.floating-whatsapp|\.bottom-nav)(?:\b|[.#:[>+~])/i;
+
+function selectorNeededForHome(selector){
+  return splitCssSelectors(selector).some(part=>homeSelectorPattern.test(part.trim()));
+}
+
+function filterCssLevelForHome(source){
+  let out='',i=0;
+  while(i<source.length){
+    let quote='',escaped=false,comment=false,open=-1;
+    for(let j=i;j<source.length;j++){
+      const ch=source[j],next=source[j+1];
+      if(comment){if(ch==='*'&&next==='/'){comment=false;j++}continue}
+      if(quote){
+        if(escaped){escaped=false;continue}
+        if(ch==='\\'){escaped=true;continue}
+        if(ch===quote)quote='';
+        continue;
+      }
+      if(ch==='/'&&next==='*'){comment=true;j++;continue}
+      if(ch==='"'||ch==="'"){quote=ch;continue}
+      if(ch==='{'){open=j;break}
+    }
+    if(open<0){break}
+    const prelude=source.slice(i,open);
+    let depth=1,close=open+1,q='',esc=false,inComment=false;
+    for(;close<source.length;close++){
+      const ch=source[close],next=source[close+1];
+      if(inComment){if(ch==='*'&&next==='/'){inComment=false;close++}continue}
+      if(q){
+        if(esc){esc=false;continue}
+        if(ch==='\\'){esc=true;continue}
+        if(ch===q)q='';
+        continue;
+      }
+      if(ch==='/'&&next==='*'){inComment=true;close++;continue}
+      if(ch==='"'||ch==="'"){q=ch;continue}
+      if(ch==='{')depth++;
+      else if(ch==='}'){depth--;if(depth===0)break}
+    }
+    if(close>=source.length)break;
+
+    const body=source.slice(open+1,close);
+    const trimmed=prelude.trim();
+
+    if(/^@(media|supports|container|layer|scope|document)\b/i.test(trimmed)){
+      const inner=filterCssLevelForHome(body);
+      if(inner.trim())out+=prelude+'{'+inner+'}';
+    }else if(trimmed.startsWith('@')){
+      out+=prelude+'{'+body+'}';
+    }else if(selectorNeededForHome(trimmed)){
+      out+=prelude+'{'+body+'}';
+    }
+    i=close+1;
+  }
+  return out;
+}
+
+const fullCssSource=await readFile(path.join(root,'www','style.css'),'utf8');
+const homeCssSource=filterCssLevelForHome(fullCssSource);
+const homeCssMinified=await transform(homeCssSource,{
+  loader:'css',
+  minify:true,
+  legalComments:'none'
+});
+await writeFile(path.join(outDir,'home.min.css'),homeCssMinified.code,'utf8');
+
 const optimizedImages=[];
 for(const name of imageTargets){
   try{optimizedImages.push(await optimizeImage(name))}catch(error){
@@ -101,8 +190,9 @@ for(const name of imageTargets){
   }
 }
 
-const [js,css]=await Promise.all([
+const [js,css,homeCss]=await Promise.all([
   stat(path.join(outDir,'app.min.js')),
-  stat(path.join(outDir,'style.min.css'))
+  stat(path.join(outDir,'style.min.css')),
+  stat(path.join(outDir,'home.min.css'))
 ]);
-console.log(`Built production assets: app.min.js ${js.size} bytes, style.min.css ${css.size} bytes, optimized images ${optimizedImages.length}`);
+console.log(`Built production assets: app.min.js ${js.size} bytes, style.min.css ${css.size} bytes, home.min.css ${homeCss.size} bytes, optimized images ${optimizedImages.length}`);
