@@ -8422,15 +8422,18 @@ function scheduleStartupDomHardening(root){
   // accessibility/UX DOM scans into small tasks so no single task blocks
   // the main thread for Lighthouse TBT.
   const images=[...root.querySelectorAll('img')];
-  let priorityAssigned=false;
+  const heroLcpImage=root.querySelector('.v94-hero-slider .hero-slide.is-active img,.v94-hero-slider .quality-hero img');
   images.forEach(img=>{
     if(!img.hasAttribute('alt'))img.setAttribute('alt','');
-    const aboveFold=Boolean(img.closest('.ref-customer-header,.mobile-reference-header,.v94-hero-slider,.quality-hero,.simple-auth-logo-wrap'));
-    if(aboveFold&&!priorityAssigned){
+    const headerImage=Boolean(img.closest('.ref-customer-header,.mobile-reference-header,.simple-auth-logo-wrap'));
+    if(img===heroLcpImage){
       img.setAttribute('loading','eager');
       img.setAttribute('fetchpriority','high');
       img.setAttribute('decoding','sync');
-      priorityAssigned=true;
+    }else if(headerImage){
+      img.setAttribute('loading','eager');
+      img.setAttribute('fetchpriority','auto');
+      img.setAttribute('decoding','async');
     }else{
       if(!img.hasAttribute('loading'))img.setAttribute('loading','lazy');
       if(!img.hasAttribute('decoding'))img.setAttribute('decoding','async');
@@ -8708,8 +8711,8 @@ function render(){
     window.__v517SyncBrandContrast?.();
   };
   ensureFinalWaveLayer();
-  normalizeFinalWaveDom(appRoot);
-  requestAnimationFrame(()=>normalizeFinalWaveDom(appRoot));
+  const isMobileInitialPaint=window.matchMedia?.('(max-width: 900px)')?.matches;
+  if(!isMobileInitialPaint) normalizeFinalWaveDom(appRoot);
   scheduleAfterInitialPerformanceWindow(()=>{
     bindDeferredHomeUi();
     ensureFinalWaveLayer();
