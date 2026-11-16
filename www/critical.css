@@ -1237,3 +1237,26 @@ body{background:#f3f6f4;color:#14231e;font-family:Tahoma,Arial,sans-serif}
   border:1px solid #e5b6ba;
   color:#9f2730;
 }
+
+
+/* v570 — mobile language label visibility only */
+@media(max-width:900px){
+  .app-shell:not(.admin-shell) #mobile-language.mobile-ref-language{
+    display:grid!important;
+    place-items:center!important;
+    background:#fff!important;
+    border:1px solid #d9aa2f!important;
+    color:#0a5b45!important;
+    opacity:1!important;
+    visibility:visible!important;
+  }
+  .app-shell:not(.admin-shell) #mobile-language.mobile-ref-language b{
+    display:block!important;
+    color:#0a5b45!important;
+    font-size:11px!important;
+    font-weight:900!important;
+    line-height:1!important;
+    opacity:1!important;
+    visibility:visible!important;
+  }
+}
