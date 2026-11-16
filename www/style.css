@@ -54717,3 +54717,34 @@ html body .app-shell:has(.v405-home-ui) .luxury-hero-title .hero-title-gold{
     max-height:27px!important;
   }
 }
+
+
+/* v577: pin the existing mobile language control inside the right edge of the compact header */
+@media(max-width:900px){
+  .mobile-reference-mainbar{
+    position:relative!important;
+  }
+  .mobile-reference-mainbar #mobile-language.mobile-ref-language{
+    position:absolute!important;
+    inset-inline-end:8px!important;
+    top:50%!important;
+    transform:translateY(-50%)!important;
+    z-index:30!important;
+    display:grid!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+  }
+  .mobile-reference-mainbar .mobile-ref-actions-right{
+    padding-inline-end:38px!important;
+    box-sizing:border-box!important;
+  }
+}
+@media(max-width:390px){
+  .mobile-reference-mainbar #mobile-language.mobile-ref-language{
+    inset-inline-end:6px!important;
+  }
+  .mobile-reference-mainbar .mobile-ref-actions-right{
+    padding-inline-end:34px!important;
+  }
+}
