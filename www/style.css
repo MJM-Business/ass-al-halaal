@@ -54796,3 +54796,23 @@ html body .app-shell:has(.v405-home-ui) .luxury-hero-title .hero-title-gold{
     padding-inline-end:38px!important;
   }
 }
+
+
+/* v579: clear globe language icon only */
+@media(max-width:900px){
+  .mobile-reference-mainbar #mobile-language.mobile-ref-language .mobile-language-glyph{
+    display:block!important;
+    width:18px!important;
+    height:18px!important;
+    stroke:#0a5b45!important;
+    stroke-width:1.8!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+    fill:none!important;
+    opacity:1!important;
+    visibility:visible!important;
+  }
+  .mobile-reference-mainbar #mobile-language.mobile-ref-language .mobile-language-code{
+    display:none!important;
+  }
+}
