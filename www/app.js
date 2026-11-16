@@ -8709,7 +8709,6 @@ function render(){
   };
   ensureFinalWaveLayer();
   normalizeFinalWaveDom(appRoot);
-  requestAnimationFrame(()=>normalizeFinalWaveDom(appRoot));
   scheduleAfterInitialPerformanceWindow(()=>{
     bindDeferredHomeUi();
     ensureFinalWaveLayer();
