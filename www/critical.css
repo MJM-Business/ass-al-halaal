@@ -998,14 +998,6 @@ body{background:#f3f6f4;color:#14231e;font-family:Tahoma,Arial,sans-serif}
   }
   .app-shell:not(.admin-shell) .mobile-ref-actions{display:flex;align-items:center;gap:4px}
   .app-shell:not(.admin-shell) .mobile-ref-actions-right{justify-content:flex-end}
-  .app-shell:not(.admin-shell) .mobile-ref-language{
-    display:grid!important;place-items:center!important;visibility:visible!important;opacity:1!important;
-    color:#0a5b45!important;background:#fff!important;border:1px solid #d9e2de!important;
-    font-weight:900!important;font-size:12px!important;line-height:1!important
-  }
-  .app-shell:not(.admin-shell) .mobile-ref-language b{
-    display:block!important;color:#0a5b45!important;visibility:visible!important;opacity:1!important
-  }
   .app-shell:not(.admin-shell) .mobile-ref-actions button{
     width:34px;height:34px;min-width:34px;border-radius:10px;display:grid;place-items:center
   }
