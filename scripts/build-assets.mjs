@@ -1,109 +1,14 @@
-import {mkdir,stat,readFile,writeFile} from 'node:fs/promises';
+import {mkdir,stat} from 'node:fs/promises';
 import sharp from 'sharp';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {build,transform} from 'esbuild';
+import {build} from 'esbuild';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const outDir=path.join(root,'www','dist');
 const optimizedAssetsDir=path.join(outDir,'assets');
 await mkdir(outDir,{recursive:true});
 await mkdir(optimizedAssetsDir,{recursive:true});
-
-
-function sourceChunk(source,startMarker,endMarker,maxLength=120000){
-  const start=source.indexOf(startMarker);
-  if(start<0)return '';
-  const end=endMarker?source.indexOf(endMarker,start+startMarker.length):-1;
-  return source.slice(start,end>start?end:start+maxLength);
-}
-
-function collectInitialHomeTokens(source){
-  const selected=[
-    sourceChunk(source,'function header()','function bottomNav()'),
-    sourceChunk(source,'function bottomNav()','function shell('),
-    sourceChunk(source,'function shell(','function homePage()'),
-    sourceChunk(source,'function homePage()','function standardDetailData'),
-    sourceChunk(source,'function productCards(','function productOptionsDialog')
-  ].join('\n');
-
-  const classes=new Set(['app-shell','screen','app-header','bottom-nav']);
-  const ids=new Set(['app','toast','modal']);
-
-  for(const match of selected.matchAll(/class\s*=\s*["'\x60](.*?)["'\x60]/gs)){
-    const clean=match[1].replace(/\$\{[^}]*\}/g,' ');
-    clean.split(/\s+/).forEach(token=>{
-      if(/^[A-Za-z_][\w-]*$/.test(token))classes.add(token);
-    });
-  }
-
-  for(const match of selected.matchAll(/id\s*=\s*["'\x60]([^"'\x60$<>\s]+)["'\x60]/g)){
-    ids.add(match[1]);
-  }
-
-  return {classes,ids};
-}
-
-function splitTopLevelSelectors(header){
-  const out=[];let start=0,depth=0;
-  for(let i=0;i<header.length;i++){
-    const c=header[i];
-    if(c==='('||c==='[')depth++;
-    else if(c===')'||c===']')depth=Math.max(0,depth-1);
-    else if(c===','&&depth===0){out.push(header.slice(start,i));start=i+1}
-  }
-  out.push(header.slice(start));
-  return out;
-}
-
-function buildInitialHomeCss(css,{classes,ids}){
-  const selectorRelevant=selector=>{
-    const classRefs=[...selector.matchAll(/\.([A-Za-z_][\w-]*)/g)].map(m=>m[1]);
-    const idRefs=[...selector.matchAll(/#([A-Za-z_][\w-]*)/g)].map(m=>m[1]);
-
-    if(!classRefs.length&&!idRefs.length){
-      return /(^|[\s>+~,:])(html|body|\*|:root|img|button|input|select|textarea|main|header|nav|section|article|small|b|p|h1|h2|h3)\b/i.test(selector);
-    }
-
-    return classRefs.every(name=>classes.has(name)||/^(is-|active$|selected$)/.test(name))
-      && idRefs.every(name=>ids.has(name));
-  };
-
-  const walk=input=>{
-    let out='',i=0;
-    while(i<input.length){
-      const open=input.indexOf('{',i);
-      if(open<0)break;
-      const header=input.slice(i,open);
-      let j=open+1,depth=1;
-      while(j<input.length&&depth){
-        if(input[j]==='{')depth++;
-        else if(input[j]==='}')depth--;
-        j++;
-      }
-      if(depth)break;
-
-      const body=input.slice(open+1,j-1);
-      const trimmed=header.trim();
-
-      if(/^@(media|supports|layer|container)\b/.test(trimmed)){
-        const inner=walk(body);
-        if(inner.trim())out+=header+'{'+inner+'}';
-      }else if(/^@(?:keyframes|font-face|property)\b/.test(trimmed)){
-        out+=header+'{'+body+'}';
-      }else if(trimmed.startsWith('@')){
-        out+=header+'{'+body+'}';
-      }else{
-        const kept=splitTopLevelSelectors(header).filter(selectorRelevant);
-        if(kept.length)out+=kept.join(',')+'{'+body+'}';
-      }
-      i=j;
-    }
-    return out;
-  };
-
-  return walk(css);
-}
 
 const imageTargets=[
   'ass-al-halaal-mobile-logo-v519.png',
@@ -189,16 +94,6 @@ await Promise.all([
   })
 ]);
 
-
-const [rawCss,rawApp]=await Promise.all([
-  readFile(path.join(root,'www','style.css'),'utf8'),
-  readFile(path.join(root,'www','app.js'),'utf8')
-]);
-const homeTokens=collectInitialHomeTokens(rawApp);
-const homeCss=buildInitialHomeCss(rawCss,homeTokens);
-const homeMinified=await transform(homeCss,{loader:'css',minify:true,legalComments:'none'});
-await writeFile(path.join(outDir,'home.min.css'),homeMinified.code,'utf8');
-
 const optimizedImages=[];
 for(const name of imageTargets){
   try{optimizedImages.push(await optimizeImage(name))}catch(error){
@@ -206,9 +101,8 @@ for(const name of imageTargets){
   }
 }
 
-const [js,css,homeCssStat]=await Promise.all([
+const [js,css]=await Promise.all([
   stat(path.join(outDir,'app.min.js')),
-  stat(path.join(outDir,'style.min.css')),
-  stat(path.join(outDir,'home.min.css'))
+  stat(path.join(outDir,'style.min.css'))
 ]);
-console.log(`Built production assets: app.min.js ${js.size} bytes, style.min.css ${css.size} bytes, home.min.css ${homeCssStat.size} bytes, optimized images ${optimizedImages.length}`);
+console.log(`Built production assets: app.min.js ${js.size} bytes, style.min.css ${css.size} bytes, optimized images ${optimizedImages.length}`);
