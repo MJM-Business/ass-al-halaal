@@ -5,7 +5,7 @@ function enableFullStyle(){
     if(!style){resolve();return}
     const apply=()=>{
       style.media='all';
-      requestAnimationFrame(()=>resolve());
+      requestAnimationFrame(()=>requestAnimationFrame(resolve));
     };
     if(style.sheet){apply();return}
     style.addEventListener('load',apply,{once:true});
@@ -14,7 +14,11 @@ function enableFullStyle(){
 
 async function start(){
   await enableFullStyle();
-  await import('./dist/app.min.js?v=572');
+  await import('./app.js?v=425');
 }
 
-start().catch(console.error);
+if('requestIdleCallback' in window){
+  requestIdleCallback(()=>{start().catch(console.error)},{timeout:1600});
+}else{
+  setTimeout(()=>{start().catch(console.error)},500);
+}
