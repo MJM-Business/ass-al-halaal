@@ -54748,3 +54748,51 @@ html body .app-shell:has(.v405-home-ui) .luxury-hero-title .hero-title-gold{
     padding-inline-end:34px!important;
   }
 }
+
+
+/* v578: polish mobile language control to match header icon styling */
+@media(max-width:900px){
+  .mobile-reference-mainbar #mobile-language.mobile-ref-language{
+    width:34px!important;
+    min-width:34px!important;
+    max-width:34px!important;
+    height:34px!important;
+    min-height:34px!important;
+    max-height:34px!important;
+    border-radius:50%!important;
+    border:1px solid #d9b24a!important;
+    background:#fffdf7!important;
+    box-shadow:0 1px 4px rgba(9,46,37,.08)!important;
+    color:#9a741c!important;
+    display:grid!important;
+    place-items:center!important;
+  }
+  .mobile-reference-mainbar #mobile-language.mobile-ref-language b{
+    font-size:8.5px!important;
+    font-weight:900!important;
+    letter-spacing:.2px!important;
+    color:#9a741c!important;
+  }
+  .mobile-reference-mainbar #mobile-language.mobile-ref-language:hover,
+  .mobile-reference-mainbar #mobile-language.mobile-ref-language:focus-visible{
+    background:#fff8e7!important;
+    box-shadow:0 2px 7px rgba(9,46,37,.12)!important;
+  }
+  .mobile-reference-mainbar .mobile-ref-actions-right{
+    gap:6px!important;
+    padding-inline-end:42px!important;
+  }
+}
+@media(max-width:390px){
+  .mobile-reference-mainbar #mobile-language.mobile-ref-language{
+    width:32px!important;
+    min-width:32px!important;
+    max-width:32px!important;
+    height:32px!important;
+    min-height:32px!important;
+    max-height:32px!important;
+  }
+  .mobile-reference-mainbar .mobile-ref-actions-right{
+    padding-inline-end:38px!important;
+  }
+}
