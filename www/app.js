@@ -8627,8 +8627,10 @@ function normalizeFinalWaveDom(root=document.querySelector('#app')){
   };
   const preserveGold=el=>Boolean(el.closest('.luxury-hero-title,.hero-title-gold,.crown'));
   const categoryNameButton=el=>Boolean(el.closest('.category-name-button'));
+  const storeBadgeText=el=>Boolean(el.closest('.mega-store-badge .store-copy'));
+  const advisorReadableText=el=>Boolean(el.closest('.v490-advisor-head'));
   const goldControl=el=>Boolean(el.closest('.unified-login-hero,.luxury-hero-badges>span,.hero-slider-arrow,.ref-location-pin'));
-  const darkSurface=el=>Boolean(el.closest('.ref-customer-header,.ref-announcement,.v94-hero-slider,.floating-whatsapp-trigger,.floating-whatsapp-card,.premium-safety-standards .standard-card .standard-verified,.v490-advisor-card,.request-fit-summary button'));
+  const darkSurface=el=>Boolean(el.closest('.ref-customer-header,.ref-announcement,.v94-hero-slider,.floating-whatsapp-trigger,.floating-whatsapp-card,.premium-safety-standards .standard-card .standard-verified,.request-fit-summary button'));
   const lightSurface=el=>Boolean(el.closest('.ref-district-card,.ref-categories,.ref-collection,.product-card,.premium-safety-standards,.v500-proof-section,.v500-guide-section,.v500-faq-section,.customer-mega-footer,.v490-request-section,.request-fit-summary,.standards-title'));
 
   root.querySelectorAll('*').forEach(el=>{
@@ -8646,6 +8648,16 @@ function normalizeFinalWaveDom(root=document.querySelector('#app')){
 
     if(categoryNameButton(el)){
       el.style.setProperty('color','#ffffff','important');
+      el.style.setProperty('opacity','1','important');
+      return;
+    }
+    if(storeBadgeText(el)){
+      el.style.setProperty('color','#ffffff','important');
+      el.style.setProperty('opacity','1','important');
+      return;
+    }
+    if(advisorReadableText(el)){
+      el.style.setProperty('color','#1f332b','important');
       el.style.setProperty('opacity','1','important');
       return;
     }
