@@ -1310,11 +1310,28 @@ function portalApplyProductOverrides(list=[]){
     };
   });
 }
+function homeOptimizedAsset(src){
+  const value=String(src||'');
+  const map={
+    'assets/kabsh-top-v397.png':'dist/assets/kabsh-top-v397.webp',
+    'assets/jamal-top-v397.png':'dist/assets/jamal-top-v397.webp',
+    'assets/baqar-top-v397.png':'dist/assets/baqar-top-v397.webp',
+    'assets/maaz-top-v397.png':'dist/assets/maaz-top-v397.webp',
+    'assets/hashi-card-final-v344.webp':'dist/assets/hashi-card-final-v344.webp',
+    'assets/huwar-jaml-card-v362.png':'dist/assets/huwar-jaml-card-v362.webp',
+    'assets/baqar-ajl-card-v368.png':'dist/assets/baqar-ajl-card-v368.webp',
+    'assets/beshi-card-v371.png':'dist/assets/beshi-card-v371.webp',
+    'assets/ass-al-halaal-mobile-logo-v519.png':'dist/assets/ass-al-halaal-mobile-logo-v519.webp',
+    'assets/order-now-preparation-sameday-3d-stamp.png':'dist/assets/order-now-preparation-sameday-3d-stamp.webp'
+  };
+  return map[value]||value;
+}
+
 function portalCategoryRows(){
   const order=['kabsh','jamal','baqar','maaz'];
   return order.map(id=>[id,portalManagerState.categories[id]])
     .filter(([,c])=>c&&c.visible!==false)
-    .map(([id,c])=>[id,c.image,c.ar,c.en]);
+    .map(([id,c])=>[id,homeOptimizedAsset(c.image),c.ar,c.en]);
 }
 function portalFaqRows(){
   return (portalManagerState.faqs||[]).filter(x=>x&&(x.qAr||x.qEn));
@@ -2357,7 +2374,7 @@ function header(){const v=view();return `<header class="app-header ref-customer-
       </div>
 
       <button class="mobile-ref-brand" type="button" data-nav="home" aria-label="Ass Al Halaal Home">
-        <img src="assets/ass-al-halaal-mobile-logo-v519.png" alt="">
+        <img src="dist/assets/ass-al-halaal-mobile-logo-v519.webp" alt="">
         <strong>Ass Al Halaal</strong>
       </button>
 
@@ -2384,7 +2401,7 @@ function header(){const v=view();return `<header class="app-header ref-customer-
   </div>
 
   <button class="mobile-brand-wordmark ${v==='home'?'is-home-brand':'is-light-brand'}" type="button" data-nav="home" aria-label="Ass Al Halaal Home">
-    <span class="mobile-brand-logo"><img src="assets/ass-al-halaal-mobile-logo-v519.png" alt=""></span>
+    <span class="mobile-brand-logo"><img src="dist/assets/ass-al-halaal-mobile-logo-v519.webp" alt=""></span>
     <strong>Ass Al Halaal</strong>
   </button>
 
@@ -2523,7 +2540,7 @@ function homePage(){
     <div><h2>${t('اختر منطقة التوصيل في جدة','Choose your delivery area in Jeddah')}</h2><p>${t('توصيل مبرد 4°C يحافظ على طلبك طازجاً','Chilled 4°C delivery keeps every order fresh')}</p></div>
   </div>
   <div class="district-prep-stamp" aria-hidden="true">
-    <img class="district-prep-stamp-image" src="assets/order-now-preparation-sameday-3d-stamp.png" alt="">
+    <img class="district-prep-stamp-image" src="dist/assets/order-now-preparation-sameday-3d-stamp.webp" alt="">
   </div>
   <div class="district-chips">${districts.map(d=>`<button data-district="${safe(d)}" class="${d===district?'selected':''}">${t(d,districtEn[d])}</button>`).join('')}</div>
 </section>
@@ -3411,7 +3428,7 @@ function productCards(limit=Infinity){
     if(hashi){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card hashi-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل السلالة','View breed details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual hashi-final-visual">
-          <img src="assets/hashi-card-final-v344.webp" alt="" loading="lazy" decoding="async" fetchpriority="low">
+          <img src="dist/assets/hashi-card-final-v344.webp" alt="" loading="lazy" decoding="async" fetchpriority="low">
         </div>
 
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
@@ -3468,7 +3485,7 @@ function productCards(limit=Infinity){
     if(huwar){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card hashi-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual hashi-final-visual">
-          <img src="assets/huwar-jaml-card-v362.png" alt="" loading="lazy">
+          <img src="dist/assets/huwar-jaml-card-v362.webp" alt="" loading="lazy">
         </div>
 
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
@@ -3524,7 +3541,7 @@ function productCards(limit=Infinity){
     if(baqar){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card hashi-final-card baqar-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual hashi-final-visual">
-          <img src="assets/baqar-ajl-card-v368.png" alt="" loading="lazy">
+          <img src="dist/assets/baqar-ajl-card-v368.webp" alt="" loading="lazy">
         </div>
 
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
@@ -3580,7 +3597,7 @@ function productCards(limit=Infinity){
     if(beshi){
       return `<article class="product-card premium-product-card clean-retail-card product-card-clickable harri-final-card hashi-final-card beshi-final-card" data-product-detail="${p.id}" role="link" tabindex="0" aria-label="${t('عرض تفاصيل المنتج','View product details')}: ${safe(t(p.ar,p.en))}">
         <div class="product-image harri-final-visual hashi-final-visual">
-          <img src="assets/beshi-card-v371.png" alt="" loading="lazy">
+          <img src="dist/assets/beshi-card-v371.webp" alt="" loading="lazy">
         </div>
 
         <div class="harri-card-tools" aria-label="${t('إجراءات المنتج','Product actions')}">
@@ -5667,7 +5684,7 @@ function hashiVariantPage(p,variantId){
     </nav>
 
     <section class="hashi-variant-hero">
-      <div class="hashi-variant-hero-photo"><img src="assets/hashi-card-final-v344.webp" alt="${safe(t(v.ar,v.en))}"><span>${safe(t(v.regionAr,v.regionEn))}</span></div>
+      <div class="hashi-variant-hero-photo"><img src="dist/assets/hashi-card-final-v344.webp" alt="${safe(t(v.ar,v.en))}"><span>${safe(t(v.regionAr,v.regionEn))}</span></div>
       <div class="hashi-variant-hero-copy"><small>ASS AL HALAAL · ${t('اختيار الحاشي','HASHI SELECTION')}</small><h1>${safe(t(v.ar,v.en))}</h1><p>${safe(t(v.noteAr,v.noteEn))}</p>
         <div class="hashi-variant-facts"><span>✓ ${t('تأكيد الحيوان قبل التجهيز','Animal confirmed before preparation')}</span><span>⚖ ${t('الوزن الفعلي عند الاختيار','Live weight at selection')}</span><span>❄ ${t('توصيل مبرد','Chilled delivery')}</span></div>
       </div>
@@ -8151,7 +8168,7 @@ function adminPage(){
     <aside class="reference-sidebar" id="admin-responsive-sidebar" aria-label="${t('قائمة الإدارة','Admin navigation')}">
       <button type="button" id="admin-sidebar-close" class="admin-responsive-close" aria-label="${t('إغلاق القائمة','Close menu')}">×</button>
       <div class="reference-brand">
-        <div class="reference-brand-mark admin-brand-logo-v531"><img src="assets/ass-al-halaal-mobile-logo-v519.png" alt=""></div>
+        <div class="reference-brand-mark admin-brand-logo-v531"><img src="dist/assets/ass-al-halaal-mobile-logo-v519.webp" alt=""></div>
         <div><b>${t('عاس الحلال','ASS AL HALAAL')}</b><small>${t('الإدارة والعمليات','ADMIN & OPERATIONS')}</small></div>
       </div>
 
