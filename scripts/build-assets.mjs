@@ -1,8 +1,8 @@
-import {mkdir,stat,readFile,writeFile} from 'node:fs/promises';
+import {mkdir,stat} from 'node:fs/promises';
 import sharp from 'sharp';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {build,transform} from 'esbuild';
+import {build} from 'esbuild';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const outDir=path.join(root,'www','dist');
@@ -33,50 +33,6 @@ const imageTargets=[
   'maaz-top-v397.png',
   'baqar-top-v397.png'
 ];
-
-
-function splitTopLevelSelectors(header){
-  const out=[];let start=0,depth=0;
-  for(let i=0;i<header.length;i++){
-    const c=header[i];
-    if(c==='('||c==='[')depth++;
-    else if(c===')'||c===']')depth=Math.max(0,depth-1);
-    else if(c===','&&depth===0){out.push(header.slice(start,i));start=i+1}
-  }
-  out.push(header.slice(start));
-  return out;
-}
-
-const customerExcludedSelector=/(reference-admin|(?:^|[\\s.#:\\[])admin(?:-|_|\\b)|#admin\\b|security-|mkt-|audit-|supplier-|finance-|reference-nav\\b|slaughterhouse-|courier-|rbac-)/i;
-
-function customerOnlyCss(input){
-  let out='',i=0;
-  while(i<input.length){
-    const open=input.indexOf('{',i);
-    if(open<0){out+=input.slice(i);break}
-    const header=input.slice(i,open);
-    let j=open+1,depth=1;
-    while(j<input.length&&depth){
-      if(input[j]==='{')depth++;
-      else if(input[j]==='}')depth--;
-      j++;
-    }
-    if(depth){out+=input.slice(i);break}
-    const body=input.slice(open+1,j-1);
-    const trimmed=header.trim();
-    if(/^@(media|supports|layer|container)\\b/.test(trimmed)){
-      const inner=customerOnlyCss(body);
-      if(inner.trim())out+=header+'{'+inner+'}';
-    }else if(trimmed.startsWith('@')){
-      out+=header+'{'+body+'}';
-    }else{
-      const kept=splitTopLevelSelectors(header).filter(selector=>!customerExcludedSelector.test(selector));
-      if(kept.length)out+=kept.join(',')+'{'+body+'}';
-    }
-    i=j;
-  }
-  return out;
-}
 
 const imageProfiles={
   'ass-al-halaal-mobile-logo-v519.png':{width:360,quality:78},
@@ -138,12 +94,6 @@ await Promise.all([
   })
 ]);
 
-
-const rawCss=await readFile(path.join(root,'www','style.css'),'utf8');
-const customerCss=customerOnlyCss(rawCss);
-const customerMinified=await transform(customerCss,{loader:'css',minify:true,legalComments:'none'});
-await writeFile(path.join(outDir,'customer.min.css'),customerMinified.code,'utf8');
-
 const optimizedImages=[];
 for(const name of imageTargets){
   try{optimizedImages.push(await optimizeImage(name))}catch(error){
@@ -151,9 +101,8 @@ for(const name of imageTargets){
   }
 }
 
-const [js,css,customerCssStat]=await Promise.all([
+const [js,css]=await Promise.all([
   stat(path.join(outDir,'app.min.js')),
-  stat(path.join(outDir,'style.min.css')),
-  stat(path.join(outDir,'customer.min.css'))
+  stat(path.join(outDir,'style.min.css'))
 ]);
-console.log(`Built production assets: app.min.js ${js.size} bytes, style.min.css ${css.size} bytes, customer.min.css ${customerCssStat.size} bytes, optimized images ${optimizedImages.length}`);
+console.log(`Built production assets: app.min.js ${js.size} bytes, style.min.css ${css.size} bytes, optimized images ${optimizedImages.length}`);
