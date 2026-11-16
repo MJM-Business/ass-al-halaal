@@ -54666,3 +54666,54 @@ html body .app-shell:has(.v405-home-ui) .luxury-hero-title .hero-title-gold{
     opacity:1!important;
   }
 }
+
+
+/* v576: restore only the mobile language switcher visibility */
+@media(max-width:900px){
+  .mobile-reference-mainbar .mobile-ref-actions-right{
+    display:flex!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+  }
+  .mobile-reference-mainbar #mobile-language.mobile-ref-language{
+    display:grid!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+    position:relative!important;
+    width:32px!important;
+    min-width:32px!important;
+    max-width:32px!important;
+    height:28px!important;
+    min-height:28px!important;
+    max-height:28px!important;
+    place-items:center!important;
+    margin:0!important;
+    padding:0!important;
+    border:1px solid #d9b24a!important;
+    border-radius:8px!important;
+    background:#fff8e7!important;
+    color:#9a741c!important;
+    overflow:visible!important;
+  }
+  .mobile-reference-mainbar #mobile-language.mobile-ref-language b{
+    display:block!important;
+    visibility:visible!important;
+    opacity:1!important;
+    color:#9a741c!important;
+    font-size:9px!important;
+    font-weight:950!important;
+    line-height:1!important;
+  }
+}
+@media(max-width:390px){
+  .mobile-reference-mainbar #mobile-language.mobile-ref-language{
+    width:29px!important;
+    min-width:29px!important;
+    max-width:29px!important;
+    height:27px!important;
+    min-height:27px!important;
+    max-height:27px!important;
+  }
+}
