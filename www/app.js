@@ -2360,7 +2360,11 @@ function header(){const v=view();return `<header class="app-header ref-customer-
           <span>${customerIcon('account')}</span>
         </button>
         <button id="mobile-language" class="mobile-ref-language" type="button" aria-label="${t('لغة التطبيق','App language')}">
-          <b>${lang==='ar'?'AR':'EN'}</b>
+          <svg class="mobile-language-glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="8"></circle>
+            <path d="M4 12h16M12 4c2.2 2.2 3.3 4.9 3.3 8S14.2 17.8 12 20M12 4C9.8 6.2 8.7 8.9 8.7 12S9.8 17.8 12 20"></path>
+          </svg>
+          <span class="mobile-language-code">${lang==='ar'?'AR':'EN'}</span>
         </button>
       </div>
     </div>
