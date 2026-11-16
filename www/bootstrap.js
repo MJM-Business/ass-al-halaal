@@ -1,24 +1,21 @@
-const style=document.getElementById('full-style');
+const fullStyle=document.getElementById('full-style');
 
-function enableFullStyle(){
+function activateFullStyle(){
   return new Promise(resolve=>{
-    if(!style){resolve();return}
+    if(!fullStyle){resolve();return}
     const apply=()=>{
-      style.media='all';
-      requestAnimationFrame(()=>requestAnimationFrame(resolve));
+      fullStyle.media='all';
+      requestAnimationFrame(resolve);
     };
-    if(style.sheet){apply();return}
-    style.addEventListener('load',apply,{once:true});
+    if(fullStyle.sheet){apply();return}
+    fullStyle.addEventListener('load',apply,{once:true});
   });
 }
 
 async function start(){
-  await enableFullStyle();
-  await import('./app.js?v=425');
+  const directAdmin=location.hash.replace('#','').startsWith('admin');
+  if(directAdmin)await activateFullStyle();
+  await import('./dist/app.min.js?v=573');
 }
 
-if('requestIdleCallback' in window){
-  requestIdleCallback(()=>{start().catch(console.error)},{timeout:1600});
-}else{
-  setTimeout(()=>{start().catch(console.error)},500);
-}
+start().catch(console.error);
