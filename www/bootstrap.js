@@ -1,24 +1,35 @@
-const style=document.getElementById('full-style');
+const fullStyle=document.getElementById('full-style');
+let fullStyleActive=false;
 
-function enableFullStyle(){
+function activateFullStyle(){
+  if(fullStyleActive||!fullStyle)return Promise.resolve();
+  fullStyleActive=true;
   return new Promise(resolve=>{
-    if(!style){resolve();return}
     const apply=()=>{
-      style.media='all';
-      requestAnimationFrame(()=>requestAnimationFrame(resolve));
+      fullStyle.media='all';
+      requestAnimationFrame(resolve);
     };
-    if(style.sheet){apply();return}
-    style.addEventListener('load',apply,{once:true});
+    if(fullStyle.sheet){apply();return}
+    fullStyle.addEventListener('load',apply,{once:true});
   });
 }
 
 async function start(){
-  await enableFullStyle();
-  await import('./app.js?v=425');
+  const route=location.hash.replace('#','');
+  const directHome=!route||route==='home';
+  if(!directHome)await activateFullStyle();
+
+  const app=await import('./dist/app.min.js?v=574');
+
+  if(directHome){
+    const arm=()=>{activateFullStyle().catch(()=>{})};
+    window.addEventListener('pointerdown',arm,{once:true,capture:true,passive:true});
+    window.addEventListener('touchstart',arm,{once:true,capture:true,passive:true});
+    window.addEventListener('keydown',arm,{once:true,capture:true});
+    window.addEventListener('hashchange',()=>{activateFullStyle().catch(()=>{})},{once:true});
+  }
+
+  return app;
 }
 
-if('requestIdleCallback' in window){
-  requestIdleCallback(()=>{start().catch(console.error)},{timeout:1600});
-}else{
-  setTimeout(()=>{start().catch(console.error)},500);
-}
+start().catch(console.error);
