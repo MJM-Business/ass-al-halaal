@@ -8053,20 +8053,49 @@ function openDeliveryLocationPopup(){
 }
 
 function bind(){
-  document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>setView(b.dataset.nav));
-  document.querySelector('#language')?.addEventListener('click',openLanguagePicker);
-  document.querySelector('#location-top')?.addEventListener('click',openDeliveryLocationPopup);
-  document.querySelector('#top-search')?.addEventListener('click',()=>openTopSearchOverlay());
-  document.querySelector('#top-bell')?.addEventListener('click',()=>toast(t('سنضيف مركز التنبيهات في مرحلة الحسابات.','Notification centre will be connected in the account phase.')));
-  document.querySelectorAll('.js-cart,#nav-cart').forEach(el=>el.addEventListener('click',showCart));
-  document.querySelector('#header-cart')?.addEventListener('click',showCart);
-  document.querySelector('#mobile-language')?.addEventListener('click',openLanguagePicker);
-  document.querySelector('#mobile-location-top')?.addEventListener('click',openDeliveryLocationPopup);
-  document.querySelector('#mobile-top-search')?.addEventListener('click',()=>openTopSearchOverlay());
-  document.querySelector('#mobile-top-bell')?.addEventListener('click',()=>toast(t('سنضيف مركز التنبيهات في مرحلة الحسابات.','Notification centre will be connected in the account phase.')));
-  document.querySelector('#mobile-header-cart')?.addEventListener('click',showCart);
-  document.querySelectorAll('.js-products,#nav-products').forEach(el=>el.addEventListener('click',()=>{if(view()!=='home')setView('home');setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'}),100)}));
-  document.querySelectorAll('[data-hero-browse]').forEach(btn=>btn.addEventListener('click',()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'})));
+  const root=document.querySelector('#app');
+  if(root&&root.dataset.customerDelegatedClick!=='1'){
+    root.dataset.customerDelegatedClick='1';
+    root.addEventListener('click',e=>{
+      const el=e.target?.closest?.(
+        '[data-nav],#language,#location-top,#top-search,#top-bell,.js-cart,#nav-cart,#header-cart,#mobile-language,#mobile-location-top,#mobile-top-search,#mobile-top-bell,#mobile-header-cart,.js-products,#nav-products,[data-hero-browse],#view-all,[data-district],[data-livestock-category],[data-category-query],[data-filter]'
+      );
+      if(!el||!root.contains(el))return;
+
+      if(el.dataset?.nav){setView(el.dataset.nav);return}
+      if(el.id==='language'||el.id==='mobile-language'){openLanguagePicker();return}
+      if(el.id==='location-top'||el.id==='mobile-location-top'){openDeliveryLocationPopup();return}
+      if(el.id==='top-search'||el.id==='mobile-top-search'){openTopSearchOverlay();return}
+      if(el.id==='top-bell'||el.id==='mobile-top-bell'){toast(t('سنضيف مركز التنبيهات في مرحلة الحسابات.','Notification centre will be connected in the account phase.'));return}
+      if(el.matches('.js-cart,#nav-cart,#header-cart,#mobile-header-cart')){showCart();return}
+      if(el.matches('.js-products,#nav-products')){
+        if(view()!=='home')setView('home');
+        setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'}),100);
+        return;
+      }
+      if(el.matches('[data-hero-browse]')){document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'});return}
+      if(el.id==='view-all'){
+        filter='all';render();
+        setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'}),60);
+        return;
+      }
+      if(el.dataset?.district){district=el.dataset.district;persist();render();return}
+      if(el.dataset?.livestockCategory){setView('livestock/'+encodeURIComponent(el.dataset.livestockCategory));return}
+      if(el.dataset?.categoryQuery){
+        const id=el.dataset.categoryQuery;
+        const p=products.find(x=>String(x.id)===String(id));
+        filter='whole';
+        query=p?String(lang==='ar'?p.ar:p.en):'';
+        render();
+        setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({block:'start'}),10);
+        return;
+      }
+      if(el.dataset?.filter){
+        filter=el.dataset.filter;query='';render();
+        setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({block:'start'}),10);
+      }
+    });
+  }
   // Secondary rich interactions are not required for the first usable paint.
   // Bind them during idle time so they do not inflate Lighthouse TBT.
   const bindDeferredInteractions=()=>{
@@ -8085,20 +8114,8 @@ function bind(){
     document.querySelectorAll('[data-hashi-product]').forEach(card=>{const choose=()=>{const source=hashiVariantById(card.dataset.hashiSource);const item=HASHI_VARIANT_PRODUCTS.find(x=>x.id===card.dataset.hashiProduct);toast(t(`تم اختيار ${item?.ar||''} من ${source?.ar||''}. ستفتح خيارات التقطيع والتغليف في المرحلة التالية.`,`Selected ${item?.en||''} from ${source?.en||''}. Cutting and packaging options are the next layer.`))};card.addEventListener('click',choose);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose()}})});
   };
   scheduleAfterInitialPerformanceWindow(bindDeferredCatalogDetails,6000);
-  document.querySelector('#view-all')?.addEventListener('click',()=>{filter='all';render();setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'}),60)});
-  document.querySelectorAll('[data-district]').forEach(b=>b.onclick=()=>{district=b.dataset.district;persist();render()});
-  document.querySelectorAll('[data-livestock-category]').forEach(b=>b.onclick=()=>setView('livestock/'+encodeURIComponent(b.dataset.livestockCategory)));
   document.querySelectorAll('[data-livestock-open]').forEach(el=>{const open=e=>{e.stopPropagation();const id=el.dataset.livestockOpen;if(id)setView('product/'+encodeURIComponent(id))};el.addEventListener('click',open);el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open(e)}})});
   document.querySelectorAll('[data-livestock-quick-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();quickAddLivestockProduct(b.dataset.livestockQuickAdd)});
-  document.querySelectorAll('[data-category-query]').forEach(b=>b.onclick=()=>{
-    const id=b.dataset.categoryQuery;
-    const p=products.find(x=>String(x.id)===String(id));
-    filter='whole';
-    query=p?String(lang==='ar'?p.ar:p.en):'';
-    render();
-    setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({block:'start'}),10);
-  });
-  document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;query='';render();setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({block:'start'}),10)});
   const bindDeferredProductActions=()=>{
     document.querySelectorAll('[data-product]').forEach(b=>b.onclick=e=>{e.stopPropagation();productDialog(b.dataset.product)});
     document.querySelectorAll('[data-product-options]').forEach(b=>b.onclick=e=>{e.stopPropagation();productOptionsDialog(b.dataset.productOptions)});
