@@ -1536,7 +1536,7 @@ function header(){const v=view();return `<header class="app-header ref-customer-
       </div>
 
       <button class="mobile-ref-brand" type="button" data-nav="home" aria-label="Ass Al Halaal Home">
-        <img src="assets/ass-al-halaal-mobile-logo-v519.png" alt="">
+        <img src="dist/assets/ass-al-halaal-mobile-logo-v519.webp" alt="">
         <strong>Ass Al Halaal</strong>
       </button>
 
@@ -1567,7 +1567,7 @@ function header(){const v=view();return `<header class="app-header ref-customer-
   </div>
 
   <button class="mobile-brand-wordmark ${v==='home'?'is-home-brand':'is-light-brand'}" type="button" data-nav="home" aria-label="Ass Al Halaal Home">
-    <span class="mobile-brand-logo"><img src="assets/ass-al-halaal-mobile-logo-v519.png" alt=""></span>
+    <span class="mobile-brand-logo"><img src="dist/assets/ass-al-halaal-mobile-logo-v519.webp" alt=""></span>
     <strong>Ass Al Halaal</strong>
   </button>
 
@@ -1706,7 +1706,7 @@ function homePage(){
     <div><h2>${t('اختر منطقة التوصيل في جدة','Choose your delivery area in Jeddah')}</h2><p>${t('توصيل مبرد 4°C يحافظ على طلبك طازجاً','Chilled 4°C delivery keeps every order fresh')}</p></div>
   </div>
   <div class="district-prep-stamp" aria-hidden="true">
-    <img class="district-prep-stamp-image" src="assets/order-now-preparation-sameday-3d-stamp.png" alt="" loading="lazy" decoding="async" fetchpriority="low">
+    <img class="district-prep-stamp-image" src="dist/assets/order-now-preparation-sameday-3d-stamp.webp" alt="" loading="lazy" decoding="async" fetchpriority="low">
   </div>
   <div class="district-chips">${districts.map(d=>`<button data-district="${safe(d)}" class="${d===district?'selected':''}">${t(d,districtEn[d])}</button>`).join('')}</div>
 </section>
@@ -7334,7 +7334,7 @@ function adminPage(){
     <aside class="reference-sidebar" id="admin-responsive-sidebar" aria-label="${t('قائمة الإدارة','Admin navigation')}">
       <button type="button" id="admin-sidebar-close" class="admin-responsive-close" aria-label="${t('إغلاق القائمة','Close menu')}">×</button>
       <div class="reference-brand">
-        <div class="reference-brand-mark admin-brand-logo-v531"><img src="assets/ass-al-halaal-mobile-logo-v519.png" alt=""></div>
+        <div class="reference-brand-mark admin-brand-logo-v531"><img src="dist/assets/ass-al-halaal-mobile-logo-v519.webp" alt=""></div>
         <div><b>${t('عاس الحلال','ASS AL HALAAL')}</b><small>${t('الإدارة والعمليات','ADMIN & OPERATIONS')}</small></div>
       </div>
 
