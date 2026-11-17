@@ -4389,22 +4389,6 @@ function bindSheepBreedCatalog(){
 
 
 
-/* removed dead helper: pdpChoiceGroup */){
-  const selectedValue=String(selected||options?.[0]?.[0]||'');
-  return `<section class="pdp-choice-group" data-pdp-choice-group="${safe(id)}">
-    <div class="pdp-choice-label">
-      <b>${label}</b>
-      ${note?`<small>${note}</small>`:''}
-    </div>
-    <div class="pdp-choice-boxes" role="group" aria-label="${safe(label)}">
-      ${options.map(([value,text,meta=''])=>`<button type="button" class="pdp-choice-box ${String(value)===selectedValue?'selected':''}" data-pdp-choice-target="${safe(id)}" data-pdp-choice-value="${safe(value)}"><span>${text}</span>${meta?`<small>${meta}</small>`:''}</button>`).join('')}
-    </div>
-    <select id="${safe(id)}" class="pdp-choice-select" tabindex="-1" aria-hidden="true">
-      ${options.map(([value,text])=>`<option value="${safe(value)}" ${String(value)===selectedValue?'selected':''}>${text}</option>`).join('')}
-    </select>
-  </section>`;
-}
-
 /* removed dead helper: pdpPackagingBoxGroup */
 
 const HASHI_SOURCE_VARIANTS=[
