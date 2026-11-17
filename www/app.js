@@ -1136,27 +1136,6 @@ function adminOtpChannelLabel(channels=[]){
   if(list.includes('sms'))return t('الجوال','mobile');
   return t('البريد الإلكتروني','email');
 }
-let adminOtpStylePromise=null;
-function ensureAdminOtpStyle(){
-  if(adminOtpStylePromise)return adminOtpStylePromise;
-  adminOtpStylePromise=new Promise((resolve,reject)=>{
-    const existing=document.getElementById('admin-otp-style');
-    if(existing){
-      if(existing.sheet){resolve();return}
-      existing.addEventListener('load',()=>resolve(),{once:true});
-      existing.addEventListener('error',reject,{once:true});
-      return;
-    }
-    const link=document.createElement('link');
-    link.id='admin-otp-style';
-    link.rel='stylesheet';
-    link.href='otp.css?v=1';
-    link.onload=()=>resolve();
-    link.onerror=reject;
-    document.head.appendChild(link);
-  });
-  return adminOtpStylePromise;
-}
 function openAdminOtpChallenge(startData,adminId){
   adminOtpChallenge={
     id:String(startData?.challenge_id||''),
@@ -1301,7 +1280,6 @@ async function startAdminTwoFactor(adminId,password){
     method:'POST',
     body:JSON.stringify({admin_id:id,password:secret})
   });
-  await ensureAdminOtpStyle();
   openAdminOtpChallenge(data,id);
   return data;
 }
