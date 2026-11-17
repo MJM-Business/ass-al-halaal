@@ -112,9 +112,17 @@ function compressedStaticPayload(file,data,encoding){
   const cached=STATIC_COMPRESSION_CACHE.get(key);
   if(cached)return cached;
 
+  // Compression happens once during server prewarm and is then served from
+  // STATIC_COMPRESSION_CACHE. Use maximum transfer compression here so the
+  // large production CSS/JS bundles cost less on throttled mobile networks
+  // without adding per-request CPU work or changing any UI/runtime behavior.
   const payload=encoding==='br'
-    ? brotliCompressSync(data,{params:{[zlibConstants.BROTLI_PARAM_QUALITY]:4}})
-    : gzipSync(data,{level:5});
+    ? brotliCompressSync(data,{params:{
+        [zlibConstants.BROTLI_PARAM_QUALITY]:11,
+        [zlibConstants.BROTLI_PARAM_MODE]:zlibConstants.BROTLI_MODE_TEXT,
+        [zlibConstants.BROTLI_PARAM_LGWIN]:22
+      }})
+    : gzipSync(data,{level:9});
 
   STATIC_COMPRESSION_CACHE.set(key,payload);
   return payload;
