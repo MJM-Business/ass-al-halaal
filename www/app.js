@@ -1147,7 +1147,7 @@ function openAdminOtpChallenge(startData,adminId){
   };
   if(!adminOtpChallenge.id)throw new Error('OTP challenge was not created');
 
-  open(`<div class="admin-otp-card"><section class="admin-otp-shell">
+  open(`<section class="admin-otp-shell">
     <div class="admin-otp-shield" aria-hidden="true">✓</div>
     <small>${t('التحقق بخطوتين','TWO-FACTOR AUTHENTICATION')}</small>
     <h2>${t('أدخل رمز التحقق','Enter verification code')}</h2>
@@ -1168,7 +1168,7 @@ function openAdminOtpChallenge(startData,adminId){
       <button id="admin-otp-restart" class="simple-auth-switch" type="button">${t('العودة لتسجيل الدخول','Back to login')}</button>
     </div>
     <small class="admin-otp-expiry">${t('ينتهي الرمز خلال 5 دقائق. لا تشارك الرمز مع أي شخص.','Code expires in 5 minutes. Never share this code with anyone.')}</small>
-  </section></div>`,'admin-otp-modal');
+  </section>`,'admin-otp-modal');
 
   const form=modal.querySelector('#admin-otp-form');
   const input=form?.querySelector('input[name="otp"]');
@@ -1280,12 +1280,7 @@ async function startAdminTwoFactor(adminId,password){
     method:'POST',
     body:JSON.stringify({admin_id:id,password:secret})
   });
-  // OTP is launched from the lightweight customer/account shell, while its
-  // complete visual layer lives in the admin stylesheet. Load that stylesheet
-  // only after a valid admin login attempt so the public homepage remains
-  // performance-neutral and the OTP dialog keeps its intended design.
-  await ensureAdminFullStyle();
-  openAdminOtpChallenge(data,id);
+   openAdminOtpChallenge(data,id);
   return data;
 }
 
