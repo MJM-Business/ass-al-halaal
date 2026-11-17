@@ -8557,13 +8557,7 @@ function productDialog(id){
 }
 
 
-function ensureAddedCartPopupStyles(){
-  if(document.querySelector('#added-cart-popup-styles'))return;
-  const style=document.createElement('style');
-  style.id='added-cart-popup-styles';
-  style.textContent=``;
-    if(style.textContent.trim())document.head.appendChild(style);
-}
+function ensureAddedCartPopupStyles(){}
 
 function showAddedToCartPopup(item){
   if(!item)return;
@@ -9003,13 +8997,7 @@ if(view()==='admin'){
 ;(()=>{
   const STYLE_ID='v443-true-fixed-top-navigation';
 
-  function ensureV443Style(){
-    if(document.getElementById(STYLE_ID)) return;
-    const style=document.createElement('style');
-    style.id=STYLE_ID;
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
-  }
+  function ensureV443Style(){}
 
   function px(n){ return `${Math.max(0,Math.round(n))}px`; }
 
@@ -9129,13 +9117,7 @@ if(view()==='admin'){
   const STYLE_ID='v449-expandable-header-search';
   const OVERLAY_ID='v449-top-search-overlay';
 
-  function ensureV449SearchStyle(){
-    if(document.getElementById(STYLE_ID)) return;
-    const style=document.createElement('style');
-    style.id=STYLE_ID;
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
-  }
+  function ensureV449SearchStyle(){}
 
   const esc=s=>String(s??'').replace(/[&<>\"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[m]));
   const searchSvg=`<svg viewBox="0 0 24 24" fill="none"><circle cx="10.5" cy="10.5" r="5.7"></circle><path d="m15 15 4.2 4.2"></path></svg>`;
