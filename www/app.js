@@ -3571,7 +3571,7 @@ function homeDeferredSections(){return `<section id="request-fit" class="v490-re
     <span class="v500-heading-rule" aria-hidden="true"><i></i><b></b><i></i></span>
   </div>
   <div class="v500-faq-grid">
-    ${portalFaqRows().map(row=>\`<details><summary>${safe(t(row.qAr,row.qEn))}</summary><p>${safe(t(row.aAr,row.aEn))}</p></details>\`).join('')}
+    ${portalFaqRows().map(row=>`<details><summary>${safe(t(row.qAr,row.qEn))}</summary><p>${safe(t(row.aAr,row.aEn))}</p></details>`).join('')}
   </div>
 </section>
 
