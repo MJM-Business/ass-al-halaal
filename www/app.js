@@ -5443,28 +5443,7 @@ async function aiChatRequest({message,phone='',orderId='',language=lang,channel=
   return data.ai;
 }
 
-/* removed dead helper: aiWhatsAppReplyRequest */={}){
-  const r=await fetch('/api/ai/whatsapp-reply',{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-    },
-    body:JSON.stringify({
-      message:String(message||'').trim(),
-      phone:String(phone||'').trim(),
-      order_id:String(orderId||'').trim(),
-      language,
-      send:Boolean(send)
-    })
-  });
-  const data=await r.json().catch(()=>({}));
-  if(!r.ok){
-    const error=new Error(data.error||`WhatsApp AI request failed (${r.status})`);
-    error.payload=data;
-    throw error;
-  }
-  return data;
-}
+/* removed dead helper: aiWhatsAppReplyRequest */
 
 function appendWaMessage(rowId,message){
   waLocalMessages[rowId]=[...(waLocalMessages[rowId]||[]),message];
