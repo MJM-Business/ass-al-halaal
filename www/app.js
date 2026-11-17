@@ -7198,7 +7198,9 @@ function scheduleStartupDomHardening(root){
     if(!priorityAssigned){
       img.setAttribute('loading','eager');
       img.setAttribute('fetchpriority','high');
-      img.setAttribute('decoding','sync');
+      // Keep the above-fold image high priority, but avoid blocking the
+      // main thread with a forced synchronous decode.
+      img.setAttribute('decoding','async');
       priorityAssigned=true;
     }else{
       if(!img.hasAttribute('decoding'))img.setAttribute('decoding','async');
