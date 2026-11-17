@@ -7346,24 +7346,28 @@ function scheduleStartupDomHardening(root){
   // Keep LCP/image priority behavior synchronous, but move the large
   // accessibility/UX DOM scans into small tasks so no single task blocks
   // the main thread for Lighthouse TBT.
-  const images=[...root.querySelectorAll('img')];
+  const priorityImages=root.querySelectorAll('.ref-customer-header img,.mobile-reference-header img,.v94-hero-slider img,.quality-hero img,.simple-auth-logo-wrap img');
   let priorityAssigned=false;
-  images.forEach(img=>{
+  priorityImages.forEach(img=>{
     if(!img.hasAttribute('alt'))img.setAttribute('alt','');
-    const aboveFold=Boolean(img.closest('.ref-customer-header,.mobile-reference-header,.v94-hero-slider,.quality-hero,.simple-auth-logo-wrap'));
-    if(aboveFold&&!priorityAssigned){
+    if(!priorityAssigned){
       img.setAttribute('loading','eager');
       img.setAttribute('fetchpriority','high');
       img.setAttribute('decoding','sync');
       priorityAssigned=true;
     }else{
-      if(!img.hasAttribute('loading'))img.setAttribute('loading','lazy');
       if(!img.hasAttribute('decoding'))img.setAttribute('decoding','async');
-      if(!img.hasAttribute('fetchpriority'))img.setAttribute('fetchpriority','low');
     }
   });
 
   const jobs=[
+    ()=>root.querySelectorAll('img').forEach(img=>{
+      if(!img.hasAttribute('alt'))img.setAttribute('alt','');
+      if(priorityImages.length&&Array.prototype.includes.call(priorityImages,img))return;
+      if(!img.hasAttribute('loading'))img.setAttribute('loading','lazy');
+      if(!img.hasAttribute('decoding'))img.setAttribute('decoding','async');
+      if(!img.hasAttribute('fetchpriority'))img.setAttribute('fetchpriority','low');
+    }),
     ()=>root.querySelectorAll('input:not([type="hidden"]),select,textarea').forEach(field=>{
       if(field.hasAttribute('aria-label')||field.hasAttribute('aria-labelledby')||field.closest('label'))return;
       const fallback=field.getAttribute('placeholder')||field.getAttribute('name')||field.id||'Form field';
@@ -7606,7 +7610,13 @@ function render(){
   scheduleStartupDomHardening(appRoot);
   bind();
   applyV469MobileExperience();
-  setupHomeProductLazyExpansion();
+  if(view()==='home'){
+    const armHomeProducts=()=>setupHomeProductLazyExpansion();
+    if('requestIdleCallback' in window)requestIdleCallback(armHomeProducts,{timeout:1500});
+    else setTimeout(armHomeProducts,0);
+  }else{
+    setupHomeProductLazyExpansion();
+  }
 
   // Keep first paint and primary interaction light. Below-the-fold carousel,
   // request-section, FAQ and contrast normalization can safely bind once the
