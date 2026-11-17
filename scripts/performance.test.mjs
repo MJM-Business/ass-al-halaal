@@ -60,9 +60,12 @@ test('first visible image is prioritized while remaining images are lazy loaded'
 
 
 test('mobile rendering uses content visibility and reduced animation overhead',async()=>{
-  const css=await readFile('www/style.css','utf8');
-  assert.match(css,/content-visibility:auto/);
-  assert.match(css,/contain-intrinsic-size:auto 900px/);
+  const [css,app]=await Promise.all([
+    readFile('www/style.css','utf8'),
+    readFile('www/app.js','utf8')
+  ]);
+  assert.match(app,/content-visibility:auto/);
+  assert.match(app,/contain-intrinsic-size:auto 900px/);
   assert.match(css,/transition:none!important/);
 });
 
