@@ -17,21 +17,23 @@ test('static assets support Brotli and gzip compression',()=>{
 
 test('static assets use browser caching policies',()=>{
   assert.match(server,/max-age=31536000, immutable/);
-  assert.match(server,/max-age=86400, stale-while-revalidate=604800/);
+  assert.match(server,/max-age=604800, stale-while-revalidate=2592000/);
+  assert.match(server,/max-age=86400/);
 });
 
-test('critical stylesheet and module use versioned resource hints',()=>{
-  assert.match(index,/rel="stylesheet" href="critical\.css\?v=\d+"/);
+test('production stylesheet and module use versioned resource hints',()=>{
+  assert.match(index,/rel="preload" as="style" href="dist\/style\.min\.css\?v=\d+"/);
+  assert.match(index,/id="full-style" rel="stylesheet" href="dist\/style\.min\.css\?v=\d+"/);
   assert.match(index,/rel="modulepreload" href="dist\/app\.min\.js\?v=\d+"/);
 });
 
-test('google identity origin is preconnected',()=>{
-  assert.match(index,/rel="preconnect" href="https:\/\/accounts\.google\.com"/);
+test('google identity is not preconnected during the initial public paint',()=>{
+  assert.doesNotMatch(index,/rel="preconnect" href="https:\/\/accounts\.google\.com"/);
 });
 
 
 test('render keep-alive workflow pings health endpoint on a schedule',()=>{
-  assert.match(keepalive,/cron:\s*"\*\/10 \* \* \* \*"/);
+  assert.match(keepalive,/cron:\s*"\*\/5 \* \* \* \*"/);
   assert.match(keepalive,/https:\/\/ass-al-halaal\.onrender\.com\/api\/health/);
   assert.match(keepalive,/workflow_dispatch/);
 });
@@ -60,13 +62,13 @@ test('first visible image is prioritized while remaining images are lazy loaded'
 test('mobile rendering uses content visibility and reduced animation overhead',async()=>{
   const css=await readFile('www/style.css','utf8');
   assert.match(css,/content-visibility:auto/);
-  assert.match(css,/contain-intrinsic-size:700px/);
+  assert.match(css,/contain-intrinsic-size:auto 900px/);
   assert.match(css,/transition:none!important/);
 });
 
-test('production cache lifetimes are extended for generated assets',()=>{
+test('production cache lifetimes are extended for generated and static assets',()=>{
   assert.match(server,/max-age=31536000, immutable/);
-  assert.match(server,/max-age=2592000/);
+  assert.match(server,/max-age=604800, stale-while-revalidate=2592000/);
   assert.match(server,/max-age=86400/);
 });
 
@@ -95,17 +97,17 @@ test('mobile active hero paints immediately without entrance transitions',async(
 });
 
 
-test('full stylesheet is preloaded and activated without blocking first paint',async()=>{
+test('full stylesheet is preloaded and applied directly without runtime activation',async()=>{
   assert.match(index,/rel="preload" as="style" href="dist\/style\.min\.css\?v=\d+"/);
-  assert.match(index,/id="full-style" rel="stylesheet" href="dist\/style\.min\.css\?v=\d+" media="print"/);
-  assert.match(index,/style-loader\.js\?v=\d+/);
+  assert.match(index,/id="full-style" rel="stylesheet" href="dist\/style\.min\.css\?v=\d+"/);
+  assert.doesNotMatch(index,/style-loader\.js\?v=\d+/);
 });
 
 
 test('empty runtime style installers do not mutate the DOM',async()=>{
   const app=await readFile('www/app.js','utf8');
   assert.doesNotMatch(app,/style\.textContent=``;\s*(?:\(document\.head\|\|document\.documentElement\)|document\.head)\.appendChild\(style\);/);
-  assert.match(app,/if\(style\.textContent\.trim\(\)\)/);
+  assert.match(app,/style\.textContent=\`[\s\S]*@media \(min-width:901px\)/);
 });
 
 
@@ -130,7 +132,7 @@ test('performance-critical home page avoids obsolete body-wide observers',async(
   assert.doesNotMatch(app,/observer\.observe\(document\.body\|\|document\.documentElement,\{childList:true,subtree:true\}\)/);
   assert.doesNotMatch(app,/observer\.observe\(document\.body,\{childList:true,subtree:true,attributes:true,attributeFilter:\['class','dir'\]\}\)/);
   assert.match(app,/window\.__v496BindFaq=bindFaq/);
-  assert.match(app,/window\.__v517SyncBrandContrast=syncBrandContrast/);
+  assert.match(app,/window\.__v517SyncBrandContrast=applyTone/);
 });
 
 
@@ -144,7 +146,7 @@ test('home image build uses right-sized WebP profiles',async()=>{
   const build=await readFile('scripts/build-assets.mjs','utf8');
   assert.match(build,/ass-al-halaal-mobile-logo-v519\.png':\{width:360,quality:78\}/);
   assert.match(build,/kabsh-top-v397\.png':\{width:520,quality:76\}/);
-  assert.match(build,/harri-card-v386\.png':\{width:900,quality:78\}/);
+  assert.match(build,/harri-card-v386\.png':\{width:760,quality:74\}/);
   assert.match(build,/profile\.width/);
   assert.match(build,/profile\.quality/);
 });
