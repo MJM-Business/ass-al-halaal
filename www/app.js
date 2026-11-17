@@ -503,11 +503,38 @@ function portalApplyProductOverrides(list=[]){
     };
   });
 }
+function optimizedStaticAsset(src=''){
+  const value=String(src||'');
+  const known={
+    'assets/najdi-sheep-category-v506.png':'dist/assets/najdi-sheep-category-v506.webp',
+    'assets/jamal-top-v397.png':'dist/assets/jamal-top-v397.webp',
+    'assets/baqar-top-v397.png':'dist/assets/baqar-top-v397.webp',
+    'assets/maaz-top-v397.png':'dist/assets/maaz-top-v397.webp',
+    'assets/hashi-original-v343.jpeg':'dist/assets/hashi-original-v343.webp',
+    'assets/huwar-jaml-card-v362.png':'dist/assets/huwar-jaml-card-v362.webp',
+    'assets/baqar-ajl-card-v368.png':'dist/assets/baqar-ajl-card-v368.webp',
+    'assets/beshi-card-v371.png':'dist/assets/beshi-card-v371.webp',
+    'assets/barbari-card-v373.png':'dist/assets/barbari-card-v373.webp',
+    'assets/rufaidi-card-v375.png':'dist/assets/rufaidi-card-v375.webp',
+    'assets/teeth-card-v382.png':'dist/assets/teeth-card-v382.webp',
+    'assets/najdi-card-v383.png':'dist/assets/najdi-card-v383.webp',
+    'assets/sawakni-card-v384.png':'dist/assets/sawakni-card-v384.webp',
+    'assets/naimi-card-v385.png':'dist/assets/naimi-card-v385.webp',
+    'assets/harri-card-v386.png':'dist/assets/harri-card-v386.webp',
+    'assets/product-harri-option4-v112.webp':'dist/assets/product-harri-option4-v112.webp',
+    'assets/product-ardi-premium.jpg':'dist/assets/product-ardi-premium.webp',
+    'assets/product-naimi-premium.jpg':'dist/assets/product-naimi-premium.webp',
+    'assets/product-family-box-premium.jpg':'dist/assets/product-family-box-premium.webp',
+    'assets/product-grill-box-premium.jpg':'dist/assets/product-grill-box-premium.webp',
+    'assets/product-everyday-premium.jpg':'dist/assets/product-everyday-premium.webp'
+  };
+  return known[value]||value;
+}
 function portalCategoryRows(){
   const order=['kabsh','jamal','baqar','maaz'];
   return order.map(id=>[id,portalManagerState.categories[id]])
     .filter(([,c])=>c&&c.visible!==false)
-    .map(([id,c])=>[id,c.image,c.ar,c.en]);
+    .map(([id,c])=>[id,optimizedStaticAsset(c.image),c.ar,c.en]);
 }
 function portalFaqRows(){
   return (portalManagerState.faqs||[]).filter(x=>x&&(x.qAr||x.qEn));
@@ -560,7 +587,7 @@ function applyPortalProductCardVisuals(){
   });
 }
 
-let products=portalApplyProductOverrides(withFeaturedProducts(visibleFallbackProducts().map(p=>({...p,image:premiumProductImage(p)||p.image}))).filter(p=>!isRemovedProduct(p)));
+let products=portalApplyProductOverrides(withFeaturedProducts(visibleFallbackProducts().map(p=>({...p,image:optimizedStaticAsset(premiumProductImage(p)||p.image)}))).filter(p=>!isRemovedProduct(p)));
 let filter='all',query='',myOrders=[],ordersLoading=false,ordersLookupQuery='',ordersLookupTouched=false,ordersLookupStatus={message:'',state:'idle'},adminOrders=[],adminStats=null,adminLoading=false,adminFilter='all',adminQuery='',adminModule='dashboard',ordersSubView='overview',ordersFacilityFilter='',ordersCourierFilter='',waMode=read('kn-wa-mode','ai'),waSelected='',waSearch='',waFilter='all',waLocalMessages=read('kn-wa-local-messages',{}),waAiBusy=false,waAiError='',waSettings=null,waSettingsLoading=false;
 let mktCampaigns=[],mktCoupons=[],mktAiCopy='',mktAiProduct='',mktAiTone='hijazi',mktAiChannel='social';
 
@@ -1465,7 +1492,7 @@ async function loadProducts(){
   try{
     const {products:rows}=await api('/api/products',{method:'GET',headers:{}});
     const detail=new Map(fallbackProducts.map(p=>[p.id,p]));
-    products=portalApplyProductOverrides(withFeaturedProducts(rows.map(r=>{const merged={...detail.get(r.id),id:r.id,ar:r.name_ar,en:r.name_en,name_en:r.name_en,price:r.price,kg:r.kg,category:r.category};return {...merged,image:premiumProductImage(merged)||r.image||detail.get(r.id)?.image};})).filter(p=>!isRemovedProduct(p)));
+    products=portalApplyProductOverrides(withFeaturedProducts(rows.map(r=>{const merged={...detail.get(r.id),id:r.id,ar:r.name_ar,en:r.name_en,name_en:r.name_en,price:r.price,kg:r.kg,category:r.category};return {...merged,image:optimizedStaticAsset(premiumProductImage(merged)||r.image||detail.get(r.id)?.image)};})).filter(p=>!isRemovedProduct(p)));
   }catch{products=portalApplyProductOverrides(withFeaturedProducts(visibleFallbackProducts().map(p=>({...p,image:premiumProductImage(p)||p.image}))).filter(p=>!isRemovedProduct(p)))}
 }
 
