@@ -54967,3 +54967,35 @@ html body .app-shell:has(.v405-home-ui) .luxury-hero-title .hero-title-gold{
     margin-top:4px!important;
   }
 }
+
+
+/* v593 — mobile initial-render performance guard */
+@media (max-width:900px){
+  /* Keep the approved hero geometry and colours, but do not spend the
+     Lighthouse first-paint window animating/transforms/filter effects. */
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide .hero-copy>*,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slider-progress i{
+    transition:none!important;
+    animation:none!important;
+  }
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-slide,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy{
+    filter:none!important;
+  }
+
+  /* Below-the-fold customer sections keep exactly the same authored styles
+     when they approach the viewport, while their initial layout/paint work
+     is skipped on mobile startup. */
+  .app-shell:not(.admin-shell) .ref-district-card,
+  .app-shell:not(.admin-shell) .ref-categories,
+  .app-shell:not(.admin-shell) .ref-collection,
+  .app-shell:not(.admin-shell) #request-fit,
+  .app-shell:not(.admin-shell) .standards,
+  .app-shell:not(.admin-shell) .v500-proof-section,
+  .app-shell:not(.admin-shell) .v500-faq-section,
+  .app-shell:not(.admin-shell) footer{
+    content-visibility:auto;
+    contain-intrinsic-size:auto 640px;
+  }
+}
