@@ -1260,3 +1260,55 @@ body{background:#f3f6f4;color:#14231e;font-family:Tahoma,Arial,sans-serif}
     visibility:visible!important;
   }
 }
+
+
+/* v582 — critical mobile preservation + static contrast */
+@media(max-width:900px){
+  .mobile-reference-mainbar #mobile-language.mobile-ref-language .mobile-language-glyph{
+    display:block!important;
+    width:18px!important;
+    height:18px!important;
+    stroke:#0a5b45!important;
+    stroke-width:1.8!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+    fill:none!important;
+    opacity:1!important;
+    visibility:visible!important;
+  }
+  .mobile-reference-mainbar #mobile-language.mobile-ref-language .mobile-language-code{
+    display:none!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-announcement,
+  .app-shell:not(.admin-shell) .ref-announcement p,
+  .app-shell:not(.admin-shell) .ref-announcement small,
+  .app-shell:not(.admin-shell) .v94-hero-slider .hero-copy>p,
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-feature-row b,
+  .app-shell:not(.admin-shell) .v94-hero-slider .luxury-hero-actions>small{
+    color:#fff!important;
+    opacity:1!important;
+  }
+
+  .app-shell:not(.admin-shell) .unified-login-hero,
+  .app-shell:not(.admin-shell) .unified-login-hero *{
+    color:#173d32!important;
+    opacity:1!important;
+  }
+
+  .app-shell:not(.admin-shell) .ref-district-card p,
+  .app-shell:not(.admin-shell) .ref-categories p,
+  .app-shell:not(.admin-shell) .ref-collection p,
+  .app-shell:not(.admin-shell) .premium-safety-standards p,
+  .app-shell:not(.admin-shell) .premium-safety-standards small,
+  .app-shell:not(.admin-shell) .customer-mega-footer p,
+  .app-shell:not(.admin-shell) .customer-mega-footer small{
+    color:#23382f!important;
+    opacity:1!important;
+  }
+
+  .app-shell:not(.admin-shell) .category-name-button{
+    color:#fff!important;
+    opacity:1!important;
+  }
+}
