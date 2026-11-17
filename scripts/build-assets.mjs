@@ -13,6 +13,9 @@ await mkdir(optimizedAssetsDir,{recursive:true});
 const imageTargets=[
   'ass-al-halaal-mobile-logo-v519.png',
   'ass-al-halaal-logo-v135.png',
+  'saudi-ministry-commerce-v139.png',
+  'ass-al-halaal-logo-white.png',
+  'ass-al-halaal-logo-colored.png',
   'everyday-card-final-v331.webp',
   'najdi-sheep-category-v506.png',
   'huwar-jaml-card-v362.png',
@@ -37,6 +40,9 @@ const imageTargets=[
 const imageProfiles={
   'ass-al-halaal-mobile-logo-v519.png':{width:360,quality:78},
   'ass-al-halaal-logo-v135.png':{width:480,quality:78},
+  'ass-al-halaal-logo-colored.png':{width:360,quality:76},
+  'ass-al-halaal-logo-white.png':{width:360,quality:76},
+  'saudi-ministry-commerce-v139.png':{width:320,quality:74},
   'kabsh-top-v397.png':{width:520,quality:76},
   'maaz-top-v397.png':{width:520,quality:76},
   'jamal-top-v397.png':{width:520,quality:76},
