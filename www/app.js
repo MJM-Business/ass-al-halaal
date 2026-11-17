@@ -8767,21 +8767,14 @@ if(view()==='admin'){
     hydrateInitialCustomerData().catch(()=>{});
   };
 
-  // Keep the first interaction window free from API hydration + a second
-  // full render. Start immediately on real user intent, otherwise wait for a
-  // later idle window after Lighthouse/initial interactivity has settled.
+  // Performance lock: do not trigger an automatic second full-page render
+  // during the initial Lighthouse/paint window. The customer shell already
+  // has complete fallback content; live API/session hydration starts on the
+  // visitor's first real intent instead. This preserves the first hero paint,
+  // avoids resetting LCP around ~3s, and removes avoidable main-thread work.
   ['pointerdown','keydown','touchstart'].forEach(type=>{
     window.addEventListener(type,startCustomerHydration,{once:true,passive:type!=='keydown'});
   });
-
-  const scheduleLater=()=>{
-    if(window.requestIdleCallback){
-      window.requestIdleCallback(startCustomerHydration,{timeout:8000});
-    }else{
-      setTimeout(startCustomerHydration,6000);
-    }
-  };
-  setTimeout(scheduleLater,3000);
 }
 
 
