@@ -8081,24 +8081,20 @@ function bind(){
     document.querySelectorAll('[data-hashi-product]').forEach(card=>{const choose=()=>{const source=hashiVariantById(card.dataset.hashiSource);const item=HASHI_VARIANT_PRODUCTS.find(x=>x.id===card.dataset.hashiProduct);toast(t(`تم اختيار ${item?.ar||''} من ${source?.ar||''}. ستفتح خيارات التقطيع والتغليف في المرحلة التالية.`,`Selected ${item?.en||''} from ${source?.en||''}. Cutting and packaging options are the next layer.`))};card.addEventListener('click',choose);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose()}})});
   };
   scheduleAfterInitialPerformanceWindow(bindDeferredCatalogDetails,6000);
-  const bindSecondaryCustomerActions=()=>{
-    document.querySelector('#view-all')?.addEventListener('click',()=>{filter='all';render();setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'}),60)});
-    document.querySelectorAll('[data-district]').forEach(b=>b.onclick=()=>{district=b.dataset.district;persist();render()});
-    document.querySelectorAll('[data-livestock-category]').forEach(b=>b.onclick=()=>setView('livestock/'+encodeURIComponent(b.dataset.livestockCategory)));
-    document.querySelectorAll('[data-livestock-open]').forEach(el=>{const open=e=>{e.stopPropagation();const id=el.dataset.livestockOpen;if(id)setView('product/'+encodeURIComponent(id))};el.addEventListener('click',open);el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open(e)}})});
-    document.querySelectorAll('[data-livestock-quick-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();quickAddLivestockProduct(b.dataset.livestockQuickAdd)});
-    document.querySelectorAll('[data-category-query]').forEach(b=>b.onclick=()=>{
-      const id=b.dataset.categoryQuery;
-      const p=products.find(x=>String(x.id)===String(id));
-      filter='whole';
-      query=p?String(lang==='ar'?p.ar:p.en):'';
-      render();
-      setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({block:'start'}),10);
-    });
-    document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;query='';render();setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({block:'start'}),10)});
-  };
-  if(view()==='home')scheduleAfterInitialPerformanceWindow(bindSecondaryCustomerActions);
-  else bindSecondaryCustomerActions();
+  document.querySelector('#view-all')?.addEventListener('click',()=>{filter='all';render();setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'}),60)});
+  document.querySelectorAll('[data-district]').forEach(b=>b.onclick=()=>{district=b.dataset.district;persist();render()});
+  document.querySelectorAll('[data-livestock-category]').forEach(b=>b.onclick=()=>setView('livestock/'+encodeURIComponent(b.dataset.livestockCategory)));
+  document.querySelectorAll('[data-livestock-open]').forEach(el=>{const open=e=>{e.stopPropagation();const id=el.dataset.livestockOpen;if(id)setView('product/'+encodeURIComponent(id))};el.addEventListener('click',open);el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open(e)}})});
+  document.querySelectorAll('[data-livestock-quick-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();quickAddLivestockProduct(b.dataset.livestockQuickAdd)});
+  document.querySelectorAll('[data-category-query]').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.categoryQuery;
+    const p=products.find(x=>String(x.id)===String(id));
+    filter='whole';
+    query=p?String(lang==='ar'?p.ar:p.en):'';
+    render();
+    setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({block:'start'}),10);
+  });
+  document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;query='';render();setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({block:'start'}),10)});
   const bindDeferredProductActions=()=>{
     document.querySelectorAll('[data-product]').forEach(b=>b.onclick=e=>{e.stopPropagation();productDialog(b.dataset.product)});
     document.querySelectorAll('[data-product-options]').forEach(b=>b.onclick=e=>{e.stopPropagation();productOptionsDialog(b.dataset.productOptions)});
