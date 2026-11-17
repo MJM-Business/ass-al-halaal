@@ -91,6 +91,11 @@ const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=
 
 const COMPRESSIBLE_EXTENSIONS=new Set(['.html','.js','.css','.svg','.json','.txt','.xml']);
 const IMMUTABLE_ASSET_EXTENSIONS=new Set(['.png','.jpg','.jpeg','.webp','.svg','.ico','.woff','.woff2']);
+const STATIC_COMPRESSION_CACHE=new Map();
+
+function compressionCacheKey(file,encoding){
+  return encoding+':'+file;
+}
 function acceptsEncoding(req,name){
   return String(req.headers['accept-encoding']||'').toLowerCase().split(',').some(part=>part.trim().startsWith(name));
 }
@@ -102,6 +107,19 @@ function staticCacheControl(file){
   if(ext==='.js'||ext==='.css')return 'public, max-age=604800, stale-while-revalidate=2592000';
   return 'public, max-age=86400';
 }
+function compressedStaticPayload(file,data,encoding){
+  const key=compressionCacheKey(file,encoding);
+  const cached=STATIC_COMPRESSION_CACHE.get(key);
+  if(cached)return cached;
+
+  const payload=encoding==='br'
+    ? brotliCompressSync(data,{params:{[zlibConstants.BROTLI_PARAM_QUALITY]:4}})
+    : gzipSync(data,{level:5});
+
+  STATIC_COMPRESSION_CACHE.set(key,payload);
+  return payload;
+}
+
 function sendStatic(req,res,file,data){
   const ext=path.extname(file).toLowerCase();
   const headers={
@@ -112,16 +130,30 @@ function sendStatic(req,res,file,data){
   let payload=data;
   if(COMPRESSIBLE_EXTENSIONS.has(ext)&&data.length>=1024){
     if(acceptsEncoding(req,'br')){
-      payload=brotliCompressSync(data,{params:{[zlibConstants.BROTLI_PARAM_QUALITY]:5}});
+      payload=compressedStaticPayload(file,data,'br');
       headers['Content-Encoding']='br';
     }else if(acceptsEncoding(req,'gzip')){
-      payload=gzipSync(data,{level:6});
+      payload=compressedStaticPayload(file,data,'gzip');
       headers['Content-Encoding']='gzip';
     }
   }
   headers['Content-Length']=String(payload.length);
   res.writeHead(200,headers);
   res.end(payload);
+}
+
+async function prewarmCriticalStaticCompression(){
+  const files=[
+    path.join(root,'dist','app.min.js'),
+    path.join(root,'dist','style.min.css')
+  ];
+  for(const file of files){
+    try{
+      const data=await readFile(file);
+      compressedStaticPayload(file,data,'br');
+      compressedStaticPayload(file,data,'gzip');
+    }catch{}
+  }
 }
 
 
@@ -3490,6 +3522,8 @@ const server=http.createServer(async(req,res)=>{
 server.requestTimeout=30_000;
 server.headersTimeout=35_000;
 server.keepAliveTimeout=5_000;
+
+await prewarmCriticalStaticCompression();
 
 server.listen(PORT,HOST,()=>{
   const wa=publicWaSettings();
