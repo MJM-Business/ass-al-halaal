@@ -613,7 +613,7 @@ function persist(){write('kn-cart',cart);write('kn-cart-coupon',cartCouponCode);
 function toast(message){toastEl.textContent=message;toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),2600)}
 function applyAccessibilityHardening(root=document){
   const scope=root&&root.querySelectorAll?root:document;
-  const images=scope.querySelectorAll('img');
+  const images=[...scope.querySelectorAll('img')];
   let priorityAssigned=false;
   images.forEach(img=>{
     if(!img.hasAttribute('alt'))img.setAttribute('alt','');
@@ -628,17 +628,16 @@ function applyAccessibilityHardening(root=document){
       if(!img.hasAttribute('decoding'))img.setAttribute('decoding','async');
       if(!img.hasAttribute('fetchpriority'))img.setAttribute('fetchpriority','low');
     }
-
-    // WAVE: decorative/repeated card images do not need duplicate alternative
-    // text when the same product/category name is already visible in the card.
+  });
+  // WAVE: decorative/repeated card images do not need duplicate alternative text
+  // when the same product/category name is already visible in the same card.
+  images.forEach(img=>{
     const alt=String(img.getAttribute('alt')||'').trim();
-    if(alt){
-      const card=img.closest('article,.product-card,.livestock-type-card,.standard-card,.category');
-      if(card){
-        const visible=String(card.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
-        if(visible.includes(alt.toLowerCase()))img.setAttribute('alt','');
-      }
-    }
+    if(!alt)return;
+    const card=img.closest('article,.product-card,.livestock-type-card,.standard-card,.category');
+    if(!card)return;
+    const visible=String(card.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
+    if(visible.includes(alt.toLowerCase()))img.setAttribute('alt','');
   });
 
   scope.querySelectorAll('input:not([type="hidden"]),select,textarea').forEach(field=>{
@@ -673,18 +672,17 @@ function applyAccessibilityHardening(root=document){
       const fallback=accessibleNameFallback(el);
       if(fallback)el.setAttribute('aria-label',fallback);
     }
+  });
 
-    if(el.getAttribute('role')==='button'){
-      if(!el.hasAttribute('tabindex'))el.setAttribute('tabindex','0');
-      if(el.dataset.a11yKeyBound!=='1'){
-        el.dataset.a11yKeyBound='1';
-        el.addEventListener('keydown',event=>{
-          if(event.key!=='Enter'&&event.key!==' ')return;
-          event.preventDefault();
-          el.click();
-        });
-      }
-    }
+  scope.querySelectorAll('[role="button"]').forEach(el=>{
+    if(!el.hasAttribute('tabindex'))el.setAttribute('tabindex','0');
+    if(el.dataset.a11yKeyBound==='1')return;
+    el.dataset.a11yKeyBound='1';
+    el.addEventListener('keydown',event=>{
+      if(event.key!=='Enter'&&event.key!==' ')return;
+      event.preventDefault();
+      el.click();
+    });
   });
 }
 function open(html,klass=''){opener=document.activeElement;modal.className=klass;modal.innerHTML=`<button class="close" type="button" aria-label="${t('إغلاق','Close')}">×</button>${html}`;applyAccessibilityHardening(modal);modal.showModal();modal.querySelector('.close').onclick=()=>modal.close();setTimeout(applyRbacUi,0)}
