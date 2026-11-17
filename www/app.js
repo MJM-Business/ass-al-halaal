@@ -1136,6 +1136,182 @@ function adminOtpChannelLabel(channels=[]){
   if(list.includes('sms'))return t('الجوال','mobile');
   return t('البريد الإلكتروني','email');
 }
+function styleAdminOtpPopup(){
+  const dlg=modal;
+  if(!dlg||!dlg.classList.contains('admin-otp-modal'))return;
+  const set=(el,prop,val)=>el?.style?.setProperty(prop,val,'important');
+
+  set(dlg,'position','fixed');
+  set(dlg,'inset','0');
+  set(dlg,'width','min(92vw,520px)');
+  set(dlg,'max-width','520px');
+  set(dlg,'height','fit-content');
+  set(dlg,'max-height','94vh');
+  set(dlg,'margin','auto');
+  set(dlg,'padding','0');
+  set(dlg,'border','0');
+  set(dlg,'border-radius','30px');
+  set(dlg,'background','transparent');
+  set(dlg,'overflow','visible');
+  set(dlg,'box-shadow','none');
+  set(dlg,'transform','none');
+
+  const close=dlg.querySelector('.close');
+  set(close,'position','absolute');
+  set(close,'top','18px');
+  set(close,'right','18px');
+  set(close,'left','auto');
+  set(close,'width','34px');
+  set(close,'height','34px');
+  set(close,'min-width','34px');
+  set(close,'padding','0');
+  set(close,'border','1px solid #e2e8e5');
+  set(close,'border-radius','50%');
+  set(close,'background','#fff');
+  set(close,'color','#31564a');
+  set(close,'display','grid');
+  set(close,'place-items','center');
+  set(close,'font-size','17px');
+  set(close,'line-height','1');
+  set(close,'z-index','20');
+
+  const shell=dlg.querySelector('.admin-otp-shell');
+  set(shell,'position','relative');
+  set(shell,'width','100%');
+  set(shell,'padding','36px 42px 32px');
+  set(shell,'border','1px solid #dfe8e3');
+  set(shell,'border-radius','28px');
+  set(shell,'background','linear-gradient(180deg,#ffffff 0%,#fffefa 100%)');
+  set(shell,'box-shadow','0 30px 80px rgba(7,48,38,.24)');
+  set(shell,'text-align','center');
+  set(shell,'overflow','hidden');
+  set(shell,'box-sizing','border-box');
+
+  const shield=dlg.querySelector('.admin-otp-shield');
+  set(shield,'width','56px');
+  set(shield,'height','56px');
+  set(shield,'margin','0 auto 12px');
+  set(shield,'border-radius','50%');
+  set(shield,'display','grid');
+  set(shield,'place-items','center');
+  set(shield,'background','linear-gradient(145deg,#0d7255,#08513f)');
+  set(shield,'color','#fff');
+  set(shield,'font-size','22px');
+  set(shield,'font-weight','900');
+  set(shield,'box-shadow','0 8px 22px rgba(7,81,62,.18)');
+
+  const kicker=dlg.querySelector('.admin-otp-shell>small:first-of-type');
+  set(kicker,'display','block');
+  set(kicker,'margin','0 0 8px');
+  set(kicker,'color','#b8872f');
+  set(kicker,'font-size','10px');
+  set(kicker,'font-weight','900');
+  set(kicker,'letter-spacing','1.4px');
+
+  const title=dlg.querySelector('.admin-otp-shell h2');
+  set(title,'margin','0');
+  set(title,'color','#123f32');
+  set(title,'font-size','30px');
+  set(title,'line-height','1.18');
+  set(title,'font-weight','800');
+
+  const desc=dlg.querySelector('.admin-otp-shell>p');
+  set(desc,'max-width','380px');
+  set(desc,'margin','11px auto 0');
+  set(desc,'color','#6a7c74');
+  set(desc,'font-size','12px');
+  set(desc,'line-height','1.7');
+
+  const dest=dlg.querySelector('.admin-otp-destination');
+  set(dest,'width','100%');
+  set(dest,'margin','20px auto 18px');
+  set(dest,'padding','11px 14px');
+  set(dest,'border','1px solid #dbe7e1');
+  set(dest,'border-radius','13px');
+  set(dest,'background','#f3f8f5');
+  set(dest,'display','flex');
+  set(dest,'align-items','center');
+  set(dest,'justify-content','center');
+  set(dest,'gap','7px');
+  set(dest,'box-sizing','border-box');
+
+  const form=dlg.querySelector('.admin-otp-form');
+  set(form,'display','grid');
+  set(form,'gap','11px');
+  set(form,'margin','0');
+
+  const label=dlg.querySelector('.admin-otp-form label');
+  set(label,'display','grid');
+  set(label,'gap','8px');
+  set(label,'color','#38584d');
+  set(label,'font-size','11px');
+  set(label,'font-weight','800');
+  set(label,'text-align','start');
+
+  const input=dlg.querySelector('.admin-otp-form input[name="otp"]');
+  set(input,'width','100%');
+  set(input,'height','64px');
+  set(input,'margin','0');
+  set(input,'padding','0 16px');
+  set(input,'border','1.5px solid #d7e2dd');
+  set(input,'border-radius','15px');
+  set(input,'background','#fbfdfc');
+  set(input,'color','#0d4737');
+  set(input,'text-align','center');
+  set(input,'font-family','Courier New, monospace');
+  set(input,'font-size','26px');
+  set(input,'font-weight','900');
+  set(input,'letter-spacing','12px');
+  set(input,'box-sizing','border-box');
+
+  const primary=dlg.querySelector('.admin-otp-form [type="submit"]');
+  set(primary,'width','100%');
+  set(primary,'min-height','52px');
+  set(primary,'margin','2px 0 0');
+  set(primary,'border','0');
+  set(primary,'border-radius','13px');
+  set(primary,'background','linear-gradient(180deg,#0d7256 0%,#07533f 100%)');
+  set(primary,'color','#fff');
+  set(primary,'font-size','11px');
+  set(primary,'font-weight','900');
+
+  const actions=dlg.querySelector('.admin-otp-actions');
+  set(actions,'display','grid');
+  set(actions,'grid-template-columns','1fr 1fr');
+  set(actions,'gap','9px');
+  set(actions,'margin-top','3px');
+
+  dlg.querySelectorAll('.admin-otp-actions .simple-auth-switch').forEach(btn=>{
+    set(btn,'width','100%');
+    set(btn,'min-height','44px');
+    set(btn,'margin','0');
+    set(btn,'padding','0 12px');
+    set(btn,'border','1px solid #d8e3de');
+    set(btn,'border-radius','12px');
+    set(btn,'background','#fff');
+    set(btn,'color','#174d3d');
+    set(btn,'font-size','10px');
+    set(btn,'font-weight','800');
+  });
+
+  const expiry=dlg.querySelector('.admin-otp-expiry');
+  set(expiry,'display','block');
+  set(expiry,'margin-top','15px');
+  set(expiry,'color','#7b8983');
+  set(expiry,'font-size','9.5px');
+  set(expiry,'line-height','1.5');
+
+  if(window.matchMedia?.('(max-width:600px)').matches){
+    set(dlg,'width','min(94vw,470px)');
+    set(shell,'padding','30px 20px 24px');
+    set(title,'font-size','25px');
+    set(input,'height','58px');
+    set(input,'font-size','23px');
+    set(input,'letter-spacing','9px');
+    set(actions,'grid-template-columns','1fr');
+  }
+}
+
 function openAdminOtpChallenge(startData,adminId){
   adminOtpChallenge={
     id:String(startData?.challenge_id||''),
@@ -1169,6 +1345,7 @@ function openAdminOtpChallenge(startData,adminId){
     </div>
     <small class="admin-otp-expiry">${t('ينتهي الرمز خلال 5 دقائق. لا تشارك الرمز مع أي شخص.','Code expires in 5 minutes. Never share this code with anyone.')}</small>
   </section>`,'admin-otp-modal');
+  styleAdminOtpPopup();
 
   const form=modal.querySelector('#admin-otp-form');
   const input=form?.querySelector('input[name="otp"]');
