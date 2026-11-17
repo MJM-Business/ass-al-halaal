@@ -6,18 +6,13 @@ if(fullStyle){
   const activate=()=>{
     if(started)return;
     started=true;
-
     const href=String(fullStyle.dataset.href||'').trim();
     if(!href)return;
-
-    fullStyle.addEventListener('load',()=>{
-      fullStyle.media='all';
-    },{once:true});
-
+    fullStyle.addEventListener('load',()=>{ fullStyle.media='all'; },{once:true});
     fullStyle.href=href;
   };
 
-  ['pointerdown','touchstart','keydown'].forEach(type=>{
-    window.addEventListener(type,activate,{once:true,capture:true,passive:type!=='keydown'});
+  ['pointerdown','touchstart','keydown','wheel','scroll'].forEach(type=>{
+    window.addEventListener(type,activate,{once:true,capture:true,passive:true});
   });
 }
