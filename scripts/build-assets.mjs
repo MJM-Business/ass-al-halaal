@@ -78,8 +78,12 @@ async function optimizeImage(name){
 await Promise.all([
   build({
     entryPoints:[path.join(root,'www','app.js')],
-    outfile:path.join(outDir,'app.min.js'),
+    outdir:outDir,
+    entryNames:'app.min',
+    chunkNames:'chunks/[name]-[hash]',
+    assetNames:'assets/[name]-[hash]',
     bundle:true,
+    splitting:true,
     minify:true,
     legalComments:'none',
     charset:'utf8',
