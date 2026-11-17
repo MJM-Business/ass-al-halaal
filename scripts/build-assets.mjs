@@ -1,4 +1,4 @@
-import {mkdir,stat} from 'node:fs/promises';
+import {mkdir,stat,readFile,writeFile} from 'node:fs/promises';
 import sharp from 'sharp';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -9,6 +9,42 @@ const outDir=path.join(root,'www','dist');
 const optimizedAssetsDir=path.join(outDir,'assets');
 await mkdir(outDir,{recursive:true});
 await mkdir(optimizedAssetsDir,{recursive:true});
+
+const fullStyleSource=await readFile(path.join(root,'www','style.css'),'utf8');
+const customerStylePath=path.join(outDir,'style.customer.css');
+const fullStylePath=path.join(outDir,'style.full.css');
+
+function removeMarkedRange(css,startMarker,endMarker){
+  const start=css.indexOf(startMarker);
+  if(start<0)return css;
+  const end=css.indexOf(endMarker,start+startMarker.length);
+  if(end<0)return css;
+  return css.slice(0,start)+css.slice(end);
+}
+
+// Remove only sections whose own comments explicitly scope them to Admin.
+// Customer/home sections and mixed global/mobile blocks remain untouched.
+let customerStyleSource=fullStyleSource;
+const adminOnlyRanges=[
+  ['KABSH NAJD ADMIN PORTAL — CORRECTED FULL STYLE v15','KABSH NAJD CUSTOMER PORTAL — PREMIUM 3D HOME v74'],
+  ['v164 — PREMIUM EXECUTIVE ADMIN DASHBOARD','v177 — FULL MOBILE RESPONSIVE HARDENING'],
+  ['========================================================= ADMIN MOBILE =========================================================','v178 — Admin sidebar logo prominence boost'],
+  ['v178 — Admin sidebar logo prominence boost','v194 — FULL APPLICATION TYPOGRAPHY NORMALIZATION'],
+  ['ADMIN PORTAL — GLOBAL READABILITY BASELINE','CUSTOMER / PUBLIC APP — READABILITY BASELINE'],
+  ['v196 — ADMIN RTL / ARABIC DESKTOP LAYOUT FIX','v198 — PREMIUM WHATSAPP OPERATIONS WORKSPACE'],
+  ['v198 — PREMIUM WHATSAPP OPERATIONS WORKSPACE','PREMIUM ADMIN 2FA / OTP MODAL — v178'],
+  ['PREMIUM ADMIN 2FA / OTP MODAL — v178','ASS AL HALAAL — FINAL TYPOGRAPHY SYSTEM v1'],
+  ['Admin portal: global readable baseline','v313 — TRUE STICKY PRODUCT VISUAL FIX'],
+  ['v337 — GOVERNANCE AUDIT LOG READABILITY','v341 — ULTRA 4D EMERALD SHOWCASE PANEL'],
+  ['ADMIN RESPONSIVE FOUNDATION — v529','v534 — Mobile initial hero paints immediately for LCP']
+];
+for(const [startMarker,endMarker] of adminOnlyRanges){
+  customerStyleSource=removeMarkedRange(customerStyleSource,startMarker,endMarker);
+}
+await Promise.all([
+  writeFile(customerStylePath,customerStyleSource,'utf8'),
+  writeFile(fullStylePath,fullStyleSource,'utf8')
+]);
 
 const imageTargets=[
   'ass-al-halaal-mobile-logo-v519.png',
@@ -93,8 +129,18 @@ await Promise.all([
     logLevel:'warning'
   }),
   build({
-    entryPoints:[path.join(root,'www','style.css')],
+    entryPoints:[customerStylePath],
     outfile:path.join(outDir,'style.min.css'),
+    bundle:false,
+    minify:true,
+    legalComments:'none',
+    charset:'utf8',
+    sourcemap:false,
+    logLevel:'warning'
+  }),
+  build({
+    entryPoints:[fullStylePath],
+    outfile:path.join(outDir,'style-full.min.css'),
     bundle:false,
     minify:true,
     legalComments:'none',
@@ -111,8 +157,9 @@ for(const name of imageTargets){
   }
 }
 
-const [js,css]=await Promise.all([
+const [js,css,fullCss]=await Promise.all([
   stat(path.join(outDir,'app.min.js')),
-  stat(path.join(outDir,'style.min.css'))
+  stat(path.join(outDir,'style.min.css')),
+  stat(path.join(outDir,'style-full.min.css'))
 ]);
-console.log(`Built production assets: app.min.js ${js.size} bytes, style.min.css ${css.size} bytes, optimized images ${optimizedImages.length}`);
+console.log(`Built production assets: app.min.js ${js.size} bytes, customer style.min.css ${css.size} bytes, full admin style ${fullCss.size} bytes, optimized images ${optimizedImages.length}`);
