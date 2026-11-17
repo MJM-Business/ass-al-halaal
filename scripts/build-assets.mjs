@@ -11,6 +11,7 @@ await mkdir(outDir,{recursive:true});
 await mkdir(optimizedAssetsDir,{recursive:true});
 
 const fullStyleSource=await readFile(path.join(root,'www','style.css'),'utf8');
+const otpStyleSource=await readFile(path.join(root,'www','otp.css'),'utf8');
 const customerStylePath=path.join(outDir,'style.customer.css');
 const fullStylePath=path.join(outDir,'style.full.css');
 
@@ -41,6 +42,7 @@ const adminOnlyRanges=[
 for(const [startMarker,endMarker] of adminOnlyRanges){
   customerStyleSource=removeMarkedRange(customerStyleSource,startMarker,endMarker);
 }
+customerStyleSource+='\n'+otpStyleSource;
 await Promise.all([
   writeFile(customerStylePath,customerStyleSource,'utf8'),
   writeFile(fullStylePath,fullStyleSource,'utf8')
