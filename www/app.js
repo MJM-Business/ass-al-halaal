@@ -9317,69 +9317,7 @@ if(!window.__v469ResizeBound){
 
 
 
-;(()=>{
-  const OLD_HERO_STYLES=[
-    'v478-pure-green-gold-hero',
-    'v479-centered-hero',
-    'v480-true-center-hero',
-    'v481-hero-cleanup'
-  ];
-
-  const removeOldHeroOverrides=()=>{
-    OLD_HERO_STYLES.forEach(id=>document.getElementById(id)?.remove());
-    try{
-      if(window.__v480HeroCenterObserver){
-        window.__v480HeroCenterObserver.disconnect();
-        window.__v480HeroCenterObserver=null;
-      }
-    }catch{}
-  };
-
-  const installV482HeroSystem=()=>{
-    if(document.getElementById('v482-hero-system')) return;
-    removeOldHeroOverrides();
-
-    /* visual CSS already lives in the stylesheet; no runtime style injection needed */
-  };
-
-  const normalizeActiveHero=()=>{
-    const root=document.querySelector('.v94-hero-slider');
-    if(!root) return;
-    root.querySelectorAll('.hero-slide').forEach(slide=>{
-      const active=slide.classList.contains('is-active');
-      slide.setAttribute('aria-hidden',active?'false':'true');
-    });
-  };
-
-  const boot=()=>{
-    installV482HeroSystem();
-    requestAnimationFrame(normalizeActiveHero);
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',boot,{once:true});
-  }else{
-    boot();
-  }
-
-  if(!window.__v482HeroObserver){
-    const heroRoot=document.querySelector('.v94-hero-slider');
-    if(heroRoot){
-      let heroRaf=0;
-      window.__v482HeroObserver=new MutationObserver(()=>{
-        cancelAnimationFrame(heroRaf);
-        heroRaf=requestAnimationFrame(normalizeActiveHero);
-      });
-      window.__v482HeroObserver.observe(heroRoot,{
-        subtree:true,
-        attributes:true,
-        attributeFilter:['class']
-      });
-    }
-  }
-})();
-
-
+/* v482 startup hero normalizer retired: current hero markup + setupHeroSlider own state */
 
 /* retired empty runtime style installer */
 
@@ -9974,25 +9912,7 @@ function setupV489RequestFitSelector(){
   renderFit(selected?.dataset.requestFit||'camping');
 }
 
-;(()=>{
-  const installV489RequestFitCSS=()=>{
-    if(document.getElementById('v489-request-fit-css'))return;
-
-    /* visual CSS already lives in the stylesheet; no runtime style injection needed */
-  };
-
-  const boot=()=>{
-    installV489RequestFitCSS();
-    setupV489RequestFitSelector();
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',boot,{once:true});
-  }else{
-    boot();
-  }
-})();
-
+/* v489 auto-boot retired: v490 owns the request section */
 
 /* =========================================================
    Ass Al Halaal v490 — REFERENCE-STYLE REQUEST SECTION
@@ -10096,11 +10016,7 @@ function setupV490RequestSection(){
     };
 
     window.__v496BindFaq=bindFaq;
-    if(document.readyState==='loading'){
-      document.addEventListener('DOMContentLoaded',bindFaq,{once:true});
-    }else{
-      bindFaq();
-    }
+    // render() schedules the first FAQ bind after the initial performance window.
   };
 
   installV496FaqSingleOpen();
@@ -10149,29 +10065,7 @@ function setupV490RequestSection(){
 
 /* legacy favicon installer retired; final favicon installer below owns the icon. */
 /* canvas favicon regeneration retired; final static icon installer below is authoritative. */
-;(()=>{
-  const installProminentOriginalAssAlHalaalFavicon=()=>{
-    const href='apple-touch-icon.png';
-    document.querySelectorAll('link[rel~="icon"],link[rel="shortcut icon"]').forEach(el=>{
-      el.href=href;
-      if(el.rel.includes('icon')) el.type='image/png';
-    });
-    let apple=document.querySelector('link[rel="apple-touch-icon"]');
-    if(!apple){
-      apple=document.createElement('link');
-      apple.rel='apple-touch-icon';
-      document.head.appendChild(apple);
-    }
-    apple.href=href;
-  };
-
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded',installProminentOriginalAssAlHalaalFavicon,{once:true});
-  }else{
-    installProminentOriginalAssAlHalaalFavicon();
-  }
-})();
-
+/* runtime favicon installer retired: index.html owns the static favicon */
 
 /* retired empty runtime style installer */
 
@@ -10227,7 +10121,6 @@ function setupV490RequestSection(){
     };
 
     window.__v517SyncBrandContrast=applyTone;
-    applyTone();
     window.addEventListener('resize',schedule,{passive:true});
     window.addEventListener('hashchange',schedule);
   };
