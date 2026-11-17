@@ -2607,10 +2607,7 @@ function homePage(){
   <div id="products" class="product-list ref-products">${productCards(homeProductsExpanded?Infinity:4)}</div>
 </section>
 
-<div id="home-deferred-sections" aria-hidden="true"></div>
-`}
-
-function homeDeferredSections(){return `<section id="request-fit" class="v490-request-section" aria-labelledby="v490-request-title">
+<section id="request-fit" class="v490-request-section" aria-labelledby="v490-request-title">
   <div class="v490-request-layout">
     <div class="v490-request-main">
       <div class="v490-request-heading">
@@ -3297,34 +3294,11 @@ html[dir="rtl"] .app-shell:has(.v405-home-ui) .ref-categories #view-all{right:au
 .app-shell:has(.v405-home-ui) small{
   font-size:11px!important;
 }
-</style>`}
+</style>
+`}
 
-function setupHomeDeferredSections(){
-  if(view()!=='home')return;
-  const slot=document.querySelector('#home-deferred-sections');
-  if(!slot||slot.dataset.loaded==='1')return;
-  const load=()=>{
-    if(slot.dataset.loaded==='1')return;
-    slot.dataset.loaded='1';
-    slot.removeAttribute('aria-hidden');
-    slot.innerHTML=homeDeferredSections();
-    try{setupV490RequestSection()}catch{}
-    try{setupStandardsExperience()}catch{}
-    try{setupFloatingWhatsapp()}catch{}
-    try{window.__v496BindFaq?.()}catch{}
-  };
-  if('IntersectionObserver' in window){
-    const observer=new IntersectionObserver(entries=>{
-      if(entries.some(entry=>entry.isIntersecting)){
-        observer.disconnect();
-        load();
-      }
-    },{rootMargin:'300px 0px'});
-    observer.observe(slot);
-  }else{
-    window.addEventListener('scroll',load,{once:true,passive:true});
-  }
-}
+
+let customBoxPromoTimer=0;
 
 function customBoxPromoCard(){
   const slides=[
@@ -8706,7 +8680,6 @@ function render(){
   bind();
   applyV469MobileExperience();
   setupHomeProductLazyExpansion();
-  setupHomeDeferredSections();
 
   // Keep first paint and primary interaction light. Below-the-fold carousel,
   // request-section, FAQ and contrast normalization can safely bind once the
