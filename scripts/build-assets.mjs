@@ -153,16 +153,6 @@ await Promise.all([
     logLevel:'warning'
   }),
   build({
-    entryPoints:[path.join(root,'www','critical.css')],
-    outfile:path.join(outDir,'critical.min.css'),
-    bundle:false,
-    minify:true,
-    legalComments:'none',
-    charset:'utf8',
-    sourcemap:false,
-    logLevel:'warning'
-  }),
-  build({
     entryPoints:[fullStylePath],
     outfile:path.join(outDir,'style-full.min.css'),
     bundle:false,
@@ -181,10 +171,9 @@ for(const name of imageTargets){
   }
 }
 
-const [js,css,criticalCss,fullCss]=await Promise.all([
+const [js,css,fullCss]=await Promise.all([
   stat(path.join(outDir,'app.min.js')),
   stat(path.join(outDir,'style.min.css')),
-  stat(path.join(outDir,'critical.min.css')),
   stat(path.join(outDir,'style-full.min.css'))
 ]);
-console.log(`Built production assets: app.min.js ${js.size} bytes, customer style.min.css ${css.size} bytes, critical.min.css ${criticalCss.size} bytes, full admin style ${fullCss.size} bytes, optimized images ${optimizedImages.length}`);
+console.log(`Built production assets: app.min.js ${js.size} bytes, customer style.min.css ${css.size} bytes, full admin style ${fullCss.size} bytes, optimized images ${optimizedImages.length}`);
