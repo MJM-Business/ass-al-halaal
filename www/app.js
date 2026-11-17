@@ -1543,7 +1543,7 @@ function header(){const v=view();return `<header class="app-header ref-customer-
       </div>
 
       <button class="mobile-ref-brand" type="button" data-nav="home" aria-label="Ass Al Halaal Home">
-        <img src="dist/assets/ass-al-halaal-mobile-logo-v519.webp" alt="">
+        <img src="dist/assets/ass-al-halaal-mobile-logo-v519.webp" alt="" loading="eager" fetchpriority="high" decoding="async">
         <strong>Ass Al Halaal</strong>
       </button>
 
@@ -1574,7 +1574,7 @@ function header(){const v=view();return `<header class="app-header ref-customer-
   </div>
 
   <button class="mobile-brand-wordmark ${v==='home'?'is-home-brand':'is-light-brand'}" type="button" data-nav="home" aria-label="Ass Al Halaal Home">
-    <span class="mobile-brand-logo"><img src="dist/assets/ass-al-halaal-mobile-logo-v519.webp" alt=""></span>
+    <span class="mobile-brand-logo"><img src="dist/assets/ass-al-halaal-mobile-logo-v519.webp" alt="" loading="eager" fetchpriority="high" decoding="async"></span>
     <strong>Ass Al Halaal</strong>
   </button>
 
@@ -6919,7 +6919,7 @@ function adminPage(){
     <aside class="reference-sidebar" id="admin-responsive-sidebar" aria-label="${t('قائمة الإدارة','Admin navigation')}">
       <button type="button" id="admin-sidebar-close" class="admin-responsive-close" aria-label="${t('إغلاق القائمة','Close menu')}">×</button>
       <div class="reference-brand">
-        <div class="reference-brand-mark admin-brand-logo-v531"><img src="dist/assets/ass-al-halaal-mobile-logo-v519.webp" alt=""></div>
+        <div class="reference-brand-mark admin-brand-logo-v531"><img src="dist/assets/ass-al-halaal-mobile-logo-v519.webp" alt="" loading="eager" fetchpriority="high" decoding="async"></div>
         <div><b>${t('عاس الحلال','ASS AL HALAAL')}</b><small>${t('الإدارة والعمليات','ADMIN & OPERATIONS')}</small></div>
       </div>
 
