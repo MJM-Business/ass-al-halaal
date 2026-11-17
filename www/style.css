@@ -54927,3 +54927,43 @@ html body .app-shell:has(.v405-home-ui) .luxury-hero-title .hero-title-gold{
 @media(max-width:900px){
   .app-shell:not(.admin-shell) .header-quick-actions{display:none!important}
 }
+
+
+/* v592 — remove hidden mobile announcement spacer gap only */
+@media(max-width:900px){
+  .app-shell:not(.admin-shell) .v443-announcement-spacer{
+    display:none!important;
+    height:0!important;
+    min-height:0!important;
+    max-height:0!important;
+    margin:0!important;
+    padding:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .announcement.ref-announcement{
+    display:none!important;
+    height:0!important;
+    min-height:0!important;
+    max-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .screen:has(.hero-slider){
+    padding-top:0!important;
+    margin-top:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .hero-slider,
+  .app-shell:not(.admin-shell) .hero-slider.v94-hero-slider{
+    margin-top:6px!important;
+  }
+}
+
+@media(max-width:390px){
+  .app-shell:not(.admin-shell) .hero-slider,
+  .app-shell:not(.admin-shell) .hero-slider.v94-hero-slider{
+    margin-top:4px!important;
+  }
+}
