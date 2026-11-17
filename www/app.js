@@ -8694,14 +8694,11 @@ function render(){
     window.__v517SyncBrandContrast?.();
   };
   ensureFinalWaveLayer();
-  normalizeFinalWaveDom(appRoot);
-  requestAnimationFrame(()=>normalizeFinalWaveDom(appRoot));
   scheduleAfterInitialPerformanceWindow(()=>{
     bindDeferredHomeUi();
     ensureFinalWaveLayer();
     normalizeFinalWaveDom(appRoot);
-    setTimeout(()=>normalizeFinalWaveDom(appRoot),120);
-  },6200);
+  });
 }
 
 
