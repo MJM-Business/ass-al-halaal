@@ -1260,3 +1260,25 @@ body{background:#f3f6f4;color:#14231e;font-family:Tahoma,Arial,sans-serif}
     visibility:visible!important;
   }
 }
+
+
+
+/* v591/v592 approved header + mobile spacing critical overrides */
+@media(min-width:901px){
+  .app-shell:not(.admin-shell) .header-quick-actions{display:flex!important;align-items:center!important;justify-content:flex-start!important;gap:8px!important;min-width:0!important}
+  .app-shell:not(.admin-shell) .header-quick-actions .header-quick-btn{position:relative!important;width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;max-width:44px!important;max-height:44px!important;padding:0!important;margin:0!important;display:grid!important;place-items:center!important;border-radius:12px!important;border:1px solid rgba(230,183,61,.75)!important;background:rgba(255,255,255,.06)!important;color:#f6d36f!important;box-sizing:border-box!important;overflow:visible!important}
+  .app-shell:not(.admin-shell) .header-quick-actions .header-quick-btn-light{background:#fff!important;color:#0b5b47!important}
+  .app-shell:not(.admin-shell) .header-quick-actions .header-quick-icon,.app-shell:not(.admin-shell) .header-quick-actions .header-quick-icon svg{width:22px!important;height:22px!important;min-width:22px!important;min-height:22px!important;display:grid!important;place-items:center!important;color:inherit!important;opacity:1!important;visibility:visible!important}
+  .app-shell:not(.admin-shell) .header-quick-actions .header-quick-icon svg{display:block!important;fill:none!important;stroke:currentColor!important;stroke-width:2!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+  .app-shell:not(.admin-shell) .header-quick-actions .header-quick-lang{font-size:13px!important;font-weight:900!important;line-height:1!important;color:#f6d36f!important}
+}
+@media(max-width:900px){
+  .app-shell:not(.admin-shell) .header-quick-actions{display:none!important}
+  .app-shell:not(.admin-shell) .v443-announcement-spacer,.app-shell:not(.admin-shell) .announcement.ref-announcement{display:none!important;height:0!important;min-height:0!important;max-height:0!important;margin:0!important;padding:0!important}
+  .app-shell:not(.admin-shell) .announcement.ref-announcement{border:0!important}
+  .app-shell:not(.admin-shell) .screen:has(.hero-slider){padding-top:0!important;margin-top:0!important}
+  .app-shell:not(.admin-shell) .hero-slider,.app-shell:not(.admin-shell) .hero-slider.v94-hero-slider{margin-top:6px!important}
+}
+@media(max-width:390px){
+  .app-shell:not(.admin-shell) .hero-slider,.app-shell:not(.admin-shell) .hero-slider.v94-hero-slider{margin-top:4px!important}
+}
