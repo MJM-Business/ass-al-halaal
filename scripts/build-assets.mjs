@@ -1,4 +1,4 @@
-import {mkdir,stat} from 'node:fs/promises';
+import {mkdir,stat,readFile,writeFile} from 'node:fs/promises';
 import sharp from 'sharp';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -61,6 +61,57 @@ const imageProfiles={
   'family-card-final-v329.webp':{width:900,quality:78}
 };
 
+
+function extractCriticalCss(source){
+  const criticalTokens=[
+    'html','body','.app-shell','.screen','.skip-link',
+    '.ref-customer-header','.customer-brand','.desktop-main-nav','.ref-top-actions',
+    '.mobile-reference-header','.mobile-reference-topbar','.mobile-reference-mainbar',
+    '.mobile-ref-','.ref-announcement','.announcement',
+    '.v94-hero-slider','.hero-slider','.hero-slide','.hero-copy','.hero-badges',
+    '.luxury-hero-','.luxury-feature-row','.unified-login-hero','.unified-login-icon',
+    '.bottom-nav','.floating-whatsapp'
+  ];
+
+  const chunks=[];
+  let start=0,depth=0,quote='',comment=false;
+  for(let i=0;i<source.length;i++){
+    const ch=source[i],next=source[i+1];
+    if(comment){
+      if(ch==='*'&&next==='/'){comment=false;i++}
+      continue;
+    }
+    if(!quote&&ch==='/'&&next==='*'){comment=true;i++;continue}
+    if(quote){
+      if(ch==='\\'){i++;continue}
+      if(ch===quote)quote='';
+      continue;
+    }
+    if(ch==='"'||ch==="'"){quote=ch;continue}
+    if(ch==='{')depth++;
+    else if(ch==='}'){
+      depth--;
+      if(depth===0){
+        chunks.push(source.slice(start,i+1));
+        start=i+1;
+      }
+    }else if(ch===';'&&depth===0){
+      chunks.push(source.slice(start,i+1));
+      start=i+1;
+    }
+  }
+  if(start<source.length)chunks.push(source.slice(start));
+
+  const keep=chunk=>{
+    const clean=chunk.replace(/\/\*[\s\S]*?\*\//g,' ');
+    if(!clean.trim())return false;
+    if(/^\s*@(?:font-face|keyframes|-webkit-keyframes)/i.test(clean))return true;
+    return criticalTokens.some(token=>clean.includes(token));
+  };
+
+  return chunks.filter(keep).join('\n');
+}
+
 async function optimizeImage(name){
   const input=path.join(root,'www','assets',name);
   const rel=name.replace(/\.(png|jpe?g|webp)$/i,'.webp');
@@ -74,6 +125,10 @@ async function optimizeImage(name){
     .toFile(output);
   return {name,output};
 }
+
+const sourceCss=await readFile(path.join(root,'www','style.css'),'utf8');
+const criticalCss=extractCriticalCss(sourceCss);
+await writeFile(path.join(outDir,'critical.css'),criticalCss,'utf8');
 
 await Promise.all([
   build({
@@ -107,8 +162,9 @@ for(const name of imageTargets){
   }
 }
 
-const [js,css]=await Promise.all([
+const [js,css,critical]=await Promise.all([
   stat(path.join(outDir,'app.min.js')),
-  stat(path.join(outDir,'style.min.css'))
+  stat(path.join(outDir,'style.min.css')),
+  stat(path.join(outDir,'critical.css'))
 ]);
-console.log(`Built production assets: app.min.js ${js.size} bytes, style.min.css ${css.size} bytes, optimized images ${optimizedImages.length}`);
+console.log(`Built production assets: app.min.js ${js.size} bytes, style.min.css ${css.size} bytes, critical.css ${critical.size} bytes, optimized images ${optimizedImages.length}`);
