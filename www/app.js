@@ -8693,11 +8693,14 @@ function render(){
     window.__v496BindFaq?.();
     window.__v517SyncBrandContrast?.();
   };
-  ensureFinalWaveLayer();
+  const desktopViewport=window.matchMedia?.('(min-width:901px)').matches;
+  if(desktopViewport)ensureFinalWaveLayer();
   scheduleAfterInitialPerformanceWindow(()=>{
     bindDeferredHomeUi();
-    ensureFinalWaveLayer();
-    normalizeFinalWaveDom(appRoot);
+    if(desktopViewport){
+      ensureFinalWaveLayer();
+      normalizeFinalWaveDom(appRoot);
+    }
   });
 }
 
