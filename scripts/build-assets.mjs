@@ -1,4 +1,4 @@
-import {mkdir,stat,readFile,writeFile} from 'node:fs/promises';
+import {mkdir,stat} from 'node:fs/promises';
 import sharp from 'sharp';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -8,64 +8,7 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 const outDir=path.join(root,'www','dist');
 const optimizedAssetsDir=path.join(outDir,'assets');
 await mkdir(outDir,{recursive:true});
-
 await mkdir(optimizedAssetsDir,{recursive:true});
-
-const styleSourcePath=path.join(root,'www','style.css');
-const criticalSourcePath=path.join(outDir,'critical.css');
-
-function topLevelCssBlocks(css=''){
-  const blocks=[];
-  let start=0,depth=0,inString='',escape=false;
-  for(let i=0;i<css.length;i++){
-    const ch=css[i];
-    if(inString){
-      if(escape){escape=false;continue}
-      if(ch==='\\'){escape=true;continue}
-      if(ch===inString)inString='';
-      continue;
-    }
-    if(ch==='"'||ch==="'"){inString=ch;continue}
-    if(ch==='{')depth++;
-    else if(ch==='}'){
-      depth=Math.max(0,depth-1);
-      if(depth===0){
-        blocks.push(css.slice(start,i+1));
-        start=i+1;
-      }
-    }else if(ch===';'&&depth===0){
-      const chunk=css.slice(start,i+1);
-      if(chunk.trim())blocks.push(chunk);
-      start=i+1;
-    }
-  }
-  const tail=css.slice(start);
-  if(tail.trim())blocks.push(tail);
-  return blocks;
-}
-
-function buildCriticalCss(css=''){
-  const criticalTerms=[
-    ':root','html','body','#app','.app-shell','.screen',
-    '.ref-customer-header','.customer-brand','.mobile-reference-header',
-    '.mobile-ref-','.header-quick-','.premium-action-dock',
-    '.ref-announcement','.announcement',
-    '.v94-hero-slider','.hero-slider','.hero-slide','.quality-hero',
-    '.hero-copy','.luxury-hero-','.luxury-feature-row','.hero-title-gold'
-  ];
-  const blocks=topLevelCssBlocks(css);
-  const picked=[];
-  for(const block of blocks){
-    const text=block.toLowerCase();
-    const keep=criticalTerms.some(term=>text.includes(term.toLowerCase()));
-    if(keep)picked.push(block);
-  }
-  return picked.join('\n');
-}
-
-const fullStyleSource=await readFile(styleSourcePath,'utf8');
-const criticalCssSource=buildCriticalCss(fullStyleSource);
-await writeFile(criticalSourcePath,criticalCssSource,'utf8');
 
 const imageTargets=[
   'ass-al-halaal-mobile-logo-v519.png',
@@ -118,7 +61,6 @@ const imageProfiles={
   'family-card-final-v329.webp':{width:900,quality:78}
 };
 
-
 async function optimizeImage(name){
   const input=path.join(root,'www','assets',name);
   const rel=name.replace(/\.(png|jpe?g|webp)$/i,'.webp');
@@ -147,18 +89,8 @@ await Promise.all([
     logLevel:'warning'
   }),
   build({
-    entryPoints:[styleSourcePath],
+    entryPoints:[path.join(root,'www','style.css')],
     outfile:path.join(outDir,'style.min.css'),
-    bundle:false,
-    minify:true,
-    legalComments:'none',
-    charset:'utf8',
-    sourcemap:false,
-    logLevel:'warning'
-  }),
-  build({
-    entryPoints:[criticalSourcePath],
-    outfile:path.join(outDir,'critical.min.css'),
     bundle:false,
     minify:true,
     legalComments:'none',
@@ -175,9 +107,8 @@ for(const name of imageTargets){
   }
 }
 
-const [js,css,criticalCss]=await Promise.all([
+const [js,css]=await Promise.all([
   stat(path.join(outDir,'app.min.js')),
-  stat(path.join(outDir,'style.min.css')),
-  stat(path.join(outDir,'critical.min.css'))
+  stat(path.join(outDir,'style.min.css'))
 ]);
-console.log(`Built production assets: app.min.js ${js.size} bytes, style.min.css ${css.size} bytes, critical.min.css ${criticalCss.size} bytes, optimized images ${optimizedImages.length}`);
+console.log(`Built production assets: app.min.js ${js.size} bytes, style.min.css ${css.size} bytes, optimized images ${optimizedImages.length}`);
