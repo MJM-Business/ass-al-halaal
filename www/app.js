@@ -39,7 +39,29 @@ let marketingProductForCampaignCore=()=>null, marketingMetricsCore=()=>({active:
 
 let adminFeatureModulesReady=false;
 let adminFeatureModulesPromise=null;
+let adminFullStylePromise=null;
+function ensureAdminFullStyle(){
+  if(adminFullStylePromise)return adminFullStylePromise;
+  adminFullStylePromise=new Promise((resolve,reject)=>{
+    const existing=document.getElementById('admin-full-style');
+    if(existing){
+      if(existing.sheet){resolve();return}
+      existing.addEventListener('load',()=>resolve(),{once:true});
+      existing.addEventListener('error',reject,{once:true});
+      return;
+    }
+    const link=document.createElement('link');
+    link.id='admin-full-style';
+    link.rel='stylesheet';
+    link.href='dist/style-full.min.css?v=603';
+    link.onload=()=>resolve();
+    link.onerror=reject;
+    document.head.appendChild(link);
+  });
+  return adminFullStylePromise;
+}
 async function ensureAdminFeatureModules(){
+  await ensureAdminFullStyle();
   if(adminFeatureModulesReady)return;
   if(adminFeatureModulesPromise)return adminFeatureModulesPromise;
   adminFeatureModulesPromise=Promise.all([
