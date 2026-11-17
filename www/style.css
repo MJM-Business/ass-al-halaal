@@ -54816,3 +54816,114 @@ html body .app-shell:has(.v405-home-ui) .luxury-hero-title .hero-title-gold{
     display:none!important;
   }
 }
+
+
+/* v591 — restore desktop quick-action icons only */
+@media(min-width:901px){
+  .app-shell:not(.admin-shell) .header-quick-actions{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:8px!important;
+    min-width:0!important;
+  }
+
+  .app-shell:not(.admin-shell) .header-quick-actions .header-quick-btn{
+    position:relative!important;
+    width:44px!important;
+    height:44px!important;
+    min-width:44px!important;
+    min-height:44px!important;
+    max-width:44px!important;
+    max-height:44px!important;
+    padding:0!important;
+    margin:0!important;
+    display:grid!important;
+    place-items:center!important;
+    border-radius:12px!important;
+    border:1px solid rgba(230,183,61,.75)!important;
+    background:rgba(255,255,255,.06)!important;
+    color:#f6d36f!important;
+    box-sizing:border-box!important;
+    overflow:visible!important;
+  }
+
+  .app-shell:not(.admin-shell) .header-quick-actions .header-quick-btn-light{
+    background:#fff!important;
+    color:#0b5b47!important;
+  }
+
+  .app-shell:not(.admin-shell) .header-quick-actions .header-quick-icon{
+    width:22px!important;
+    height:22px!important;
+    min-width:22px!important;
+    min-height:22px!important;
+    display:grid!important;
+    place-items:center!important;
+    color:inherit!important;
+    opacity:1!important;
+    visibility:visible!important;
+  }
+
+  .app-shell:not(.admin-shell) .header-quick-actions .header-quick-icon svg{
+    width:22px!important;
+    height:22px!important;
+    display:block!important;
+    fill:none!important;
+    stroke:currentColor!important;
+    stroke-width:2!important;
+    stroke-linecap:round!important;
+    stroke-linejoin:round!important;
+    opacity:1!important;
+    visibility:visible!important;
+  }
+
+  .app-shell:not(.admin-shell) .header-quick-actions .header-quick-lang{
+    font-size:13px!important;
+    font-weight:900!important;
+    line-height:1!important;
+    color:#f6d36f!important;
+  }
+
+  .app-shell:not(.admin-shell) .header-quick-actions .header-quick-lang>span{
+    display:block!important;
+    color:inherit!important;
+    opacity:1!important;
+    visibility:visible!important;
+  }
+
+  .app-shell:not(.admin-shell) .header-quick-actions .header-quick-dot{
+    position:absolute!important;
+    top:7px!important;
+    right:7px!important;
+    width:7px!important;
+    height:7px!important;
+    border-radius:50%!important;
+    background:#ef4444!important;
+    border:1px solid #fff!important;
+    display:block!important;
+  }
+
+  .app-shell:not(.admin-shell) .header-quick-actions .header-quick-count{
+    position:absolute!important;
+    top:-5px!important;
+    right:-5px!important;
+    min-width:18px!important;
+    height:18px!important;
+    padding:0 5px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    border-radius:999px!important;
+    background:#e0ae37!important;
+    color:#103d31!important;
+    border:2px solid #0d6551!important;
+    font-size:10px!important;
+    font-weight:900!important;
+    line-height:1!important;
+  }
+}
+
+@media(max-width:900px){
+  .app-shell:not(.admin-shell) .header-quick-actions{display:none!important}
+}
