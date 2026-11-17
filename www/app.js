@@ -1055,7 +1055,7 @@ function applyBatch2UxHardening(root=document){
 
 function customerAuthMarkup(){
   return `<div class="simple-auth-shell" data-auth-mode="login">
-    <div class="simple-auth-icon simple-auth-logo-wrap"><img src="assets/ass-al-halaal-logo-colored.png" alt=""></div>
+    <div class="simple-auth-icon simple-auth-logo-wrap"><img src="dist/assets/ass-al-halaal-logo-colored.webp" alt="" loading="lazy" decoding="async" fetchpriority="low"></div>
     <div class="simple-auth-heading">
       <small>ASS AL HALAAL</small>
       <h2>${t('تسجيل الدخول','Login')}</h2>
@@ -2485,6 +2485,17 @@ html[dir="rtl"] .app-shell:has(.v405-home-ui) .ref-categories #view-all{right:au
 /* v561 WAVE small-text pass: make all semantic secondary text readable on home. */
 .app-shell:has(.v405-home-ui) small{
   font-size:11px!important;
+}
+
+/* Performance-only: skip initial layout/paint for sections below the first viewport. */
+.app-shell:has(.v405-home-ui) .v490-request-section,
+.app-shell:has(.v405-home-ui) .premium-safety-standards,
+.app-shell:has(.v405-home-ui) .v500-proof-section,
+.app-shell:has(.v405-home-ui) .v500-guide-section,
+.app-shell:has(.v405-home-ui) .v500-faq-section,
+.app-shell:has(.v405-home-ui) .customer-mega-footer{
+  content-visibility:auto;
+  contain-intrinsic-size:auto 900px;
 }
 </style>
 `}
