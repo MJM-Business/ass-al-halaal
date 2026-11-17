@@ -2371,7 +2371,7 @@ function header(){const v=view();return `<header class="app-header ref-customer-
   </div>
   <div class="customer-brand">
     <button class="customer-logo" type="button" data-nav="home" aria-label="Ass Al Halaal Home">
-      <img src="assets/ass-al-halaal-logo-white.png" alt="">
+      <img src="assets/ass-al-halaal-logo-white.png" alt="" decoding="async">
       <span><b>${t('عاس الحلال','Ass Al Halaal')}</b><small>${t('ذبائح ولحوم مختارة','Premium livestock & meat')}</small></span>
     </button>
     <button class="location-pill ref-location-pill" id="location-top" type="button" aria-label="${t('اختيار منطقة التوصيل','Choose delivery area')}">
@@ -2521,7 +2521,7 @@ function homePage(){
     <div><h2>${t('اختر منطقة التوصيل في جدة','Choose your delivery area in Jeddah')}</h2><p>${t('توصيل مبرد 4°C يحافظ على طلبك طازجاً','Chilled 4°C delivery keeps every order fresh')}</p></div>
   </div>
   <div class="district-prep-stamp" aria-hidden="true">
-    <img class="district-prep-stamp-image" src="assets/order-now-preparation-sameday-3d-stamp.png" alt="">
+    <img class="district-prep-stamp-image" src="assets/order-now-preparation-sameday-3d-stamp.png" alt="" loading="lazy" decoding="async" fetchpriority="low">
   </div>
   <div class="district-chips">${districts.map(d=>`<button data-district="${safe(d)}" class="${d===district?'selected':''}">${t(d,districtEn[d])}</button>`).join('')}</div>
 </section>
@@ -2913,7 +2913,7 @@ function homePage(){
       </div>
 
       <div class="mega-footer-registration">
-        <img src="assets/saudi-ministry-commerce-v139.png" alt="">
+        <img src="assets/saudi-ministry-commerce-v139.png" alt="" loading="lazy" decoding="async" fetchpriority="low">
         <div>
           <span><small>${t('السجل التجاري','Commercial Registration')}</small><b dir="ltr">7014006428</b></span>
           <span><small>${t('الرقم الضريبي','VAT Registration')}</small><b dir="ltr">300225678600003</b></span>
