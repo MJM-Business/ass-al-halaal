@@ -648,7 +648,9 @@ function applyAccessibilityHardening(root=document){
     if(aboveFold&&!priorityAssigned){
       img.setAttribute('loading','eager');
       img.setAttribute('fetchpriority','high');
-      img.setAttribute('decoding','sync');
+      // Keep the above-fold image high priority, but do not force a
+      // synchronous decode on the main thread.
+      img.setAttribute('decoding','async');
       priorityAssigned=true;
     }else{
       if(!img.hasAttribute('loading'))img.setAttribute('loading','lazy');
