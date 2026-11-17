@@ -1024,12 +1024,6 @@ function applyBatch2UxHardening(root=document){
     }
   });
 
-  if(!document.getElementById('batch2-ux-style')){
-    const style=document.createElement('style');
-    style.id='batch2-ux-style';
-    style.textContent=``;
-    if(style.textContent.trim())document.head.appendChild(style);
-  }
 }
 
 function customerAuthMarkup(){
@@ -9548,10 +9542,7 @@ if(!window.__v469ResizeBound){
     if(document.getElementById('v482-hero-system')) return;
     removeOldHeroOverrides();
 
-    const style=document.createElement('style');
-    style.id='v482-hero-system';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
+    /* visual CSS already lives in the stylesheet; no runtime style injection needed */
   };
 
   const normalizeActiveHero=()=>{
@@ -9736,10 +9727,6 @@ function setupV485MostRequestedSlider(){
   const installV485ProductSliderCSS=()=>{
     if(document.getElementById('v485-most-requested-product-slider'))return;
 
-    const style=document.createElement('style');
-    style.id='v485-most-requested-product-slider';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   // Initial v485 setup is owned by render()/renderProducts().
@@ -9751,196 +9738,6 @@ function setupV485MostRequestedSlider(){
    Ass Al Halaal v486 — ACTIVE CAROUSEL CONTROLS + MOUSE DRAG
    Rebinds v485 carousel with robust desktop interaction.
    ========================================================= */
-
-function setupV486MostRequestedInteractions(){
-  const shell=document.querySelector('#collection.ref-collection .v485-product-carousel-shell');
-  const track=shell?.querySelector('#products.ref-products.v485-product-carousel-track');
-  if(!shell || !track)return;
-
-  // Remove/replace old arrows so v485 listeners cannot conflict.
-  const oldPrev=shell.querySelector('.v485-carousel-prev');
-  const oldNext=shell.querySelector('.v485-carousel-next');
-
-  const makeArrow=(old, cls, label, html)=>{
-    const btn=old ? old.cloneNode(false) : document.createElement('button');
-    btn.type='button';
-    btn.className=`v485-carousel-arrow ${cls} v486-active-arrow`;
-    btn.setAttribute('aria-label',label);
-    btn.innerHTML=html;
-    if(old) old.replaceWith(btn);
-    else shell.appendChild(btn);
-    return btn;
-  };
-
-  const rtl=document.documentElement.dir==='rtl';
-  const prev=makeArrow(
-    oldPrev,
-    'v485-carousel-prev',
-    rtl?'السابق':'Previous product',
-    '‹'
-  );
-  const next=makeArrow(
-    oldNext,
-    'v485-carousel-next',
-    rtl?'التالي':'Next product',
-    '›'
-  );
-
-  const cards=()=>[...track.querySelectorAll(':scope > .product-card.v485-carousel-card')];
-
-  const nearestIndex=()=>{
-    const list=cards();
-    if(!list.length)return 0;
-    const box=track.getBoundingClientRect();
-    const anchor=rtl ? box.right : box.left;
-
-    let best=0;
-    let dist=Infinity;
-    list.forEach((card,i)=>{
-      const r=card.getBoundingClientRect();
-      const edge=rtl ? r.right : r.left;
-      const d=Math.abs(edge-anchor);
-      if(d<dist){dist=d;best=i;}
-    });
-    return best;
-  };
-
-  const goToIndex=(index,behavior='smooth')=>{
-    const list=cards();
-    if(!list.length)return;
-    const target=list[Math.max(0,Math.min(list.length-1,index))];
-    target.scrollIntoView({
-      behavior,
-      block:'nearest',
-      inline:'start'
-    });
-  };
-
-  const updateArrowState=()=>{
-    const list=cards();
-    if(list.length<=1){
-      prev.disabled=true;
-      next.disabled=true;
-      return;
-    }
-
-    const i=nearestIndex();
-    prev.disabled=i<=0;
-    next.disabled=i>=list.length-1;
-
-    prev.setAttribute('aria-disabled',String(prev.disabled));
-    next.setAttribute('aria-disabled',String(next.disabled));
-  };
-
-  prev.onclick=e=>{
-    e.preventDefault();
-    e.stopPropagation();
-    goToIndex(nearestIndex()-1,'smooth');
-    setTimeout(updateArrowState,380);
-  };
-
-  next.onclick=e=>{
-    e.preventDefault();
-    e.stopPropagation();
-    goToIndex(nearestIndex()+1,'smooth');
-    setTimeout(updateArrowState,380);
-  };
-
-  // Robust desktop mouse-drag.
-  // Uses document-level mousemove so dragging continues even if pointer leaves track.
-  if(!track.dataset.v486MouseDrag){
-    track.dataset.v486MouseDrag='1';
-
-    let dragging=false;
-    let startX=0;
-    let startScroll=0;
-    let moved=false;
-    let suppressClickUntil=0;
-
-    const interactiveSelector='button,a,input,select,textarea,label,[role="button"]';
-
-    const down=e=>{
-      if(e.button!==0)return;
-      if(e.target.closest(interactiveSelector))return;
-
-      dragging=true;
-      moved=false;
-      startX=e.clientX;
-      startScroll=track.scrollLeft;
-
-      track.classList.add('is-v486-dragging');
-      document.documentElement.classList.add('v486-carousel-dragging');
-
-      e.preventDefault();
-    };
-
-    const move=e=>{
-      if(!dragging)return;
-
-      const dx=e.clientX-startX;
-      if(Math.abs(dx)>4)moved=true;
-
-      // Physical drag: pull rail with the mouse.
-      track.scrollLeft=startScroll-dx;
-
-      if(moved)e.preventDefault();
-    };
-
-    const up=e=>{
-      if(!dragging)return;
-
-      dragging=false;
-      track.classList.remove('is-v486-dragging');
-      document.documentElement.classList.remove('v486-carousel-dragging');
-
-      if(moved){
-        suppressClickUntil=Date.now()+320;
-        // Snap cleanly to nearest card after drag.
-        const index=nearestIndex();
-        requestAnimationFrame(()=>goToIndex(index,'smooth'));
-      }
-
-      setTimeout(updateArrowState,360);
-    };
-
-    track.addEventListener('mousedown',down);
-    document.addEventListener('mousemove',move,{passive:false});
-    document.addEventListener('mouseup',up);
-
-    track.addEventListener('dragstart',e=>e.preventDefault());
-
-    // Prevent accidental card-open after an actual drag.
-    track.addEventListener('click',e=>{
-      if(Date.now()<suppressClickUntil){
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    },true);
-  }
-
-  // Native touch swipe remains enabled.
-  if(!track.dataset.v486ScrollState){
-    track.dataset.v486ScrollState='1';
-    let raf=0;
-    track.addEventListener('scroll',()=>{
-      cancelAnimationFrame(raf);
-      raf=requestAnimationFrame(updateArrowState);
-    },{passive:true});
-  }
-
-  // Image dragging should never steal the mouse gesture.
-  track.querySelectorAll('img').forEach(img=>{
-    img.draggable=false;
-    img.style.webkitUserDrag='none';
-  });
-
-  requestAnimationFrame(updateArrowState);
-}
-
-;(()=>{
-  // v486 is intentionally retired. v487 is the active carousel engine and
-  // render()/renderProducts() already invoke it explicitly.
-})();
 
 /* =========================================================
    Ass Al Halaal v487 — STABLE ACTIVE PRODUCT CAROUSEL
@@ -10152,10 +9949,6 @@ function setupV487StableCarousel(){
     // Disable v486 visual layer; v487 owns the controls now.
     document.getElementById('v486-active-carousel-controls')?.remove();
 
-    const style=document.createElement('style');
-    style.id='v487-stable-active-carousel';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   // Initial v487 setup is owned by render()/renderProducts().
@@ -10173,10 +9966,7 @@ function setupV487StableCarousel(){
   const installV488OverflowFix=()=>{
     if(document.getElementById('v488-page-overflow-fix')) return;
 
-    const style=document.createElement('style');
-    style.id='v488-page-overflow-fix';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
+    /* visual CSS already lives in the stylesheet; no runtime style injection needed */
   };
 
   const resetHorizontalPageOffset=()=>{
@@ -10391,10 +10181,7 @@ function setupV489RequestFitSelector(){
   const installV489RequestFitCSS=()=>{
     if(document.getElementById('v489-request-fit-css'))return;
 
-    const style=document.createElement('style');
-    style.id='v489-request-fit-css';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
+    /* visual CSS already lives in the stylesheet; no runtime style injection needed */
   };
 
   const boot=()=>{
@@ -10462,10 +10249,6 @@ function setupV490RequestSection(){
     /* Remove v489 styling so it cannot interfere with the new structure. */
     document.getElementById('v489-request-fit-css')?.remove();
 
-    const style=document.createElement('style');
-    style.id='v490-request-section-css';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
   };
 
   // Initial request-section setup is owned by render(); avoid duplicate startup binding.
@@ -10547,10 +10330,7 @@ function setupV490RequestSection(){
   const installV502WebsiteVsInstalledNavigation=()=>{
     if(document.getElementById('v502-website-vs-installed-navigation')) return;
 
-    const style=document.createElement('style');
-    style.id='v502-website-vs-installed-navigation';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
+    /* visual CSS already lives in the stylesheet; no runtime style injection needed */
 
     const installed =
       window.matchMedia?.('(display-mode: standalone)')?.matches ||
@@ -10920,10 +10700,7 @@ function setupV527MobileProductCarousel(){
   const installV527MobileProductCarouselCSS=()=>{
     if(document.getElementById('v527-mobile-product-center-swipe'))return;
 
-    const style=document.createElement('style');
-    style.id='v527-mobile-product-center-swipe';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
+    /* visual CSS already lives in the stylesheet; no runtime style injection needed */
   };
 
   // Initial v527 setup is owned by render()/renderProducts().
@@ -11264,10 +11041,7 @@ function setupV528MobileCarousel(){
   const installV528MobileCarouselCSS=()=>{
     if(document.getElementById('v528-mobile-carousel-pointer-swipe'))return;
 
-    const style=document.createElement('style');
-    style.id='v528-mobile-carousel-pointer-swipe';
-    style.textContent=``;
-    if(style.textContent.trim())(document.head||document.documentElement).appendChild(style);
+    /* visual CSS already lives in the stylesheet; no runtime style injection needed */
   };
 
   // Initial v528 setup is owned by render()/renderProducts().
