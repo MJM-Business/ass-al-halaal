@@ -1,4 +1,4 @@
-import {mkdir,stat} from 'node:fs/promises';
+import {mkdir,stat,readFile,writeFile} from 'node:fs/promises';
 import sharp from 'sharp';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -8,7 +8,107 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 const outDir=path.join(root,'www','dist');
 const optimizedAssetsDir=path.join(outDir,'assets');
 await mkdir(outDir,{recursive:true});
+
 await mkdir(optimizedAssetsDir,{recursive:true});
+
+function splitCustomerCss(css=''){
+  const adminTokens=[
+    '.admin-shell','.reference-admin','.reference-sidebar','.reference-nav',
+    '.reference-brand','.reference-market-card','.reference-admin-header',
+    '.reference-admin-content','.reference-header-actions','.reference-admin-user',
+    '.admin-','.supplier-','.finance-','.audit-','.gov-','.security-',
+    '.mkt-','.wa-','.opsx-','.portal-manager-','.portal-product-admin-',
+    '.stitch-','.executive-','.rbac-'
+  ];
+
+  const selectorIsAdmin=selector=>{
+    const parts=selector.split(',').map(x=>x.trim()).filter(Boolean);
+    return parts.length>0&&parts.every(part=>adminTokens.some(token=>part.includes(token)));
+  };
+
+  const splitLevel=input=>{
+    let customer='',i=0;
+    while(i<input.length){
+      while(i<input.length&&/\s/.test(input[i])){customer+=input[i++];}
+      if(i>=input.length)break;
+
+      if(input.startsWith('/*',i)){
+        const end=input.indexOf('*/',i+2);
+        if(end<0){customer+=input.slice(i);break}
+        customer+=input.slice(i,end+2);i=end+2;continue;
+      }
+
+      const start=i;
+      let quote='',escape=false,comment=false,brace=-1,semi=-1;
+      for(;i<input.length;i++){
+        const ch=input[i],next=input[i+1];
+        if(comment){
+          if(ch==='*'&&next==='/'){comment=false;i++}
+          continue;
+        }
+        if(quote){
+          if(escape){escape=false;continue}
+          if(ch==='\\'){escape=true;continue}
+          if(ch===quote)quote='';
+          continue;
+        }
+        if(ch==='/'&&next==='*'){comment=true;i++;continue}
+        if(ch==='"'||ch==="'"){quote=ch;continue}
+        if(ch==='{'){brace=i;break}
+        if(ch===';'){semi=i;break}
+      }
+
+      if(semi>=0&&(brace<0||semi<brace)){
+        customer+=input.slice(start,semi+1);
+        i=semi+1;continue;
+      }
+      if(brace<0){customer+=input.slice(start);break}
+
+      const header=input.slice(start,brace).trim();
+      let depth=1,j=brace+1;quote='';escape=false;comment=false;
+      for(;j<input.length&&depth>0;j++){
+        const ch=input[j],next=input[j+1];
+        if(comment){
+          if(ch==='*'&&next==='/'){comment=false;j++}
+          continue;
+        }
+        if(quote){
+          if(escape){escape=false;continue}
+          if(ch==='\\'){escape=true;continue}
+          if(ch===quote)quote='';
+          continue;
+        }
+        if(ch==='/'&&next==='*'){comment=true;j++;continue}
+        if(ch==='"'||ch==="'"){quote=ch;continue}
+        if(ch==='{')depth++;
+        else if(ch==='}')depth--;
+      }
+      const body=input.slice(brace+1,Math.max(brace+1,j-1));
+
+      if(/^@(media|supports|layer|container)\b/i.test(header)){
+        const inner=splitLevel(body);
+        if(inner.trim())customer+=`${header}{${inner}}`;
+      }else if(header.startsWith('@')){
+        customer+=input.slice(start,j);
+      }else if(!selectorIsAdmin(header)){
+        customer+=input.slice(start,j);
+      }
+      i=j;
+    }
+    return customer;
+  };
+
+  return splitLevel(css);
+}
+
+const fullStyleSource=await readFile(path.join(root,'www','style.css'),'utf8');
+const customerStyleSource=splitCustomerCss(fullStyleSource);
+const customerStylePath=path.join(outDir,'style.customer.css');
+const fullStylePath=path.join(outDir,'style.full.css');
+await Promise.all([
+  writeFile(customerStylePath,customerStyleSource,'utf8'),
+  writeFile(fullStylePath,fullStyleSource,'utf8')
+]);
 
 const imageTargets=[
   'ass-al-halaal-mobile-logo-v519.png',
@@ -93,8 +193,18 @@ await Promise.all([
     logLevel:'warning'
   }),
   build({
-    entryPoints:[path.join(root,'www','style.css')],
+    entryPoints:[customerStylePath],
     outfile:path.join(outDir,'style.min.css'),
+    bundle:false,
+    minify:true,
+    legalComments:'none',
+    charset:'utf8',
+    sourcemap:false,
+    logLevel:'warning'
+  }),
+  build({
+    entryPoints:[fullStylePath],
+    outfile:path.join(outDir,'style-full.min.css'),
     bundle:false,
     minify:true,
     legalComments:'none',
@@ -111,8 +221,9 @@ for(const name of imageTargets){
   }
 }
 
-const [js,css]=await Promise.all([
+const [js,css,fullCss]=await Promise.all([
   stat(path.join(outDir,'app.min.js')),
-  stat(path.join(outDir,'style.min.css'))
+  stat(path.join(outDir,'style.min.css')),
+  stat(path.join(outDir,'style-full.min.css'))
 ]);
-console.log(`Built production assets: app.min.js ${js.size} bytes, style.min.css ${css.size} bytes, optimized images ${optimizedImages.length}`);
+console.log(`Built production assets: app.min.js ${js.size} bytes, customer style.min.css ${css.size} bytes, full admin style ${fullCss.size} bytes, optimized images ${optimizedImages.length}`);
