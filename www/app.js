@@ -1136,6 +1136,201 @@ function adminOtpChannelLabel(channels=[]){
   if(list.includes('sms'))return t('الجوال','mobile');
   return t('البريد الإلكتروني','email');
 }
+function ensureAdminOtpStyles(){
+  if(document.getElementById('admin-otp-scoped-v629'))return;
+  const style=document.createElement('style');
+  style.id='admin-otp-scoped-v629';
+  style.textContent=`
+    dialog.admin-otp-modal{
+      width:min(92vw,460px)!important;
+      max-width:460px!important;
+      margin:auto!important;
+      padding:0!important;
+      border:1px solid rgba(19,80,62,.14)!important;
+      border-radius:24px!important;
+      background:#fff!important;
+      color:#173f35!important;
+      box-shadow:0 28px 80px rgba(0,35,25,.28)!important;
+      overflow:visible!important;
+    }
+    dialog.admin-otp-modal::backdrop{
+      background:rgba(7,32,25,.58)!important;
+      backdrop-filter:blur(5px)!important;
+    }
+    dialog.admin-otp-modal>.close{
+      position:absolute!important;
+      top:14px!important;
+      inset-inline-end:14px!important;
+      width:34px!important;
+      height:34px!important;
+      display:grid!important;
+      place-items:center!important;
+      z-index:3!important;
+      padding:0!important;
+      border:1px solid #dfe8e4!important;
+      border-radius:50%!important;
+      background:#fff!important;
+      color:#315248!important;
+      font-size:18px!important;
+      line-height:1!important;
+      box-shadow:0 5px 14px rgba(11,55,42,.08)!important;
+    }
+    dialog.admin-otp-modal .admin-otp-shell{
+      width:100%!important;
+      padding:34px 34px 30px!important;
+      display:flex!important;
+      flex-direction:column!important;
+      align-items:stretch!important;
+      gap:12px!important;
+      text-align:center!important;
+      box-sizing:border-box!important;
+    }
+    dialog.admin-otp-modal .admin-otp-shield{
+      width:56px!important;
+      height:56px!important;
+      margin:0 auto 2px!important;
+      display:grid!important;
+      place-items:center!important;
+      border-radius:18px!important;
+      background:linear-gradient(145deg,#0d7257,#04513e)!important;
+      color:#fff!important;
+      font-size:26px!important;
+      font-weight:900!important;
+      box-shadow:0 12px 26px rgba(5,81,62,.22)!important;
+    }
+    dialog.admin-otp-modal .admin-otp-shell>small:first-of-type{
+      color:#9b7420!important;
+      font-size:11px!important;
+      font-weight:900!important;
+      letter-spacing:.06em!important;
+    }
+    dialog.admin-otp-modal .admin-otp-shell h2{
+      margin:0!important;
+      color:#173f35!important;
+      font-size:28px!important;
+      line-height:1.25!important;
+      font-weight:900!important;
+    }
+    dialog.admin-otp-modal .admin-otp-shell>p{
+      margin:0 auto!important;
+      max-width:340px!important;
+      color:#66756f!important;
+      font-size:13px!important;
+      line-height:1.7!important;
+    }
+    dialog.admin-otp-modal .admin-otp-destination{
+      margin:4px 0 2px!important;
+      padding:12px 14px!important;
+      display:grid!important;
+      gap:3px!important;
+      border:1px solid #e1e9e5!important;
+      border-radius:14px!important;
+      background:#f6f9f7!important;
+    }
+    dialog.admin-otp-modal .admin-otp-destination b{
+      color:#173f35!important;
+      font-size:12px!important;
+    }
+    dialog.admin-otp-modal .admin-otp-destination span{
+      color:#6b7772!important;
+      font-size:12px!important;
+      overflow-wrap:anywhere!important;
+    }
+    dialog.admin-otp-modal .admin-otp-form{
+      display:grid!important;
+      gap:12px!important;
+      margin-top:2px!important;
+    }
+    dialog.admin-otp-modal .admin-otp-form label{
+      display:grid!important;
+      gap:7px!important;
+      text-align:start!important;
+      color:#304c43!important;
+      font-size:12px!important;
+      font-weight:800!important;
+    }
+    dialog.admin-otp-modal .admin-otp-form input{
+      width:100%!important;
+      height:54px!important;
+      box-sizing:border-box!important;
+      padding:0 16px!important;
+      border:2px solid #d9e3df!important;
+      border-radius:14px!important;
+      background:#fff!important;
+      color:#173f35!important;
+      text-align:center!important;
+      font-size:24px!important;
+      font-weight:900!important;
+      letter-spacing:.32em!important;
+      outline:none!important;
+    }
+    dialog.admin-otp-modal .admin-otp-form input:focus{
+      border-color:#0a6b51!important;
+      box-shadow:0 0 0 4px rgba(10,107,81,.10)!important;
+    }
+    dialog.admin-otp-modal .admin-otp-form .simple-auth-primary{
+      width:100%!important;
+      min-height:50px!important;
+      margin:0!important;
+      padding:12px 18px!important;
+      border:0!important;
+      border-radius:14px!important;
+      background:linear-gradient(180deg,#0b6a50,#07513e)!important;
+      color:#fff!important;
+      font-size:13px!important;
+      font-weight:900!important;
+      box-shadow:0 10px 22px rgba(7,81,62,.18)!important;
+    }
+    dialog.admin-otp-modal .admin-otp-actions{
+      display:grid!important;
+      grid-template-columns:1fr 1fr!important;
+      gap:10px!important;
+    }
+    dialog.admin-otp-modal .admin-otp-actions .simple-auth-switch{
+      min-height:44px!important;
+      padding:9px 12px!important;
+      border:1px solid #dfe7e3!important;
+      border-radius:12px!important;
+      background:#fff!important;
+      color:#214b3e!important;
+      font-size:12px!important;
+      font-weight:800!important;
+    }
+    dialog.admin-otp-modal .admin-otp-actions .simple-auth-switch:disabled{
+      opacity:.55!important;
+      cursor:not-allowed!important;
+    }
+    dialog.admin-otp-modal .admin-otp-expiry{
+      display:block!important;
+      margin-top:2px!important;
+      color:#74817c!important;
+      font-size:11px!important;
+      line-height:1.6!important;
+    }
+    dialog.admin-otp-modal .form-error{
+      min-height:0!important;
+      margin:0!important;
+      color:#a62f35!important;
+      font-size:12px!important;
+    }
+    @media(max-width:560px){
+      dialog.admin-otp-modal{
+        width:calc(100vw - 28px)!important;
+        border-radius:20px!important;
+      }
+      dialog.admin-otp-modal .admin-otp-shell{
+        padding:30px 20px 24px!important;
+      }
+      dialog.admin-otp-modal .admin-otp-actions{
+        grid-template-columns:1fr!important;
+      }
+      dialog.admin-otp-modal .admin-otp-shell h2{
+        font-size:24px!important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
 function openAdminOtpChallenge(startData,adminId){
   adminOtpChallenge={
     id:String(startData?.challenge_id||''),
@@ -1147,6 +1342,7 @@ function openAdminOtpChallenge(startData,adminId){
   };
   if(!adminOtpChallenge.id)throw new Error('OTP challenge was not created');
 
+  ensureAdminOtpStyles();
   open(`<section class="admin-otp-shell">
     <div class="admin-otp-shield" aria-hidden="true">✓</div>
     <small>${t('التحقق بخطوتين','TWO-FACTOR AUTHENTICATION')}</small>
