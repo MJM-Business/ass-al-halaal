@@ -54,7 +54,7 @@ function ensureAdminFullStyle(){
     const link=document.createElement('link');
     link.id='admin-full-style';
     link.rel='stylesheet';
-    link.href='dist/style-full.min.css?v=604';
+    link.href='dist/style-full.min.css?v=603';
     link.onload=()=>resolve();
     link.onerror=reject;
     document.head.appendChild(link);
@@ -1280,7 +1280,7 @@ async function startAdminTwoFactor(adminId,password){
     method:'POST',
     body:JSON.stringify({admin_id:id,password:secret})
   });
-   openAdminOtpChallenge(data,id);
+  openAdminOtpChallenge(data,id);
   return data;
 }
 
