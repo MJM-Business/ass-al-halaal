@@ -1136,6 +1136,148 @@ function adminOtpChannelLabel(channels=[]){
   if(list.includes('sms'))return t('الجوال','mobile');
   return t('البريد الإلكتروني','email');
 }
+function lockAdminOtpLayout(){
+  const dlg=modal;
+  if(!dlg||!dlg.classList.contains('admin-otp-modal'))return;
+  const set=(el,prop,value)=>el?.style?.setProperty(prop,value,'important');
+
+  set(dlg,'position','fixed');
+  set(dlg,'inset','0');
+  set(dlg,'width','min(92vw, 460px)');
+  set(dlg,'max-width','460px');
+  set(dlg,'height','fit-content');
+  set(dlg,'max-height','calc(100vh - 32px)');
+  set(dlg,'margin','auto');
+  set(dlg,'padding','0');
+  set(dlg,'border','1px solid rgba(19,80,62,.14)');
+  set(dlg,'border-radius','24px');
+  set(dlg,'background','#ffffff');
+  set(dlg,'color','#173f35');
+  set(dlg,'box-shadow','0 28px 80px rgba(0,35,25,.28)');
+  set(dlg,'overflow','auto');
+  set(dlg,'transform','none');
+  set(dlg,'box-sizing','border-box');
+
+  const close=dlg.querySelector('.close');
+  set(close,'position','absolute');
+  set(close,'top','14px');
+  set(close,'inset-inline-end','14px');
+  set(close,'width','34px');
+  set(close,'height','34px');
+  set(close,'display','grid');
+  set(close,'place-items','center');
+  set(close,'padding','0');
+  set(close,'border','1px solid #dfe8e4');
+  set(close,'border-radius','50%');
+  set(close,'background','#fff');
+  set(close,'color','#315248');
+  set(close,'z-index','5');
+
+  const shell=dlg.querySelector('.admin-otp-shell');
+  set(shell,'width','100%');
+  set(shell,'padding','34px');
+  set(shell,'display','flex');
+  set(shell,'flex-direction','column');
+  set(shell,'align-items','stretch');
+  set(shell,'gap','12px');
+  set(shell,'text-align','center');
+  set(shell,'box-sizing','border-box');
+
+  const shield=dlg.querySelector('.admin-otp-shield');
+  set(shield,'width','56px');
+  set(shield,'height','56px');
+  set(shield,'margin','0 auto 2px');
+  set(shield,'display','grid');
+  set(shield,'place-items','center');
+  set(shield,'border-radius','18px');
+  set(shield,'background','linear-gradient(145deg,#0d7257,#04513e)');
+  set(shield,'color','#fff');
+  set(shield,'font-size','26px');
+  set(shield,'font-weight','900');
+
+  const heading=dlg.querySelector('.admin-otp-shell h2');
+  set(heading,'margin','0');
+  set(heading,'font-size','28px');
+  set(heading,'line-height','1.25');
+  set(heading,'color','#173f35');
+
+  const intro=dlg.querySelector('.admin-otp-shell>p');
+  set(intro,'margin','0 auto');
+  set(intro,'max-width','340px');
+  set(intro,'font-size','13px');
+  set(intro,'line-height','1.7');
+  set(intro,'color','#66756f');
+
+  const dest=dlg.querySelector('.admin-otp-destination');
+  set(dest,'margin','4px 0 2px');
+  set(dest,'padding','12px 14px');
+  set(dest,'display','grid');
+  set(dest,'gap','3px');
+  set(dest,'border','1px solid #e1e9e5');
+  set(dest,'border-radius','14px');
+  set(dest,'background','#f6f9f7');
+
+  const form=dlg.querySelector('.admin-otp-form');
+  set(form,'display','grid');
+  set(form,'gap','12px');
+  set(form,'margin-top','2px');
+
+  const label=dlg.querySelector('.admin-otp-form label');
+  set(label,'display','grid');
+  set(label,'gap','7px');
+  set(label,'text-align','start');
+  set(label,'font-size','12px');
+  set(label,'font-weight','800');
+
+  const input=dlg.querySelector('.admin-otp-form input');
+  set(input,'width','100%');
+  set(input,'height','54px');
+  set(input,'box-sizing','border-box');
+  set(input,'padding','0 16px');
+  set(input,'border','2px solid #d9e3df');
+  set(input,'border-radius','14px');
+  set(input,'background','#fff');
+  set(input,'color','#173f35');
+  set(input,'text-align','center');
+  set(input,'font-size','24px');
+  set(input,'font-weight','900');
+  set(input,'letter-spacing','.32em');
+
+  const primary=dlg.querySelector('.admin-otp-form [type="submit"]');
+  set(primary,'width','100%');
+  set(primary,'min-height','50px');
+  set(primary,'margin','0');
+  set(primary,'padding','12px 18px');
+  set(primary,'border','0');
+  set(primary,'border-radius','14px');
+  set(primary,'background','linear-gradient(180deg,#0b6a50,#07513e)');
+  set(primary,'color','#fff');
+  set(primary,'font-size','13px');
+  set(primary,'font-weight','900');
+
+  const actions=dlg.querySelector('.admin-otp-actions');
+  set(actions,'display','grid');
+  set(actions,'grid-template-columns',window.matchMedia?.('(max-width:560px)').matches?'1fr':'1fr 1fr');
+  set(actions,'gap','10px');
+
+  dlg.querySelectorAll('.admin-otp-actions button').forEach(btn=>{
+    set(btn,'min-height','44px');
+    set(btn,'padding','9px 12px');
+    set(btn,'border','1px solid #dfe7e3');
+    set(btn,'border-radius','12px');
+    set(btn,'background','#fff');
+    set(btn,'color','#214b3e');
+    set(btn,'font-size','12px');
+    set(btn,'font-weight','800');
+  });
+
+  const expiry=dlg.querySelector('.admin-otp-expiry');
+  set(expiry,'display','block');
+  set(expiry,'margin-top','2px');
+  set(expiry,'font-size','11px');
+  set(expiry,'line-height','1.6');
+  set(expiry,'color','#74817c');
+}
 function ensureAdminOtpStyles(){
   if(document.getElementById('admin-otp-scoped-v629'))return;
   const style=document.createElement('style');
@@ -1365,6 +1507,7 @@ function openAdminOtpChallenge(startData,adminId){
     </div>
     <small class="admin-otp-expiry">${t('ينتهي الرمز خلال 5 دقائق. لا تشارك الرمز مع أي شخص.','Code expires in 5 minutes. Never share this code with anyone.')}</small>
   </section>`,'admin-otp-modal');
+  lockAdminOtpLayout();
 
   const form=modal.querySelector('#admin-otp-form');
   const input=form?.querySelector('input[name="otp"]');
