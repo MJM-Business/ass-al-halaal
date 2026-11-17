@@ -6185,9 +6185,7 @@ function adminUsersGovernanceContent(){
 
 /* removed dead helper: auditSeverityFor */
 /* removed dead helper: auditCategoryFor */
-/* removed dead helper: auditActorFor */){
-  return event.actor||event.user||event.updated_by||event.created_by||'System Administrator';
-}
+/* removed dead helper: auditActorFor */
 function auditRows(){
   const customers=new Map(adminOrders.map(o=>[o.id,o.customer_name||'']));
   return (auditData.events||[]).map(e=>({
