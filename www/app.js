@@ -1280,6 +1280,11 @@ async function startAdminTwoFactor(adminId,password){
     method:'POST',
     body:JSON.stringify({admin_id:id,password:secret})
   });
+  // OTP is launched from the lightweight customer/account shell, while its
+  // complete visual layer lives in the admin stylesheet. Load that stylesheet
+  // only after a valid admin login attempt so the public homepage remains
+  // performance-neutral and the OTP dialog keeps its intended design.
+  await ensureAdminFullStyle();
   openAdminOtpChallenge(data,id);
   return data;
 }
