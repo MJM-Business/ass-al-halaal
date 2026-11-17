@@ -7803,22 +7803,30 @@ function scheduleStartupDomHardening(root){
   // Keep LCP/image priority behavior synchronous, but move the large
   // accessibility/UX DOM scans into small tasks so no single task blocks
   // the main thread for Lighthouse TBT.
-  const images=[...root.querySelectorAll('img')];
+  const priorityImages=[...root.querySelectorAll('.ref-customer-header img,.mobile-reference-header img,.v94-hero-slider img,.quality-hero img,.simple-auth-logo-wrap img')];
   let priorityAssigned=false;
-  images.forEach(img=>{
+  priorityImages.forEach(img=>{
     if(!img.hasAttribute('alt'))img.setAttribute('alt','');
-    const aboveFold=Boolean(img.closest('.ref-customer-header,.mobile-reference-header,.v94-hero-slider,.quality-hero,.simple-auth-logo-wrap'));
-    if(aboveFold&&!priorityAssigned){
+    if(!priorityAssigned){
       img.setAttribute('loading','eager');
       img.setAttribute('fetchpriority','high');
       img.setAttribute('decoding','sync');
       priorityAssigned=true;
     }else{
+      if(!img.hasAttribute('decoding'))img.setAttribute('decoding','async');
+    }
+  });
+
+  const normalizeDeferredImages=()=>{
+    root.querySelectorAll('img').forEach(img=>{
+      if(!img.hasAttribute('alt'))img.setAttribute('alt','');
+      if(priorityImages.includes(img))return;
       if(!img.hasAttribute('loading'))img.setAttribute('loading','lazy');
       if(!img.hasAttribute('decoding'))img.setAttribute('decoding','async');
       if(!img.hasAttribute('fetchpriority'))img.setAttribute('fetchpriority','low');
-    }
-  });
+    });
+  };
+  scheduleAfterInitialPerformanceWindow(normalizeDeferredImages);
 
   const jobs=[
     ()=>root.querySelectorAll('input:not([type="hidden"]),select,textarea').forEach(field=>{
@@ -8532,20 +8540,23 @@ function bind(){
     document.querySelectorAll('[data-hashi-product]').forEach(card=>{const choose=()=>{const source=hashiVariantById(card.dataset.hashiSource);const item=HASHI_VARIANT_PRODUCTS.find(x=>x.id===card.dataset.hashiProduct);toast(t(`تم اختيار ${item?.ar||''} من ${source?.ar||''}. ستفتح خيارات التقطيع والتغليف في المرحلة التالية.`,`Selected ${item?.en||''} from ${source?.en||''}. Cutting and packaging options are the next layer.`))};card.addEventListener('click',choose);card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();choose()}})});
   };
   scheduleAfterInitialPerformanceWindow(bindDeferredCatalogDetails,6000);
-  document.querySelector('#view-all')?.addEventListener('click',()=>{filter='all';render();setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'}),60)});
-  document.querySelectorAll('[data-district]').forEach(b=>b.onclick=()=>{district=b.dataset.district;persist();render()});
-  document.querySelectorAll('[data-livestock-category]').forEach(b=>b.onclick=()=>setView('livestock/'+encodeURIComponent(b.dataset.livestockCategory)));
-  document.querySelectorAll('[data-livestock-open]').forEach(el=>{const open=e=>{e.stopPropagation();const id=el.dataset.livestockOpen;if(id)setView('product/'+encodeURIComponent(id))};el.addEventListener('click',open);el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open(e)}})});
-  document.querySelectorAll('[data-livestock-quick-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();quickAddLivestockProduct(b.dataset.livestockQuickAdd)});
-  document.querySelectorAll('[data-category-query]').forEach(b=>b.onclick=()=>{
-    const id=b.dataset.categoryQuery;
-    const p=products.find(x=>String(x.id)===String(id));
-    filter='whole';
-    query=p?String(lang==='ar'?p.ar:p.en):'';
-    render();
-    setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({block:'start'}),10);
-  });
-  document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;query='';render();setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({block:'start'}),10)});
+  const bindDeferredHomeCatalog=()=>{
+    document.querySelector('#view-all')?.addEventListener('click',()=>{filter='all';render();setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({behavior:'smooth'}),60)});
+    document.querySelectorAll('[data-district]').forEach(b=>b.onclick=()=>{district=b.dataset.district;persist();render()});
+    document.querySelectorAll('[data-livestock-category]').forEach(b=>b.onclick=()=>setView('livestock/'+encodeURIComponent(b.dataset.livestockCategory)));
+    document.querySelectorAll('[data-livestock-open]').forEach(el=>{const open=e=>{e.stopPropagation();const id=el.dataset.livestockOpen;if(id)setView('product/'+encodeURIComponent(id))};el.addEventListener('click',open);el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open(e)}})});
+    document.querySelectorAll('[data-livestock-quick-add]').forEach(b=>b.onclick=e=>{e.stopPropagation();quickAddLivestockProduct(b.dataset.livestockQuickAdd)});
+    document.querySelectorAll('[data-category-query]').forEach(b=>b.onclick=()=>{
+      const id=b.dataset.categoryQuery;
+      const p=products.find(x=>String(x.id)===String(id));
+      filter='whole';
+      query=p?String(lang==='ar'?p.ar:p.en):'';
+      render();
+      setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({block:'start'}),10);
+    });
+    document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;query='';render();setTimeout(()=>document.querySelector('#collection')?.scrollIntoView({block:'start'}),10)});
+  };
+  scheduleAfterInitialPerformanceWindow(bindDeferredHomeCatalog);
   const bindDeferredProductActions=()=>{
     document.querySelectorAll('[data-product]').forEach(b=>b.onclick=e=>{e.stopPropagation();productDialog(b.dataset.product)});
     document.querySelectorAll('[data-product-options]').forEach(b=>b.onclick=e=>{e.stopPropagation();productOptionsDialog(b.dataset.productOptions)});
